@@ -1228,4 +1228,289 @@ Adds a listener triggered when the browser records a page visit.
 onHistoryVisitRemoved(callback: (removed: chrome.history.RemoveInfo) => void): () => void
 ```
 
-Adds a listener triggered when URLs are removed from the history, providing details of the removal.
+Adds a listener triggered when URLs are removed from the history, providing details of the removal.<a name="i18n"></a>
+## i18n
+
+**Documentation:** [Chrome i18n API](https://developer.chrome.com/docs/extensions/reference/i18n)
+
+A promise-based wrapper for the Chrome `i18n` API to manage localization.
+
+### Methods
+
+- [detectI18Language](#detectI18Language)
+- [getI18nAcceptLanguages](#getI18nAcceptLanguages)
+- [getI18nUILanguage](#getI18nUILanguage)
+- [getI18nMessage](#getI18nMessage)
+- [getDefaultLanguage](#getDefaultLanguage)
+
+<a name="detectI18Language"></a>
+### detectI18Language
+
+```
+detectI18Language(text: string): Promise<chrome.i18n.LanguageDetectionResult>
+```
+
+Detects the primary language of the provided text.
+
+<a name="getI18nAcceptLanguages"></a>
+### getI18nAcceptLanguages
+
+```
+getI18nAcceptLanguages(): Promise<string[]>
+```
+
+Retrieves the user's preferred accept languages list.
+
+<a name="getI18nUILanguage"></a>
+### getI18nUILanguage
+
+```
+getI18nUILanguage(): string | undefined
+```
+
+Returns the browser's UI language code.
+
+<a name="getI18nMessage"></a>
+### getI18nMessage
+
+```
+getI18nMessage(key: string): string | undefined
+```
+
+Retrieves the localized message for the specified key.
+
+<a name="getDefaultLanguage"></a>
+### getDefaultLanguage
+
+```
+getDefaultLanguage(): string | undefined
+```
+
+Extracts the default locale as declared in the extension manifest.
+
+<a name="idle"></a>
+## idle
+
+**Documentation:** [Chrome Idle API](https://developer.chrome.com/docs/extensions/reference/idle)
+
+A promise-based wrapper for the Chrome `idle` API to monitor user idle state.
+
+### Methods
+
+- [getIdleAutoLockDelay](#getIdleAutoLockDelay)
+- [queryIdleState](#queryIdleState)
+- [setIdleDetectionInterval](#setIdleDetectionInterval)
+
+### Events
+
+- [onIdleStateChanged](#onIdleStateChanged)
+
+<a name="getIdleAutoLockDelay"></a>
+### getIdleAutoLockDelay
+
+```
+getIdleAutoLockDelay(): Promise<number>
+```
+
+Retrieves the number of seconds before the system auto-locks due to inactivity.
+
+<a name="queryIdleState"></a>
+### queryIdleState
+
+```
+queryIdleState(detectionIntervalInSeconds: number): Promise<chrome.idle.IdleState>
+```
+
+Queries the user's idle state within the specified detection interval.
+
+<a name="setIdleDetectionInterval"></a>
+### setIdleDetectionInterval
+
+```
+setIdleDetectionInterval(intervalInSeconds: number): void
+```
+
+Sets the interval, in seconds, used to detect idle state changes.
+
+<a name="onIdleStateChanged"></a>
+### onIdleStateChanged
+
+```
+onIdleStateChanged(callback: (newState: chrome.idle.IdleState) => void): () => void
+```
+
+Adds a listener that fires when the user's idle state changes, returning a function to remove the listener.
+
+<a name="management"></a>
+## management
+
+**Documentation:** [Chrome Management API](https://developer.chrome.com/docs/extensions/reference/management)
+
+A promise-based wrapper for the Chrome `management` API to manage extensions and apps.
+
+### Methods
+
+- [createAppShortcut](#createAppShortcut)
+- [generateAppForLink](#generateAppForLink)
+- [getExtensionInfo](#getExtensionInfo)
+- [getAllExtensionInfo](#getAllExtensionInfo)
+- [getPermissionWarningsById](#getPermissionWarningsById)
+- [getPermissionWarningsByManifest](#getPermissionWarningsByManifest)
+- [getCurrentExtension](#getCurrentExtension)
+- [launchExtensionApp](#launchExtensionApp)
+- [setExtensionEnabled](#setExtensionEnabled)
+- [setExtensionLaunchType](#setExtensionLaunchType)
+- [uninstallExtension](#uninstallExtension)
+- [uninstallCurrentExtension](#uninstallCurrentExtension)
+
+### Events
+
+- [onExtensionDisabled](#onExtensionDisabled)
+- [onExtensionEnabled](#onExtensionEnabled)
+- [onExtensionInstalled](#onExtensionInstalled)
+- [onExtensionUninstalled](#onExtensionUninstalled)
+
+<a name="createAppShortcut"></a>
+### createAppShortcut
+
+```
+createAppShortcut(id: string): Promise<void>
+```
+
+Creates a desktop shortcut for the specified app ID.
+
+<a name="generateAppForLink"></a>
+### generateAppForLink
+
+```
+generateAppForLink(url: string, title: string): Promise<chrome.management.ExtensionInfo>
+```
+
+Generates a Chrome app for the given URL and title, returning its extension info.
+
+<a name="getExtensionInfo"></a>
+### getExtensionInfo
+
+```
+getExtensionInfo(id: string): Promise<chrome.management.ExtensionInfo>
+```
+
+Retrieves information about the extension or app with the specified ID.
+
+<a name="getAllExtensionInfo"></a>
+### getAllExtensionInfo
+
+```
+getAllExtensionInfo(): Promise<chrome.management.ExtensionInfo[]>
+```
+
+Retrieves information about all installed extensions and apps.
+
+<a name="getPermissionWarningsById"></a>
+### getPermissionWarningsById
+
+```
+getPermissionWarningsById(id: string): Promise<string[]>
+```
+
+Gets permission warning messages for the specified extension ID.
+
+<a name="getPermissionWarningsByManifest"></a>
+### getPermissionWarningsByManifest
+
+```
+getPermissionWarningsByManifest(manifestStr: string): Promise<string[]>
+```
+
+Gets permission warning messages for the given manifest string.
+
+<a name="getCurrentExtension"></a>
+### getCurrentExtension
+
+```
+getCurrentExtension(): Promise<chrome.management.ExtensionInfo>
+```
+
+Retrieves information about the current extension.
+
+<a name="launchExtensionApp"></a>
+### launchExtensionApp
+
+```
+launchExtensionApp(id: string): Promise<void>
+```
+
+Launches the specified extension app by ID.
+
+<a name="setExtensionEnabled"></a>
+### setExtensionEnabled
+
+```
+setExtensionEnabled(id: string, enabled: boolean): Promise<void>
+```
+
+Enables or disables the specified extension or app.
+
+<a name="setExtensionLaunchType"></a>
+### setExtensionLaunchType
+
+```
+setExtensionLaunchType(id: string, launchType: string): Promise<void>
+```
+
+Sets the launch type (e.g., regular, pinned) for the specified extension.
+
+<a name="uninstallExtension"></a>
+### uninstallExtension
+
+```
+uninstallExtension(id: string, showConfirmDialog?: boolean): Promise<void>
+```
+
+Uninstalls the extension with the given ID, optionally showing a confirmation dialog.
+
+<a name="uninstallCurrentExtension"></a>
+### uninstallCurrentExtension
+
+```
+uninstallCurrentExtension(showConfirmDialog?: boolean): Promise<void>
+```
+
+Uninstalls the current extension, optionally showing a confirmation dialog.
+
+<a name="onExtensionDisabled"></a>
+### onExtensionDisabled
+
+```
+onExtensionDisabled(callback: (info: chrome.management.ExtensionInfo) => void): () => void
+```
+
+Fires when an extension or app is disabled.
+
+<a name="onExtensionEnabled"></a>
+### onExtensionEnabled
+
+```
+onExtensionEnabled(callback: (info: chrome.management.ExtensionInfo) => void): () => void
+```
+
+Fires when an extension or app is enabled.
+
+<a name="onExtensionInstalled"></a>
+### onExtensionInstalled
+
+```
+onExtensionInstalled(callback: (info: chrome.management.ExtensionInfo) => void): () => void
+```
+
+Fires when an extension or app is installed.
+
+<a name="onExtensionUninstalled"></a>
+### onExtensionUninstalled
+
+```
+onExtensionUninstalled(callback: (extensionId: string) => void): () => void
+```
+
+Fires when an extension or app is uninstalled, passing its ID.
+
