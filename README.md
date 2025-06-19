@@ -736,3 +736,303 @@ onCookieChanged(callback: (changeInfo: chrome.cookies.CookieChangeInfo) => void)
 ```
 
 Adds a listener that triggers when a cookie change event occurs.
+
+<a name="documentscan"></a>
+## documentscan
+
+**Documentation:** [Chrome Document Scan API](https://developer.chrome.com/docs/extensions/reference/documentScan)
+
+A promise-based wrapper for the Chrome `documentScan` API.
+
+### Methods
+
+- [cancelDocScanning](#cancelDocScanning)
+- [closeDocScanner](#closeDocScanner)
+- [getDocScannerOptionGroups](#getDocScannerOptionGroups)
+- [getDocScannerList](#getDocScannerList)
+- [openDocScanner](#openDocScanner)
+- [readDocScanningData](#readDocScanningData)
+- [docScanning](#docScanning)
+- [setDocScannerOptions](#setDocScannerOptions)
+- [startDocScanning](#startDocScanning)
+
+<a name="cancelDocScanning"></a>
+### cancelDocScanning
+
+```
+cancelDocScanning(job: string): Promise<chrome.documentScan.CancelScanResponse<string>>
+```
+
+Cancels an ongoing document scan job.
+
+<a name="closeDocScanner"></a>
+### closeDocScanner
+
+```
+closeDocScanner(scannerHandle: string): Promise<chrome.documentScan.CloseScannerResponse<string>>
+```
+
+Closes the document scanner associated with the specified scanner handle.
+
+<a name="getDocScannerOptionGroups"></a>
+### getDocScannerOptionGroups
+
+```
+getDocScannerOptionGroups(scannerHandle: string): Promise<chrome.documentScan.GetOptionGroupsResponse<string>>
+```
+
+Retrieves the available option groups for the specified document scanner.
+
+<a name="getDocScannerList"></a>
+### getDocScannerList
+
+```
+getDocScannerList(filter: chrome.documentScan.DeviceFilter): Promise<chrome.documentScan.GetScannerListResponse>
+```
+
+Fetches a list of document scanners matching the given filter criteria.
+
+<a name="openDocScanner"></a>
+### openDocScanner
+
+```
+openDocScanner(scannerId: string): Promise<chrome.documentScan.OpenScannerResponse<string>>
+```
+
+Opens a document scanner by its ID, returning a handle for further operations.
+
+<a name="readDocScanningData"></a>
+### readDocScanningData
+
+```
+readDocScanningData(job: string): Promise<chrome.documentScan.ReadScanDataResponse<string>>
+```
+
+Reads a chunk of data from an ongoing scan job.
+
+<a name="docScanning"></a>
+### docScanning
+
+```
+docScanning(options: chrome.documentScan.ScanOptions): Promise<chrome.documentScan.ScanResults>
+```
+
+Performs a document scan with the specified options and returns the scan results.
+
+<a name="setDocScannerOptions"></a>
+### setDocScannerOptions
+
+```
+setDocScannerOptions(scannerHandle: string, options: chrome.documentScan.OptionSetting[]): Promise<chrome.documentScan.SetOptionsResponse<string>>
+```
+
+Sets the scanner options for the given scanner handle.
+
+<a name="startDocScanning"></a>
+### startDocScanning
+
+```
+startDocScanning(scannerHandle: string, options: chrome.documentScan.StartScanOptions): Promise<chrome.documentScan.StartScanResponse<string>>
+```
+
+Starts a scan operation on an open scanner with the provided settings.
+
+<a name="downloads"></a>
+## downloads
+
+**Documentation:** [Chrome Downloads API](https://developer.chrome.com/docs/extensions/reference/downloads)
+
+A promise-based wrapper for the Chrome `downloads` API.
+
+### Methods
+
+- [acceptDownloadDanger](#acceptDownloadDanger)
+- [cancelDownload](#cancelDownload)
+- [download](#download)
+- [eraseDownload](#eraseDownload)
+- [getDownloadFileIcon](#getDownloadFileIcon)
+- [openDownload](#openDownload)
+- [pauseDownload](#pauseDownload)
+- [removeDownloadFile](#removeDownloadFile)
+- [resumeDownload](#resumeDownload)
+- [searchDownloads](#searchDownloads)
+- [setDownloadsUiOptions](#setDownloadsUiOptions)
+- [showDownloadFolder](#showDownloadFolder)
+- [showDownload](#showDownload)
+- [findDownload](#findDownload)
+- [isDownloadExists](#isDownloadExists)
+- [getDownloadState](#getDownloadState)
+- [onDownloadsChanged](#onDownloadsChanged)
+- [onDownloadsCreated](#onDownloadsCreated)
+- [onDownloadsDeterminingFilename](#onDownloadsDeterminingFilename)
+
+<a name="acceptDownloadDanger"></a>
+### acceptDownloadDanger
+
+```
+acceptDownloadDanger(downloadId: number): Promise<void>
+```
+
+Accepts a dangerous download, allowing it to proceed.
+
+<a name="cancelDownload"></a>
+### cancelDownload
+
+```
+cancelDownload(downloadId: number): Promise<void>
+```
+
+Cancels the specified download.
+
+<a name="download"></a>
+### download
+
+```
+download(options: chrome.downloads.DownloadOptions): Promise<number>
+```
+
+Initiates a download with the given options, resolving to the download ID. This function automatically uniquifies filenames on conflict and verifies the download's completion, throwing a `BlockDownloadError` if the download is interrupted or requires additional permissions.
+
+<a name="eraseDownload"></a>
+### eraseDownload
+
+```
+eraseDownload(query: chrome.downloads.DownloadQuery): Promise<number[]>
+```
+
+Removes the download history entries that match the given query, returning the list of erased download IDs.
+
+<a name="getDownloadFileIcon"></a>
+### getDownloadFileIcon
+
+```
+getDownloadFileIcon(downloadId: number, options: chrome.downloads.GetFileIconOptions): Promise<string>
+```
+
+Retrieves the icon for the downloaded file.
+
+<a name="openDownload"></a>
+### openDownload
+
+```
+openDownload(downloadId: number): void
+```
+
+Opens the downloaded file.
+
+<a name="pauseDownload"></a>
+### pauseDownload
+
+```
+pauseDownload(downloadId: number): Promise<void>
+```
+
+Pauses an active download.
+
+<a name="removeDownloadFile"></a>
+### removeDownloadFile
+
+```
+removeDownloadFile(downloadId: number): Promise<void>
+```
+
+Deletes the downloaded file from the local disk.
+
+<a name="resumeDownload"></a>
+### resumeDownload
+
+```
+resumeDownload(downloadId: number): Promise<void>
+```
+
+Resumes a paused download.
+
+<a name="searchDownloads"></a>
+### searchDownloads
+
+```
+searchDownloads(query: chrome.downloads.DownloadQuery): Promise<chrome.downloads.DownloadItem[]>
+```
+
+Searches for downloads matching the specified query.
+
+<a name="setDownloadsUiOptions"></a>
+### setDownloadsUiOptions
+
+```
+setDownloadsUiOptions(enabled: boolean): Promise<void>
+```
+
+Enables or disables the browser's default download UI.
+
+<a name="showDownloadFolder"></a>
+### showDownloadFolder
+
+```
+showDownloadFolder(): void
+```
+
+Shows the default download folder in the file explorer.
+
+<a name="showDownload"></a>
+### showDownload
+
+```
+showDownload(downloadId: number): Promise<boolean>
+```
+
+Attempts to reveal the specified download in the file explorer, returning `true` if it exists.
+
+<a name="findDownload"></a>
+### findDownload
+
+```
+findDownload(downloadId: number): Promise<chrome.downloads.DownloadItem | undefined>
+```
+
+Retrieves the download item for the given download ID, if it exists.
+
+<a name="isDownloadExists"></a>
+### isDownloadExists
+
+```
+isDownloadExists(downloadId: number): Promise<boolean | undefined>
+```
+
+Checks whether a download with the specified ID exists.
+
+<a name="getDownloadState"></a>
+### getDownloadState
+
+```
+getDownloadState(downloadId?: number): Promise<chrome.downloads.DownloadState | undefined>
+```
+
+Retrieves the state (`in_progress`, `complete`, or `interrupted`) of the given download.
+
+<a name="onDownloadsChanged"></a>
+### onDownloadsChanged
+
+```
+onDownloadsChanged(callback: Parameters<typeof chrome.downloads.onChanged.addListener>[0]): () => void
+```
+
+Adds a listener triggered when a download's state or properties change.
+
+<a name="onDownloadsCreated"></a>
+### onDownloadsCreated
+
+```
+onDownloadsCreated(callback: Parameters<typeof chrome.downloads.onCreated.addListener>[0]): () => void
+```
+
+Adds a listener triggered when a new download is created.
+
+<a name="onDownloadsDeterminingFilename"></a>
+### onDownloadsDeterminingFilename
+
+```
+onDownloadsDeterminingFilename(callback: Parameters<typeof chrome.downloads.onDeterminingFilename.addListener>[0]): () => void
+```
+
+Adds a listener triggered when a download's filename is being determined.
