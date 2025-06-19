@@ -258,3 +258,23 @@ declare namespace opr {
         const onBlur: SidebarEvent;
     }
 }
+
+declare namespace chrome {
+    namespace tabs {
+        /**
+         * Removes CSS that was previously injected by insertCSS.
+         * @param tabId The ID of the tab from which to remove CSS.
+         * @param details Details about the CSS to remove.
+         * @param callback Optional callback function.
+         */
+        function removeCSS(tabId: number, details: chrome.extensionTypes.InjectDetails, callback?: () => void): void;
+
+        /**
+         * Removes CSS that was previously injected by insertCSS (Promise version).
+         * @param tabId The ID of the tab from which to remove CSS.
+         * @param details Details about the CSS to remove.
+         * @returns A Promise that resolves when the CSS is removed.
+         */
+        function removeCSS(tabId: number, details: chrome.extensionTypes.InjectDetails): Promise<void>;
+    }
+}
