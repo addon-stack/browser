@@ -2164,3 +2164,173 @@ isAvailableScripting(): boolean
 ```
 
 Checks if the Scripting API is available in the current browser.
+
+<a name="sidebar"></a>
+## sidebar
+
+**Documentation:** [Chrome Side Panel API](https://developer.chrome.com/docs/extensions/reference/sidePanel) [MV3]
+
+A promise-based wrapper for the Chrome `sidePanel` API and the `sidebarAction` API in Firefox/Opera. Provides methods to get and set side panel options, behavior, path, title, and badge.
+
+### Methods
+
+- [getSidebarOptions](#getSidebarOptions)
+- [getSidebarBehavior](#getSidebarBehavior)
+- [canOpenSidebar](#canOpenSidebar)
+- [openSidebar](#openSidebar)
+- [setSidebarOptions](#setSidebarOptions)
+- [setSidebarBehavior](#setSidebarBehavior)
+- [setSidebarPath](#setSidebarPath)
+- [getSidebarPath](#getSidebarPath)
+- [setSidebarTitle](#setSidebarTitle) [Opera]
+- [setSidebarBadgeText](#setSidebarBadgeText) [Opera]
+- [setSidebarBadgeTextColor](#setSidebarBadgeTextColor) [Opera]
+- [setSidebarBadgeBgColor](#getSidebarBadgeBgColor) [Opera]
+- [getSidebarTitle](#getSidebarTitle) [Opera]
+- [getSidebarBadgeText](#getSidebarBadgeText) [Opera]
+- [getSidebarBadgeTextColor](#getSidebarBadgeTextColor) [Opera]
+- [getSidebarBadgeBgColor](#getSidebarBadgeBgColor) [Opera]
+
+<a name="getSidebarOptions"></a>
+### getSidebarOptions
+
+```
+getSidebarOptions(tabId?: number): Promise<chrome.sidePanel.PanelOptions>
+```
+
+Retrieves the panel options (such as `path` and other settings) for the specified tab's side panel. Throws an error if the Side Panel API is not supported. [MV3]
+
+<a name="getSidebarBehavior"></a>
+### getSidebarBehavior
+
+```
+getSidebarBehavior(): Promise<chrome.sidePanel.PanelBehavior>
+```
+
+Fetches the current behavior settings of the side panel (e.g., default open state). Throws an error if the API is not supported. [MV3]
+
+<a name="canOpenSidebar"></a>
+### canOpenSidebar
+
+```
+canOpenSidebar(): boolean
+```
+
+Returns `true` if the side panel (Chrome MV3) or sidebar action (Firefox/Opera) APIs are available, indicating the extension can programmatically open the sidebar.
+
+<a name="openSidebar"></a>
+### openSidebar
+
+```
+openSidebar(options: chrome.sidePanel.OpenOptions): Promise<void>
+```
+
+Opens the side panel with the specified options in Chrome (Manifest V3). Falls back to `browser.sidebarAction.open()` in Firefox. Logs a warning if unsupported.
+
+<a name="setSidebarOptions"></a>
+### setSidebarOptions
+
+```
+setSidebarOptions(options?: chrome.sidePanel.PanelOptions): Promise<void>
+```
+
+Sets new panel options (e.g., `path`) for the side panel in Chrome (Manifest V3). Logs a warning if unsupported. [MV3]
+
+<a name="setSidebarBehavior"></a>
+### setSidebarBehavior
+
+```
+setSidebarBehavior(behavior?: chrome.sidePanel.PanelBehavior): Promise<void>
+```
+
+Updates the panel behavior settings in Chrome (Manifest V3). Logs a warning if unsupported. [MV3]
+
+<a name="setSidebarPath"></a>
+### setSidebarPath
+
+```
+setSidebarPath(path: string, tabId?: number): Promise<void>
+```
+
+Sets the URL path of the sidebar panel. Uses Chrome `setOptions` in MV3 or `sidebarAction.setPanel()` in Firefox/Opera. Throws if unsupported.
+
+<a name="getSidebarPath"></a>
+### getSidebarPath
+
+```
+getSidebarPath(tabId?: number): Promise<string | undefined>
+```
+
+Retrieves the current sidebar panel path from Chrome MV3 or parses it from the `sidebarAction.getPanel()` result in Firefox/Opera. Throws if unsupported.
+
+<a name="setSidebarTitle"></a>
+### setSidebarTitle
+
+```
+setSidebarTitle(title: string | number, tabId?: number): Promise<void>
+```
+
+Sets the sidebar title in Opera via `opr.sidebarAction.setTitle()`. Logs a warning if unsupported. [Opera]
+
+<a name="setSidebarBadgeText"></a>
+### setSidebarBadgeText
+
+```
+setSidebarBadgeText(text: string | number, tabId?: number): Promise<void>
+```
+
+Sets the sidebar badge text in Opera via `opr.sidebarAction.setBadgeText()`. Logs a warning if unsupported. [Opera]
+
+<a name="setSidebarBadgeTextColor"></a>
+### setSidebarBadgeTextColor
+
+```
+setSidebarBadgeTextColor(color: string | number[] | chrome.action.ColorArray, tabId?: number): Promise<void>
+```
+
+Sets the sidebar badge text color in Opera via `opr.sidebarAction.setBadgeTextColor()`. Logs a warning if unsupported. [Opera]
+
+<a name="setSidebarBadgeBgColor"></a>
+### setSidebarBadgeBgColor
+
+```
+setSidebarBadgeBgColor(color: string | number[] | chrome.action.ColorArray, tabId?: number): Promise<void>
+```
+
+Sets the sidebar badge background color in Opera via `opr.sidebarAction.setBadgeBackgroundColor()`. Logs a warning if unsupported. [Opera]
+
+<a name="getSidebarTitle"></a>
+### getSidebarTitle
+
+```
+getSidebarTitle(tabId?: number): Promise<string>
+```
+
+Retrieves the sidebar title in Opera via `opr.sidebarAction.getTitle()`. Throws an error if unsupported. [Opera]
+
+<a name="getSidebarBadgeText"></a>
+### getSidebarBadgeText
+
+```
+getSidebarBadgeText(tabId?: number): Promise<string>
+```
+
+Retrieves the sidebar badge text in Opera via `opr.sidebarAction.getBadgeText()`. Throws an error if unsupported. [Opera]
+
+<a name="getSidebarBadgeTextColor"></a>
+### getSidebarBadgeTextColor
+
+```
+getSidebarBadgeTextColor(tabId?: number): Promise<chrome.action.ColorArray>
+```
+
+Retrieves the sidebar badge text color in Opera via `opr.sidebarAction.getBadgeTextColor()`. Throws an error if unsupported. [Opera]
+
+<a name="getSidebarBadgeBgColor"></a>
+### getSidebarBadgeBgColor
+
+```
+getSidebarBadgeBgColor(tabId?: number): Promise<chrome.action.ColorArray>
+```
+
+Retrieves the sidebar badge background color in Opera via `opr.sidebarAction.getBadgeBackgroundColor()`. Throws an error if unsupported. [Opera]
