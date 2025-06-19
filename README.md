@@ -2844,3 +2844,83 @@ A promise-based wrapper for the Chrome `tabs` API, providing core tab operations
 - [onTabReplaced](#onTabReplaced)
 - [onTabUpdated](#onTabUpdated)
 - [onTabZoomChange](#onTabZoomChange)
+
+<a name="userscripts"></a>
+## userScripts
+
+**Documentation:** [Chrome User Scripts API](https://developer.chrome.com/docs/extensions/reference/userScripts)
+
+A promise-based wrapper for the Chrome `userScripts` API, providing methods to configure worlds, register, retrieve, update, and unregister user scripts.
+
+### Methods
+
+- [configureUserScriptsWorld(properties)](#configureUserScriptsWorld)
+- [getUserScripts(ids)](#getUserScripts)
+- [getUserScriptsWorldConfigs()](#getUserScriptsWorldConfigs)
+- [registerUserScripts(scripts)](#registerUserScripts)
+- [resetUserScriptsWorldConfigs(worldId)](#resetUserScriptsWorldConfigs)
+- [unregisterUserScripts(ids)](#unregisterUserScripts)
+- [updateUserScripts(scripts)](#updateUserScripts)
+
+<a name="configureUserScriptsWorld"></a>
+### configureUserScriptsWorld
+
+```
+configureUserScriptsWorld(properties?: chrome.userScripts.WorldProperties): Promise<void>
+```
+
+Configures the execution context for user scripts by setting world properties. Must be called before registering or executing scripts.
+
+<a name="getUserScripts"></a>
+### getUserScripts
+
+```
+getUserScripts(ids?: string[]): Promise<chrome.userScripts.RegisteredUserScript[]>
+```
+
+Retrieves registered user scripts, optionally filtered by script IDs.
+
+<a name="getUserScriptsWorldConfigs"></a>
+### getUserScriptsWorldConfigs
+
+```
+getUserScriptsWorldConfigs(): Promise<chrome.userScripts.WorldProperties[]>
+```
+
+Returns configurations for all script execution worlds.
+
+<a name="registerUserScripts"></a>
+### registerUserScripts
+
+```
+registerUserScripts(scripts: chrome.userScripts.RegisteredUserScript[]): Promise<void>
+```
+
+Registers one or more user scripts with the browser.
+
+<a name="resetUserScriptsWorldConfigs"></a>
+### resetUserScriptsWorldConfigs
+
+```
+resetUserScriptsWorldConfigs(worldId: string): Promise<void>
+```
+
+Resets the configuration of a specific world back to default settings.
+
+<a name="unregisterUserScripts"></a>
+### unregisterUserScripts
+
+```
+unregisterUserScripts(ids?: string[]): Promise<void>
+```
+
+Unregisters user scripts by ID. If no IDs provided, all scripts are unregistered.
+
+<a name="updateUserScripts"></a>
+### updateUserScripts
+
+```
+updateUserScripts(scripts: chrome.userScripts.RegisteredUserScript[]): Promise<void>
+```
+
+Updates existing user scripts with new definitions or metadata.
