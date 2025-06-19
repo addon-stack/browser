@@ -1514,6 +1514,129 @@ onExtensionUninstalled(callback: (extensionId: string) => void): () => void
 
 Fires when an extension or app is uninstalled, passing its ID.
 
+<a name="notifications"></a>
+## notifications
+
+**Documentation:** [Chrome Notifications API](https://developer.chrome.com/docs/extensions/reference/notifications)
+
+A promise-based wrapper for the Chrome `notifications` API to create and manage desktop notifications.
+
+### Methods
+
+- [clearNotification](#clearNotification)
+- [createNotification](#createNotification)
+- [getAllNotification](#getAllNotification)
+- [getNotificationPermissionLevel](#getNotificationPermissionLevel)
+- [updateNotification](#updateNotification)
+- [isSupportNotifications](#isSupportNotifications)
+- [clearAllNotification](#clearAllNotification)
+
+### Events
+
+- [onNotificationsButtonClicked](#onNotificationsButtonClicked)
+- [onNotificationsClicked](#onNotificationsClicked)
+- [onNotificationsClosed](#onNotificationsClosed)
+- [onNotificationsPermissionLevelChanged](#onNotificationsPermissionLevelChanged)
+
+<a name="clearNotification"></a>
+### clearNotification
+
+```
+clearNotification(notificationId: string): Promise<boolean>
+```
+
+Clears the notification with the specified ID, resolving to `true` if the notification existed and was cleared.
+
+<a name="createNotification"></a>
+### createNotification
+
+```
+createNotification(options: chrome.notifications.NotificationOptions, notificationId?: string): Promise<string>
+```
+
+Creates a notification with the given options and optional ID, returning the notification ID.
+
+<a name="getAllNotification"></a>
+### getAllNotification
+
+```
+getAllNotification(): Promise<{ [notificationId: string]: chrome.notifications.NotificationOptions }>
+```
+
+Retrieves all notifications currently displayed, returned as a map of notification IDs to their options.
+
+<a name="getNotificationPermissionLevel"></a>
+### getNotificationPermissionLevel
+
+```
+getNotificationPermissionLevel(): Promise<string>
+```
+
+Gets the current permission level for notifications.
+
+<a name="updateNotification"></a>
+### updateNotification
+
+```
+updateNotification(options: chrome.notifications.NotificationOptions, notificationId: string): Promise<boolean>
+```
+
+Updates an existing notification with new options, resolving to `true` if the notification was updated.
+
+<a name="isSupportNotifications"></a>
+### isSupportNotifications
+
+```
+isSupportNotifications(): boolean
+```
+
+Checks if the Notifications API is supported in the current browser.
+
+<a name="clearAllNotification"></a>
+### clearAllNotification
+
+```
+clearAllNotification(): Promise<void>
+```
+
+Clears all currently displayed notifications.
+
+<a name="onNotificationsButtonClicked"></a>
+### onNotificationsButtonClicked
+
+```
+onNotificationsButtonClicked(callback: (notificationId: string, buttonIndex: number) => void): () => void
+```
+
+Adds a listener for when a button on a notification is clicked, returning a function to remove the listener.
+
+<a name="onNotificationsClicked"></a>
+### onNotificationsClicked
+
+```
+onNotificationsClicked(callback: (notificationId: string) => void): () => void
+```
+
+Adds a listener for when a notification itself is clicked.
+
+<a name="onNotificationsClosed"></a>
+### onNotificationsClosed
+
+```
+onNotificationsClosed(callback: (notificationId: string, byUser: boolean) => void): () => void
+```
+
+Adds a listener for when a notification is closed, including whether it was closed by the user.
+
+<a name="onNotificationsPermissionLevelChanged"></a>
+### onNotificationsPermissionLevelChanged
+
+```
+onNotificationsPermissionLevelChanged(callback: (level: string) => void): () => void
+```
+
+Adds a listener for when notification permission level changes.
+
 <a name="offscreen"></a>
 ## offscreen
 
@@ -1950,3 +2073,94 @@ onUserScriptMessage(callback: (message: any, sender: chrome.runtime.MessageSende
 
 Fires when a message arrives from a user script.
 
+
+
+<a name="scripting"></a>
+## scripting
+
+**Documentation:** [Chrome Scripting API](https://developer.chrome.com/docs/extensions/reference/scripting)
+
+A promise-based wrapper for the Chrome `scripting` API to inject scripts and styles, and manage content scripts.
+
+### Methods
+
+- [executeScript](#executeScript)
+- [getRegisteredContentScripts](#getRegisteredContentScripts)
+- [insertCSS](#insertCSS)
+- [registerContentScripts](#registerContentScripts)
+- [removeCSS](#removeCSS)
+- [unregisterContentScripts](#unregisterContentScripts)
+- [updateContentScripts](#updateContentScripts)
+- [isAvailableScripting](#isAvailableScripting)
+
+<a name="executeScript"></a>
+### executeScript
+
+```
+executeScript<T = any>(injection: chrome.scripting.ScriptInjection<any, T>): Promise<chrome.scripting.InjectionResult<chrome.scripting.Awaited<T>>[]>
+```
+
+Executes a script in the specified target and returns the injection results.
+
+<a name="getRegisteredContentScripts"></a>
+### getRegisteredContentScripts
+
+```
+getRegisteredContentScripts(filter?: chrome.scripting.ContentScriptFilter): Promise<chrome.scripting.RegisteredContentScript[]>
+```
+
+Retrieves registered content scripts, optionally filtered by criteria.
+
+<a name="insertCSS"></a>
+### insertCSS
+
+```
+insertCSS(injection: chrome.scripting.CSSInjection): Promise<void>
+```
+
+Injects CSS into specified target pages.
+
+<a name="registerContentScripts"></a>
+### registerContentScripts
+
+```
+registerContentScripts(scripts: chrome.scripting.RegisteredContentScript[]): Promise<void>
+```
+
+Registers one or more content scripts programmatically.
+
+<a name="removeCSS"></a>
+### removeCSS
+
+```
+removeCSS(injection: chrome.scripting.CSSInjection): Promise<void>
+```
+
+Removes previously injected CSS from specified target pages.
+
+<a name="unregisterContentScripts"></a>
+### unregisterContentScripts
+
+```
+unregisterContentScripts(filter?: chrome.scripting.ContentScriptFilter): Promise<void>
+```
+
+Unregisters content scripts matching the given filter.
+
+<a name="updateContentScripts"></a>
+### updateContentScripts
+
+```
+updateContentScripts(scripts: chrome.scripting.RegisteredContentScript[]): Promise<void>
+```
+
+Updates existing content scripts with new definitions.
+
+<a name="isAvailableScripting"></a>
+### isAvailableScripting
+
+```
+isAvailableScripting(): boolean
+```
+
+Checks if the Scripting API is available in the current browser.
