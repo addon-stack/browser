@@ -359,17 +359,18 @@ export const insertCssTab = (tabId: number, details: InjectDetails): Promise<voi
         });
     });
 
-export const removeCssTab = (tabId: number, details: InjectDetails) => new Promise<void>((resolve, reject) => {
-    tabs().removeCSS(tabId, details, () => {
-        try {
-            throwRuntimeError();
+export const removeCssTab = (tabId: number, details: InjectDetails) =>
+    new Promise<void>((resolve, reject) => {
+        tabs().removeCSS(tabId, details, () => {
+            try {
+                throwRuntimeError();
 
-            resolve();
-        } catch (e) {
-            reject(e);
-        }
+                resolve();
+            } catch (e) {
+                reject(e);
+            }
+        });
     });
-});
 
 // Custom Methods
 export const getTabUrl = async (tabId: number): Promise<string> => {

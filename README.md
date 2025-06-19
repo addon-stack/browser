@@ -2934,7 +2934,6 @@ executeScriptTab(tabId: number, details: chrome.extensionTypes.InjectDetails): P
 
 Injects JavaScript into the specified tab and returns execution results. (Manifest V2 only).
 
-
 <a name="insertCssTab"></a>
 
 ### insertCssTab
@@ -2954,7 +2953,6 @@ removeCssTab(tabId: number, details: chrome.extensionTypes.InjectDetails): Promi
 ```
 
 Removes from a page CSS that was previously injected by a call to `insertCssTab`. (Manifest V2 only).
-
 
 <a name="getTabUrl"></a>
 
