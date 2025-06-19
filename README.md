@@ -2168,7 +2168,10 @@ Checks if the Scripting API is available in the current browser.
 <a name="sidebar"></a>
 ## sidebar
 
-**Documentation:** [Chrome Side Panel API](https://developer.chrome.com/docs/extensions/reference/sidePanel) [MV3]
+**Documentation:**
+- [Chrome Side Panel API](https://developer.chrome.com/docs/extensions/reference/sidePanel) [MV3]
+- [Opera Sidebar Action API](https://help.opera.com/en/extensions/sidebar-action-api/) 
+- [Firefox Sidebar Action API](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction)
 
 A promise-based wrapper for the Chrome `sidePanel` API and the `sidebarAction` API in Firefox/Opera. Provides methods to get and set side panel options, behavior, path, title, and badge.
 
@@ -2334,3 +2337,510 @@ getSidebarBadgeBgColor(tabId?: number): Promise<chrome.action.ColorArray>
 ```
 
 Retrieves the sidebar badge background color in Opera via `opr.sidebarAction.getBadgeBackgroundColor()`. Throws an error if unsupported. [Opera]
+
+<a name="tabCapture"></a>
+## tabCapture
+
+**Documentation:** [Chrome Tab Capture API](https://developer.chrome.com/docs/extensions/reference/tabCapture)
+
+A promise-based wrapper for the Chrome `tabCapture` API to capture and retrieve tab media streams.
+
+### Methods
+
+- [createTabCapture](#createTabCapture)
+- [getCapturedTabs](#getCapturedTabs)
+- [getCaptureMediaStreamId](#getCaptureMediaStreamId)
+
+### Events
+
+- [onCaptureStatusChanged](#onCaptureStatusChanged)
+
+<a name="createTabCapture"></a>
+### createTabCapture
+
+```
+createTabCapture(options: chrome.tabCapture.CaptureOptions): Promise<MediaStream | null>
+```
+
+Captures the visible media stream of a tab based on the specified options. Resolves with the `MediaStream` if successful, or `null` otherwise. Rejects if an error occurs.
+
+<a name="getCapturedTabs"></a>
+### getCapturedTabs
+
+```
+getCapturedTabs(): Promise<chrome.tabCapture.CaptureInfo[]>
+```
+
+Retrieves details of all active tab capture sessions. Resolves with an array of `CaptureInfo` objects.
+
+<a name="getCaptureMediaStreamId"></a>
+### getCaptureMediaStreamId
+
+```
+getCaptureMediaStreamId(options: chrome.tabCapture.GetMediaStreamOptions): Promise<string>
+```
+
+Generates a media stream ID for capturing a tab via `navigator.mediaDevices.getUserMedia`. Resolves with the stream ID.
+
+<a name="onCaptureStatusChanged"></a>
+### onCaptureStatusChanged
+
+```
+onCaptureStatusChanged(callback: (info: chrome.tabCapture.CaptureInfo) => void): () => void
+```
+
+Adds a listener for tab capture status changes (started, stopped, source changed). Returns a function to remove the listener.
+
+<a name="tabs"></a>
+## tabs
+
+**Documentation:** [Chrome Tabs API](https://developer.chrome.com/docs/extensions/reference/tabs)
+
+A promise-based wrapper for the Chrome `tabs` API, providing core tab operations, messaging, and utility methods.
+
+### Methods
+
+- [captureVisibleTab](#captureVisibleTab)
+- [connectTab](#connectTab)
+- [createTab](#createTab)
+- [detectTabLanguage](#detectTabLanguage)
+- [discardTab](#discardTab)
+- [duplicateTab](#duplicateTab)
+- [getTab](#getTab)
+- [getCurrentTab](#getCurrentTab)
+- [getTabZoom](#getTabZoom)
+- [getTabZoomSettings](#getTabZoomSettings)
+- [goTabBack](#goTabBack)
+- [goTabForward](#goTabForward)
+- [groupTabs](#groupTabs)
+- [highlightTab](#highlightTab)
+- [moveTab](#moveTab)
+- [moveTabs](#moveTabs)
+- [queryTabs](#queryTabs)
+- [reloadTab](#reloadTab)
+- [removeTab](#removeTab)
+- [sendTabMessage](#sendTabMessage)
+- [setTabZoom](#setTabZoom)
+- [setTabZoomSettings](#setTabZoomSettings)
+- [ungroupTab](#ungroupTab)
+- [updateTab](#updateTab)
+- [executeScriptTab](#executeScriptTab)
+- [getTabUrl](#getTabUrl)
+- [getActiveTab](#getActiveTab)
+- [queryTabIds](#queryTabIds)
+- [findTab](#findTab)
+- [findTabById](#findTabById)
+- [updateTabAsSelected](#updateTabAsSelected)
+- [updateTabAsActive](#updateTabAsActive)
+- [openOrCreateTab](#openOrCreateTab)
+
+### Events
+
+- [onTabActivated](#onTabActivated)
+- [onTabAttached](#onTabAttached)
+- [onTabCreated](#onTabCreated)
+- [onTabDetached](#onTabDetached)
+- [onTabHighlighted](#onTabHighlighted)
+- [onTabMoved](#onTabMoved)
+- [onTabRemoved](#onTabRemoved)
+- [onTabReplaced](#onTabReplaced)
+- [onTabUpdated](#onTabUpdated)
+- [onTabZoomChange](#onTabZoomChange)
+
+ <a name="captureVisibleTab"></a>
+ ### captureVisibleTab
+
+ ```
+ captureVisibleTab(windowId: number, options: chrome.extensionTypes.ImageDetails): Promise<string>
+ ```
+
+ Captures the visible area of the specified window as an image and returns a data URL string. Resolves with the image `data:image/png;base64,...`.
+
+ <a name="connectTab"></a>
+ ### connectTab
+
+ ```
+ connectTab(tabId: number, connectInfo?: chrome.tabs.ConnectInfo): chrome.runtime.Port
+ ```
+
+ Creates a long-lived connection to the specified tab for message passing. Returns a `Port` object.
+
+ <a name="createTab"></a>
+ ### createTab
+
+ ```
+ createTab(properties: chrome.tabs.CreateProperties): Promise<chrome.tabs.Tab>
+ ```
+
+ Creates a new tab with the given properties. Resolves with the created `Tab` object.
+
+ <a name="detectTabLanguage"></a>
+ ### detectTabLanguage
+
+ ```
+ detectTabLanguage(tabId: number): Promise<string>
+ ```
+
+ Detects the language of the specified tab's content. Resolves with a language code (e.g., `"en"` or `"und"`).
+
+ <a name="discardTab"></a>
+ ### discardTab
+
+ ```
+ discardTab(tabId: number): Promise<chrome.tabs.Tab>
+ ```
+
+ Discards the specified tab to free up system resources. Resolves with the updated `Tab` object.
+
+ <a name="duplicateTab"></a>
+ ### duplicateTab
+
+ ```
+ duplicateTab(tabId: number): Promise<chrome.tabs.Tab | undefined>
+ ```
+
+ Duplicates the specified tab, opening a copy. Resolves with the new `Tab`, or `undefined` if duplication fails.
+
+ <a name="getTab"></a>
+ ### getTab
+
+ ```
+ getTab(tabId: number): Promise<chrome.tabs.Tab>
+ ```
+
+ Retrieves information about the specified tab. Resolves with the `Tab` object.
+
+ <a name="getCurrentTab"></a>
+ ### getCurrentTab
+
+ ```
+ getCurrentTab(): Promise<chrome.tabs.Tab | undefined>
+ ```
+
+ Retrieves the tab in which the script is running (e.g., popup or content script). Resolves with the `Tab` or `undefined` if not called in a tab context.
+
+ <a name="getTabZoom"></a>
+ ### getTabZoom
+
+ ```
+ getTabZoom(tabId: number): Promise<number>
+ ```
+
+ Gets the zoom factor of the specified tab. Resolves with the zoom level (e.g., `1.0`).
+
+ <a name="getTabZoomSettings"></a>
+ ### getTabZoomSettings
+
+ ```
+ getTabZoomSettings(tabId: number): Promise<chrome.tabs.ZoomSettings>
+ ```
+
+ Retrieves the zoom settings of the specified tab. Resolves with a `ZoomSettings` object.
+
+ <a name="goTabBack"></a>
+ ### goTabBack
+
+ ```
+ goTabBack(tabId: number): Promise<void>
+ ```
+
+ Navigates the specified tab one step backward in its history.
+
+ <a name="goTabForward"></a>
+ ### goTabForward
+
+ ```
+ goTabForward(tabId: number): Promise<void>
+ ```
+
+ Navigates the specified tab one step forward in its history.
+
+ <a name="groupTabs"></a>
+ ### groupTabs
+
+ ```
+ groupTabs(options: chrome.tabs.GroupOptions): Promise<number>
+ ```
+
+ Groups one or more tabs into a single tab group. Resolves with the group ID.
+
+ <a name="highlightTab"></a>
+ ### highlightTab
+
+ ```
+ highlightTab(highlightInfo: chrome.tabs.HighlightInfo): Promise<chrome.windows.Window>
+ ```
+
+ Highlights (selects) the specified tabs within a window. Resolves with the updated `Window`.
+
+ <a name="moveTab"></a>
+ ### moveTab
+
+ ```
+ moveTab(tabId: number, moveProperties: chrome.tabs.MoveProperties): Promise<chrome.tabs.Tab>
+ ```
+
+ Moves a tab to a new index or window. Resolves with the moved `Tab`.
+
+ <a name="moveTabs"></a>
+ ### moveTabs
+
+ ```
+ moveTabs(tabIds: number[], moveProperties: chrome.tabs.MoveProperties): Promise<chrome.tabs.Tab[]>
+ ```
+
+ Moves multiple tabs to new positions. Resolves with an array of updated `Tab` objects.
+
+ <a name="queryTabs"></a>
+ ### queryTabs
+
+ ```
+ queryTabs(queryInfo?: chrome.tabs.QueryInfo): Promise<chrome.tabs.Tab[]>
+ ```
+
+ Retrieves all tabs that match the given query filters. Resolves with an array of `Tab` objects.
+
+ <a name="reloadTab"></a>
+ ### reloadTab
+
+ ```
+ reloadTab(tabId: number, bypassCache?: boolean): Promise<void>
+ ```
+
+ Reloads the specified tab. If `bypassCache` is `true`, forces resource revalidation.
+
+ <a name="removeTab"></a>
+ ### removeTab
+
+ ```
+ removeTab(tabId: number): Promise<void>
+ ```
+
+ Closes the specified tab.
+
+ <a name="sendTabMessage"></a>
+ ### sendTabMessage
+
+ ```
+ sendTabMessage<M = any, R = any>(tabId: number, message: M, options?: chrome.tabs.MessageSendOptions): Promise<R>
+ ```
+
+ Sends a one-time message to the content script in the specified tab. Resolves with the response.
+
+ <a name="setTabZoom"></a>
+ ### setTabZoom
+
+ ```
+ setTabZoom(tabId: number, zoomFactor: number): Promise<void>
+ ```
+
+ Sets the zoom factor for the specified tab.
+
+ <a name="setTabZoomSettings"></a>
+ ### setTabZoomSettings
+
+ ```
+ setTabZoomSettings(tabId: number, zoomSettings: chrome.tabs.ZoomSettings): Promise<void>
+ ```
+
+ Updates the zoom settings for the specified tab.
+
+ <a name="ungroupTab"></a>
+ ### ungroupTab
+
+ ```
+ ungroupTab(tabIds: number | number[]): Promise<void>
+ ```
+
+ Removes one or more tabs from their group.
+
+ <a name="updateTab"></a>
+ ### updateTab
+
+ ```
+ updateTab(tabId: number, updateProperties: chrome.tabs.UpdateProperties): Promise<chrome.tabs.Tab | undefined>
+ ```
+
+ Updates properties of the specified tab (e.g., URL, active state). Resolves with the updated `Tab` or `undefined`.
+
+ <a name="executeScriptTab"></a>
+ ### executeScriptTab
+
+ ```
+ executeScriptTab(tabId: number, details: chrome.extensionTypes.InjectDetails): Promise<any[]>
+ ```
+
+ Injects JavaScript into the specified tab and returns execution results.
+
+ <a name="getTabUrl"></a>
+ ### getTabUrl
+
+ ```
+ getTabUrl(tabId: number): Promise<string>
+ ```
+
+ Retrieves the URL of the specified tab. Rejects if the tab does not exist or has no URL.
+
+ <a name="getActiveTab"></a>
+ ### getActiveTab
+
+ ```
+ getActiveTab(): Promise<chrome.tabs.Tab>
+ ```
+
+ Gets the currently active tab in the current window. Rejects if no active tab is found.
+
+ <a name="queryTabIds"></a>
+ ### queryTabIds
+
+ ```
+ queryTabIds(queryInfo?: chrome.tabs.QueryInfo): Promise<number[]>
+ ```
+
+ Retrieves IDs of tabs matching the given query.
+
+ <a name="findTab"></a>
+ ### findTab
+
+ ```
+ findTab(queryInfo?: chrome.tabs.QueryInfo): Promise<chrome.tabs.Tab | undefined>
+ ```
+
+ Finds the first tab matching the query. Resolves with the `Tab` or `undefined`.
+
+ <a name="findTabById"></a>
+ ### findTabById
+
+ ```
+ findTabById(tabId: number): Promise<chrome.tabs.Tab | undefined>
+ ```
+
+ Finds a tab by its ID, or resolves with `undefined` if not found.
+
+ <a name="updateTabAsSelected"></a>
+ ### updateTabAsSelected
+
+ ```
+ updateTabAsSelected(tabId: number): Promise<chrome.tabs.Tab | undefined>
+ ```
+
+ Highlights the specified tab, making it selected.
+
+ <a name="updateTabAsActive"></a>
+ ### updateTabAsActive
+
+ ```
+ updateTabAsActive(tabId: number): Promise<chrome.tabs.Tab | undefined>
+ ```
+
+ Sets the specified tab as active.
+
+ <a name="openOrCreateTab"></a>
+ ### openOrCreateTab
+
+ ```
+ openOrCreateTab(tab: chrome.tabs.Tab): Promise<void>
+ ```
+
+ If a tab with the same URL exists, activates it; otherwise, creates a new tab.
+
+ <a name="onTabActivated"></a>
+ ### onTabActivated
+
+ ```
+ onTabActivated(callback: (activeInfo: chrome.tabs.TabActiveInfo) => void): () => void
+ ```
+
+ Fires when the active tab in a window changes. Returns a function to remove the listener.
+
+ <a name="onTabAttached"></a>
+ ### onTabAttached
+
+ ```
+ onTabAttached(callback: (info: chrome.tabs.TabAttachedInfo) => void): () => void
+ ```
+
+ Fires when a tab is attached to a window. Returns a function to remove the listener.
+
+ <a name="onTabCreated"></a>
+ ### onTabCreated
+
+ ```
+ onTabCreated(callback: (tab: chrome.tabs.Tab) => void): () => void
+ ```
+
+ Fires when a new tab is created. Returns a function to remove the listener.
+
+ <a name="onTabDetached"></a>
+ ### onTabDetached
+
+ ```
+ onTabDetached(callback: (info: chrome.tabs.TabDetachedInfo) => void): () => void
+ ```
+
+ Fires when a tab is detached from a window. Returns a function to remove the listener.
+
+ <a name="onTabHighlighted"></a>
+ ### onTabHighlighted
+
+ ```
+ onTabHighlighted(callback: (highlightInfo: chrome.tabs.TabHighlightInfo) => void): () => void
+ ```
+
+ Fires when the highlighted status of tabs in a window changes. Returns a function to remove the listener.
+
+ <a name="onTabMoved"></a>
+ ### onTabMoved
+
+ ```
+ onTabMoved(callback: (moveInfo: chrome.tabs.TabMoveInfo) => void): () => void
+ ```
+
+ Fires when a tab is moved within a window. Returns a function to remove the listener.
+
+ <a name="onTabRemoved"></a>
+ ### onTabRemoved
+
+ ```
+ onTabRemoved(callback: (tabId: number, removeInfo: chrome.tabs.TabRemoveInfo) => void): () => void
+ ```
+
+ Fires when a tab is closed. Returns a function to remove the listener.
+
+ <a name="onTabReplaced"></a>
+ ### onTabReplaced
+
+ ```
+ onTabReplaced(callback: (addedTabId: number, removedTabId: number) => void): () => void
+ ```
+
+ Fires when one tab replaces another. Returns a function to remove the listener.
+
+ <a name="onTabUpdated"></a>
+ ### onTabUpdated
+
+ ```
+ onTabUpdated(callback: (tabId: number, changeInfo: chrome.tabs.TabChangeInfo, tab: chrome.tabs.Tab) => void): () => void
+ ```
+
+ Fires when a tab is updated (e.g., URL change, status). Returns a function to remove the listener.
+
+ <a name="onTabZoomChange"></a>
+ ### onTabZoomChange
+
+ ```
+ onTabZoomChange(callback: (zoomChangeInfo: chrome.tabs.ZoomChangeInfo) => void): () => void
+ ```
+
+ Fires when the zoom level of a tab changes. Returns a function to remove the listener.
+
+- [onTabActivated](#onTabActivated)
+- [onTabAttached](#onTabAttached)
+- [onTabCreated](#onTabCreated)
+- [onTabDetached](#onTabDetached)
+- [onTabHighlighted](#onTabHighlighted)
+- [onTabMoved](#onTabMoved)
+- [onTabRemoved](#onTabRemoved)
+- [onTabReplaced](#onTabReplaced)
+- [onTabUpdated](#onTabUpdated)
+- [onTabZoomChange](#onTabZoomChange)
