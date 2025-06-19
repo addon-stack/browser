@@ -1,6 +1,6 @@
 {
     "name": "@adnbn/browser",
-    "version": "0.1.0",
+    "version": "0.1.2",
     "description": "TypeScript wrapper for Chrome extension APIs",
     "keywords": [
         "browser",
@@ -20,9 +20,9 @@
     },
     "license": "MIT",
     "author": "Addon Bone",
-    "type": "commonjs",
+    "type": "module",
     "main": "dist/index.cjs.js",
-    "module": "dist/index.esm.js",
+    "module": "dist/index.js",
     "types": "dist/index.d.ts",
     "files": [
         "dist"

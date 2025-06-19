@@ -36,7 +36,7 @@ export const getRegisteredContentScripts = (filter?: ContentScriptFilter): Promi
         });
     });
 
-export const insertCSS = (injection: CSSInjection): Promise<void> =>
+export const insertCss = (injection: CSSInjection): Promise<void> =>
     new Promise<void>((resolve, reject) => {
         scripting().insertCSS(injection, () => {
             try {
@@ -62,7 +62,7 @@ export const registerContentScripts = (scripts: RegisteredContentScript[]): Prom
         });
     });
 
-export const removeCSS = (injection: CSSInjection): Promise<void> =>
+export const removeCss = (injection: CSSInjection): Promise<void> =>
     new Promise<void>((resolve, reject) => {
         scripting().removeCSS(injection, () => {
             try {
