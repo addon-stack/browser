@@ -1036,3 +1036,176 @@ onDownloadsDeterminingFilename(callback: Parameters<typeof chrome.downloads.onDe
 ```
 
 Adds a listener triggered when a download's filename is being determined.
+
+<a name="extension"></a>
+## extension
+
+**Documentation:** [Chrome Extension API](https://developer.chrome.com/docs/extensions/reference/extension)
+
+A promise-based wrapper for the Chrome `extension` API.
+
+### Methods
+
+- [getBackgroundPage](#getBackgroundPage)
+- [getViews](#getViews)
+- [isAllowedFileSchemeAccess](#isAllowedFileSchemeAccess)
+- [isAllowedIncognitoAccess](#isAllowedIncognitoAccess)
+- [setUpdateUrlData](#setUpdateUrlData)
+
+<a name="getBackgroundPage"></a>
+### getBackgroundPage
+
+```
+getBackgroundPage(): Window | null
+```
+
+Returns the `window` object of the extension's background page, or `null` if no background page exists.
+
+<a name="getViews"></a>
+### getViews
+
+```
+getViews(properties?: chrome.extension.FetchProperties): Window[]
+```
+
+Retrieves all active extension views (e.g., background, popup, options), optionally filtered by the specified properties.
+
+<a name="isAllowedFileSchemeAccess"></a>
+### isAllowedFileSchemeAccess
+
+```
+isAllowedFileSchemeAccess(): Promise<boolean>
+```
+
+Checks if the extension has permission to access file system URLs (`file://`).
+
+<a name="isAllowedIncognitoAccess"></a>
+### isAllowedIncognitoAccess
+
+```
+isAllowedIncognitoAccess(): Promise<boolean>
+```
+
+Determines whether the extension is allowed to operate in incognito mode.
+
+<a name="setUpdateUrlData"></a>
+### setUpdateUrlData
+
+```
+setUpdateUrlData(data: string): void
+```
+
+Sets the data string to be sent as part of the extension's update check URL.
+
+<a name="fileBrowserHandler"></a>
+## fileBrowserHandler
+
+**Documentation:** [Chrome File Browser Handler API](https://developer.chrome.com/docs/extensions/reference/fileBrowserHandler)
+
+A wrapper for the Chrome `fileBrowserHandler` API to manage file browser actions.
+
+### Events
+
+- [onExecute](#onExecute)
+
+<a name="onExecute"></a>
+### onExecute
+
+```
+onExecute(callback: (id: string, details: chrome.fileBrowserHandler.FileBrowserHandlerExecuteDetails) => void): () => void
+```
+
+Adds a listener triggered when the user invokes the extension via the file browser. Returns a function to remove the listener.
+
+<a name="history"></a>
+## history
+
+**Documentation:** [Chrome History API](https://developer.chrome.com/docs/extensions/reference/history)
+
+A promise-based wrapper for the Chrome `history` API to manage browser history.
+
+### Methods
+
+- [addHistoryUrl](#addHistoryUrl)
+- [deleteAllHistory](#deleteAllHistory)
+- [deleteRangeHistory](#deleteRangeHistory)
+- [deleteHistoryUrl](#deleteHistoryUrl)
+- [getHistoryVisits](#getHistoryVisits)
+- [searchHistory](#searchHistory)
+
+### Events
+
+- [onHistoryVisited](#onHistoryVisited)
+- [onHistoryVisitRemoved](#onHistoryVisitRemoved)
+
+<a name="addHistoryUrl"></a>
+### addHistoryUrl
+
+```
+addHistoryUrl(url: string): Promise<void>
+```
+
+Adds the specified URL to the browser history.
+
+<a name="deleteAllHistory"></a>
+### deleteAllHistory
+
+```
+deleteAllHistory(): Promise<void>
+```
+
+Deletes all entries from the browser history.
+
+<a name="deleteRangeHistory"></a>
+### deleteRangeHistory
+
+```
+deleteRangeHistory(range: chrome.history.Range): Promise<void>
+```
+
+Removes all history entries within the specified time range.
+
+<a name="deleteHistoryUrl"></a>
+### deleteHistoryUrl
+
+```
+deleteHistoryUrl(details: chrome.history.Url): Promise<void>
+```
+
+Deletes all occurrences of the given URL from the history.
+
+<a name="getHistoryVisits"></a>
+### getHistoryVisits
+
+```
+getHistoryVisits(url: string): Promise<chrome.history.VisitItem[]>
+```
+
+Retrieves the visit history for the specified URL.
+
+<a name="searchHistory"></a>
+### searchHistory
+
+```
+searchHistory(query: chrome.history.HistoryQuery): Promise<chrome.history.HistoryItem[]>
+```
+
+Searches the browser history with the given query, returning matching history items.
+
+<a name="onHistoryVisited"></a>
+### onHistoryVisited
+
+```
+onHistoryVisited(callback: (result: chrome.history.HistoryItem) => void): () => void
+```
+
+Adds a listener triggered when the browser records a page visit.
+
+<a name="onHistoryVisitRemoved"></a>
+### onHistoryVisitRemoved
+
+```
+onHistoryVisitRemoved(callback: (removed: chrome.history.RemoveInfo) => void): () => void
+```
+
+Adds a listener triggered when URLs are removed from the history, providing details of the removal.
