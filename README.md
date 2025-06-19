@@ -1,5 +1,8 @@
 # @adnbn/browser
 
+[![npm version](https://img.shields.io/npm/v/@adnbn/browser.svg)](https://www.npmjs.com/package/@adnbn/browser)
+[![npm downloads](https://img.shields.io/npm/dm/@adnbn/browser.svg)](https://www.npmjs.com/package/@adnbn/browser)
+
 A TypeScript promise-based wrapper for Chrome Extension APIs, supporting both Manifest V2 and V3 across Chrome, Opera, Edge, and other Chromium-based browsers.
 
 ## Installation
