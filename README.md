@@ -596,3 +596,143 @@ onCommand(callback: (command: string) => void): () => void
 ```
 
 Adds a listener for extension command events.
+
+<a name="contextMenus"></a>
+## contextMenus
+
+**Documentation:** [Chrome Context Menus API](https://developer.chrome.com/docs/extensions/reference/contextMenus)
+
+A promise-based wrapper for the Chrome `contextMenus` API.
+
+### Methods
+
+- [createContextMenus(createProperties)](#createContextMenus)
+- [removeContextMenus(menuItemId)](#removeContextMenus)
+- [removeAllContextMenus()](#removeAllContextMenus)
+- [updateContextMenus(id, updateProperties)](#updateContextMenus)
+- [onContextMenusClicked(callback)](#onContextMenusClicked)
+
+<a name="createContextMenus"></a>
+### createContextMenus
+
+```
+createContextMenus(createProperties?: chrome.contextMenus.CreateProperties): Promise<void>
+```
+
+Creates a new context menu item with the specified properties.
+
+<a name="removeContextMenus"></a>
+### removeContextMenus
+
+```
+removeContextMenus(menuItemId: string | number): Promise<void>
+```
+
+Removes the context menu item with the given ID.
+
+<a name="removeAllContextMenus"></a>
+### removeAllContextMenus
+
+```
+removeAllContextMenus(): Promise<void>
+```
+
+Removes all context menu items added by the extension.
+
+<a name="updateContextMenus"></a>
+### updateContextMenus
+
+```
+updateContextMenus(id: string | number, updateProperties?: Omit<chrome.contextMenus.CreateProperties, 'id'>): Promise<void>
+```
+
+Updates the specified context menu item with new properties.
+
+<a name="onContextMenusClicked"></a>
+### onContextMenusClicked
+
+```
+onContextMenusClicked(callback: (info: chrome.contextMenus.OnClickData, tab: chrome.tabs.Tab) => void): () => void
+```
+
+Adds a listener that triggers when a context menu item is clicked.
+
+<a name="cookies"></a>
+## cookies
+
+**Documentation:** [Chrome Cookies API](https://developer.chrome.com/docs/extensions/reference/cookies)
+
+A promise-based wrapper for the Chrome `cookies` API.
+
+### Methods
+
+- [getCookie(details)](#getCookie)
+- [getAllCookie(details)](#getAllCookie)
+- [getAllCookieStores()](#getAllCookieStores)
+- [getCookiePartitionKey(details)](#getCookiePartitionKey)
+- [removeCookie(details)](#removeCookie)
+- [setCookie(details)](#setCookie)
+- [onCookieChanged(callback)](#onCookieChanged)
+
+<a name="getCookie"></a>
+### getCookie
+
+```
+getCookie(details: chrome.cookies.CookieDetails): Promise<chrome.cookies.Cookie | null>
+```
+
+Retrieves the cookie matching the specified details, or `null` if not found.
+
+<a name="getAllCookie"></a>
+### getAllCookie
+
+```
+getAllCookie(details?: chrome.cookies.GetAllDetails): Promise<chrome.cookies.Cookie[]>
+```
+
+Retrieves all cookies that match the given filter details.
+
+<a name="getAllCookieStores"></a>
+### getAllCookieStores
+
+```
+getAllCookieStores(): Promise<chrome.cookies.CookieStore[]>
+```
+
+Retrieves all cookie stores accessible to the extension.
+
+<a name="getCookiePartitionKey"></a>
+### getCookiePartitionKey [MV3]
+
+```
+getCookiePartitionKey(details: chrome.cookies.FrameDetails): Promise<chrome.cookies.CookiePartitionKey>
+```
+
+Retrieves the partition key for the cookie associated with the given frame (Manifest V3 only).
+
+<a name="removeCookie"></a>
+### removeCookie
+
+```
+removeCookie(details: chrome.cookies.CookieDetails): Promise<chrome.cookies.CookieDetails>
+```
+
+Removes the cookie matching the specified details, returning the details of the removed cookie.
+
+<a name="setCookie"></a>
+### setCookie
+
+```
+setCookie(details: chrome.cookies.SetDetails): Promise<chrome.cookies.Cookie | null>
+```
+
+Sets a cookie with the given details, returning the created cookie or `null` on failure.
+
+<a name="onCookieChanged"></a>
+### onCookieChanged
+
+```
+onCookieChanged(callback: (changeInfo: chrome.cookies.CookieChangeInfo) => void): () => void
+```
+
+Adds a listener that triggers when a cookie change event occurs.
