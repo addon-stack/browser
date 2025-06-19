@@ -246,3 +246,353 @@ onActionUserSettingsChanged(callback: (settings: chrome.action.UserSettings) => 
 ```
 
 Adds a listener for user settings changes on the action (Manifest V3 only).
+
+<a name="alarms"></a>
+## alarms
+
+**Documentation:** [Chrome Alarms API](https://developer.chrome.com/docs/extensions/reference/alarms)
+
+A promise-based wrapper for the Chrome `alarms` API.
+
+### Methods
+
+- [clearAlarm(name)](#clearAlarm)
+- [clearAllAlarm()](#clearAllAlarm)
+- [createAlarm(name, info)](#createAlarm)
+- [getAlarm(name)](#getAlarm)
+- [getAllAlarm()](#getAllAlarm)
+- [onAlarm(callback)](#onAlarm)
+
+<a name="clearAlarm"></a>
+### clearAlarm
+
+```
+clearAlarm(name: string): Promise<boolean>
+```
+
+Clears the alarm with the specified name, returning true if an existing alarm was found and cleared.
+
+<a name="clearAllAlarm"></a>
+### clearAllAlarm
+
+```
+clearAllAlarm(): Promise<boolean>
+```
+
+Clears all alarms, returning true if any alarms were found and cleared.
+
+<a name="createAlarm"></a>
+### createAlarm
+
+```
+createAlarm(name: string, info: chrome.alarms.AlarmCreateInfo): Promise<void>
+```
+
+Creates a new alarm or updates an existing one with the given name and scheduling options.
+
+<a name="getAlarm"></a>
+### getAlarm
+
+```
+getAlarm(name: string): Promise<chrome.alarms.Alarm>
+```
+
+Retrieves details for the alarm with the specified name.
+
+<a name="getAllAlarm"></a>
+### getAllAlarm
+
+```
+getAllAlarm(): Promise<chrome.alarms.Alarm[]>
+```
+
+Retrieves all set alarms.
+
+<a name="onAlarm"></a>
+### onAlarm
+
+```
+onAlarm(callback: (alarm: chrome.alarms.Alarm) => void): () => void
+```
+
+Adds a listener that triggers when an alarm goes off.
+
+<a name="audio"></a>
+## audio
+
+**Documentation:** [Chrome Audio API](https://developer.chrome.com/docs/extensions/reference/audio)
+
+A promise-based wrapper for the Chrome `audio` API.
+
+### Methods
+
+- [getAudioDevices(filter)](#getAudioDevices)
+- [getAudioMute(streamType)](#getAudioMute)
+- [setAudioActiveDevices(ids)](#setAudioActiveDevices)
+- [setAudioMute(streamType, isMuted)](#setAudioMute)
+- [setAudioProperties(id, properties)](#setAudioProperties)
+- [onAudioDeviceListChanged(callback)](#onAudioDeviceListChanged)
+- [onAudioLevelChanged(callback)](#onAudioLevelChanged)
+- [onAudioMuteChanged(callback)](#onAudioMuteChanged)
+
+<a name="getAudioDevices"></a>
+### getAudioDevices
+
+```
+getAudioDevices(filter?: chrome.audio.DeviceFilter): Promise<chrome.audio.AudioDeviceInfo[]>
+```
+
+Retrieves the list of available audio devices, optionally filtered.
+
+<a name="getAudioMute"></a>
+### getAudioMute
+
+```
+getAudioMute(streamType: chrome.audio.StreamType): Promise<boolean>
+```
+
+Retrieves the mute state of the specified audio stream.
+
+<a name="setAudioActiveDevices"></a>
+### setAudioActiveDevices
+
+```
+setAudioActiveDevices(ids?: chrome.audio.DeviceIdLists): Promise<void>
+```
+
+Sets the list of active audio devices.
+
+<a name="setAudioMute"></a>
+### setAudioMute
+
+```
+setAudioMute(streamType: chrome.audio.StreamType, isMuted: boolean): Promise<void>
+```
+
+Sets the mute state for the specified audio stream.
+
+<a name="setAudioProperties"></a>
+### setAudioProperties
+
+```
+setAudioProperties(id: string, properties?: chrome.audio.DeviceProperties): Promise<void>
+```
+
+Updates properties for the specified audio device.
+
+<a name="onAudioDeviceListChanged"></a>
+### onAudioDeviceListChanged
+
+```
+onAudioDeviceListChanged(callback: () => void): () => void
+```
+
+Adds a listener for changes in the list of audio devices.
+
+<a name="onAudioLevelChanged"></a>
+### onAudioLevelChanged
+
+```
+onAudioLevelChanged(callback: (level: number) => void): () => void
+```
+
+Adds a listener for changes in audio level.
+
+<a name="onAudioMuteChanged"></a>
+### onAudioMuteChanged
+
+```
+onAudioMuteChanged(callback: (isMuted: boolean) => void): () => void
+```
+
+Adds a listener for changes in audio mute state.
+
+<a name="browsingData"></a>
+## browsingData
+
+**Documentation:** [Chrome Browsing Data API](https://developer.chrome.com/docs/extensions/reference/browsingData)
+
+A promise-based wrapper for the Chrome `browsingData` API.
+
+### Methods
+
+- [removeBrowsingData(options, dataToRemove)](#removeBrowsingData)
+- [removeAppcacheData(options)](#removeAppcacheData)
+- [removeCacheData(options)](#removeCacheData)
+- [removeCacheStorageData(options)](#removeCacheStorageData)
+- [removeCookiesData(options)](#removeCookiesData)
+- [removeDownloadsData(options)](#removeDownloadsData)
+- [removeFileSystemsData(options)](#removeFileSystemsData)
+- [removeFormData(options)](#removeFormData)
+- [removeHistoryData(options)](#removeHistoryData)
+- [removeIndexedDBData(options)](#removeIndexedDBData)
+- [removeLocalStorageData(options)](#removeLocalStorageData)
+- [removePasswordsData(options)](#removePasswordsData)
+- [removeServiceWorkersData(options)](#removeServiceWorkersData)
+- [removeWebSQLData(options)](#removeWebSQLData)
+- [getBrowsingDataSettings()](#getBrowsingDataSettings)
+
+<a name="removeBrowsingData"></a>
+### removeBrowsingData
+
+```
+removeBrowsingData(options: chrome.browsingData.RemovalOptions, dataToRemove: chrome.browsingData.DataTypeSet): Promise<void>
+```
+
+Clears the specified types of browsing data within the given time range.
+
+<a name="removeAppcacheData"></a>
+### removeAppcacheData
+
+```
+removeAppcacheData(options?: chrome.browsingData.RemovalOptions): Promise<void>
+```
+
+Clears the application cache.
+
+<a name="removeCacheData"></a>
+### removeCacheData
+
+```
+removeCacheData(options?: chrome.browsingData.RemovalOptions): Promise<void>
+```
+
+Clears the browser cache.
+
+<a name="removeCacheStorageData"></a>
+### removeCacheStorageData
+
+```
+removeCacheStorageData(options?: chrome.browsingData.RemovalOptions): Promise<void>
+```
+
+Clears Cache Storage.
+
+<a name="removeCookiesData"></a>
+### removeCookiesData
+
+```
+removeCookiesData(options?: chrome.browsingData.RemovalOptions): Promise<void>
+```
+
+Clears all cookies.
+
+<a name="removeDownloadsData"></a>
+### removeDownloadsData
+
+```
+removeDownloadsData(options?: chrome.browsingData.RemovalOptions): Promise<void>
+```
+
+Clears download history.
+
+<a name="removeFileSystemsData"></a>
+### removeFileSystemsData
+
+```
+removeFileSystemsData(options?: chrome.browsingData.RemovalOptions): Promise<void>
+```
+
+Clears file system data.
+
+<a name="removeFormData"></a>
+### removeFormData
+
+```
+removeFormData(options?: chrome.browsingData.RemovalOptions): Promise<void>
+```
+
+Clears data entered into forms.
+
+<a name="removeHistoryData"></a>
+### removeHistoryData
+
+```
+removeHistoryData(options?: chrome.browsingData.RemovalOptions): Promise<void>
+```
+
+Clears browsing history.
+
+<a name="removeIndexedDBData"></a>
+### removeIndexedDBData
+
+```
+removeIndexedDBData(options?: chrome.browsingData.RemovalOptions): Promise<void>
+```
+
+Clears IndexedDB data.
+
+<a name="removeLocalStorageData"></a>
+### removeLocalStorageData
+
+```
+removeLocalStorageData(options?: chrome.browsingData.RemovalOptions): Promise<void>
+```
+
+Clears Local Storage data.
+
+<a name="removePasswordsData"></a>
+### removePasswordsData
+
+```
+removePasswordsData(options?: chrome.browsingData.RemovalOptions): Promise<void>
+```
+
+Clears saved passwords.
+
+<a name="removeServiceWorkersData"></a>
+### removeServiceWorkersData
+
+```
+removeServiceWorkersData(options?: chrome.browsingData.RemovalOptions): Promise<void>
+```
+
+Clears Service Worker registrations.
+
+<a name="removeWebSQLData"></a>
+### removeWebSQLData
+
+```
+removeWebSQLData(options?: chrome.browsingData.RemovalOptions): Promise<void>
+```
+
+Clears WebSQL data.
+
+<a name="getBrowsingDataSettings"></a>
+### getBrowsingDataSettings
+
+```
+getBrowsingDataSettings(): Promise<chrome.browsingData.SettingsResult>
+```
+
+Retrieves the current browsing data removal settings.
+
+<a name="commands"></a>
+## commands
+
+**Documentation:** [Chrome Commands API](https://developer.chrome.com/docs/extensions/reference/commands)
+
+A promise-based wrapper for the Chrome `commands` API.
+
+### Methods
+
+- [getAllCommands()](#getAllCommands)
+- [onCommand(callback)](#onCommand)
+
+<a name="getAllCommands"></a>
+### getAllCommands
+
+```
+getAllCommands(): Promise<chrome.commands.Command[]>
+```
+
+Retrieves all registered extension commands.
+
+<a name="onCommand"></a>
+### onCommand
+
+```
+onCommand(callback: (command: string) => void): () => void
+```
+
+Adds a listener for extension command events.
