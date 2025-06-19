@@ -7,21 +7,18 @@ export function safeListener<T extends (...args: any[]) => any>(listener: T): T 
 
             if (result instanceof Promise) {
                 result.catch(err => {
-                    console.error('Listener in promise error:', err);
+                    console.error("Listener in promise error:", err);
                 });
             }
 
             return result;
         } catch (err) {
-            console.error('Listener error:', err);
+            console.error("Listener error:", err);
         }
     }) as T;
 }
 
-export function handleListener<T extends (...args: any[]) => void>(
-    target: Event<T>,
-    callback: T,
-): () => void {
+export function handleListener<T extends (...args: any[]) => void>(target: Event<T>, callback: T): () => void {
     const listener = safeListener(callback);
 
     target.addListener(listener);

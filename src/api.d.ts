@@ -3,39 +3,39 @@ declare namespace browser {
         /**
          * Pixel data for an image (for example, from a <canvas> element).
          */
-        type ImageDataType = ImageData;  //  [oai_citation:0‡developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction)
+        type ImageDataType = ImageData; //  [oai_citation:0‡developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction)
 
         /**
          * Closes the sidebar.
          * @returns A promise that is resolved once the sidebar is closed.
          */
-        function close(): Promise<void>;  //  [oai_citation:1‡developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction)
+        function close(): Promise<void>; //  [oai_citation:1‡developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction)
 
         /**
          * Opens the sidebar in the active window. Must be called during a user gesture.
          * @returns A promise that is resolved once the sidebar is opened.
          */
-        function open(): Promise<void>;  //  [oai_citation:2‡developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/open?utm_source=chatgpt.com)
+        function open(): Promise<void>; //  [oai_citation:2‡developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/open?utm_source=chatgpt.com)
 
         /**
          * Toggles the visibility of the sidebar.
          * @returns A promise that is resolved once the action completes.
          */
-        function toggle(): Promise<void>;  //  [oai_citation:3‡developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction)
+        function toggle(): Promise<void>; //  [oai_citation:3‡developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction)
 
         /**
          * Checks whether the sidebar is open in the given window.
          * @param details Optional object with `windowId`; defaults to the topmost window.
          * @returns A promise fulfilled with `true` if the sidebar is open, otherwise `false`.
          */
-        function isOpen(details: { windowId?: number }): Promise<boolean>;  //  [oai_citation:4‡developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/isOpen?utm_source=chatgpt.com)
+        function isOpen(details: {windowId?: number}): Promise<boolean>; //  [oai_citation:4‡developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/isOpen?utm_source=chatgpt.com)
 
         /**
          * Gets the URL of the HTML document defining the sidebar’s contents.
          * @param details Optional object with `tabId` and/or `windowId`; omitting both returns the global panel URL.
          * @returns A promise fulfilled with the fully qualified URL for the panel.
          */
-        function getPanel(details: { tabId?: number; windowId?: number }): Promise<string>;  //  [oai_citation:5‡github.com](https://github.com/mdn/content/blob/main/files/en-us/mozilla/add-ons/webextensions/api/sidebaraction/getpanel/index.md?plain=1&utm_source=chatgpt.com)
+        function getPanel(details: {tabId?: number; windowId?: number}): Promise<string>; //  [oai_citation:5‡github.com](https://github.com/mdn/content/blob/main/files/en-us/mozilla/add-ons/webextensions/api/sidebaraction/getpanel/index.md?plain=1&utm_source=chatgpt.com)
 
         /**
          * Sets which HTML document to display in the sidebar.
@@ -44,18 +44,14 @@ declare namespace browser {
          *   - optional `tabId` or `windowId` to scope the change.
          * @returns A promise that is resolved once the panel is set.
          */
-        function setPanel(details: {
-            panel: string | null;
-            tabId?: number;
-            windowId?: number;
-        }): Promise<void>;  //  [oai_citation:6‡developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/setPanel?utm_source=chatgpt.com)
+        function setPanel(details: {panel: string | null; tabId?: number; windowId?: number}): Promise<void>; //  [oai_citation:6‡developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/setPanel?utm_source=chatgpt.com)
 
         /**
          * Gets the sidebar’s title.
          * @param details Optional object with `tabId` and/or `windowId`; omitting both returns the global title.
          * @returns A promise fulfilled with the current title string.
          */
-        function getTitle(details: { tabId?: number; windowId?: number }): Promise<string>;  //  [oai_citation:7‡mdn.org.cn](https://mdn.org.cn/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/getTitle?utm_source=chatgpt.com)
+        function getTitle(details: {tabId?: number; windowId?: number}): Promise<string>; //  [oai_citation:7‡mdn.org.cn](https://mdn.org.cn/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/getTitle?utm_source=chatgpt.com)
 
         /**
          * Sets the sidebar’s title.
@@ -64,11 +60,7 @@ declare namespace browser {
          *   - optional `tabId` or `windowId` to scope the change.
          * @returns A promise that is resolved once the title is set.
          */
-        function setTitle(details: {
-            title: string | null;
-            tabId?: number;
-            windowId?: number;
-        }): Promise<void>;  //  [oai_citation:8‡www-igm.univ-mlv.fr](https://www-igm.univ-mlv.fr/~forax/MDN/developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/setTitle.html?utm_source=chatgpt.com)
+        function setTitle(details: {title: string | null; tabId?: number; windowId?: number}): Promise<void>; //  [oai_citation:8‡www-igm.univ-mlv.fr](https://www-igm.univ-mlv.fr/~forax/MDN/developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/setTitle.html?utm_source=chatgpt.com)
 
         /**
          * Sets the sidebar’s action icon.
@@ -83,7 +75,7 @@ declare namespace browser {
             imageData?: ImageDataType | Record<number, ImageDataType>;
             tabId?: number;
             windowId?: number;
-        }): Promise<void>;  //  [oai_citation:9‡developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/setIcon?utm_source=chatgpt.com)
+        }): Promise<void>; //  [oai_citation:9‡developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/setIcon?utm_source=chatgpt.com)
     }
 }
 
@@ -197,10 +189,7 @@ declare namespace opr {
          * @param details Tab details object; omitting tabId gets the global badge background color.
          * @param callback Function called with the current background color as RGBA tuple.
          */
-        function getBadgeBackgroundColor(
-            details: TabDetails,
-            callback: (color: RGBA) => void
-        ): void;
+        function getBadgeBackgroundColor(details: TabDetails, callback: (color: RGBA) => void): void;
 
         /**
          * Sets the background color of the sidebar badge.
@@ -213,10 +202,7 @@ declare namespace opr {
          * @param details Tab details object; omitting tabId gets the global badge text color.
          * @param callback Function called with the current text color as RGBA tuple.
          */
-        function getBadgeTextColor(
-            details: TabDetails,
-            callback: (color: RGBA) => void
-        ): void;
+        function getBadgeTextColor(details: TabDetails, callback: (color: RGBA) => void): void;
 
         /**
          * Sets the text color of the sidebar badge.
@@ -229,10 +215,7 @@ declare namespace opr {
          * @param details Tab details object; omitting tabId gets the global selected background color.
          * @param callback Function called with the current selected background color as RGBA tuple.
          */
-        function getSelectedBackgroundColor(
-            details: TabDetails,
-            callback: (color: RGBA) => void
-        ): void;
+        function getSelectedBackgroundColor(details: TabDetails, callback: (color: RGBA) => void): void;
 
         /**
          * Sets the background color used when the sidebar is selected.

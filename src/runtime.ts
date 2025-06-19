@@ -19,110 +19,117 @@ export const connect = (extensionId: string, connectInfo?: object): Port => runt
 
 export const connectNative = (application: string): Port => runtime().connectNative(application);
 
-export const getContexts = (filter: ContextFilter): Promise<ExtensionContext[]> => new Promise<ExtensionContext[]>((resolve, reject) => {
-    runtime().getContexts(filter, contexts => {
-        try {
-            throwRuntimeError();
+export const getContexts = (filter: ContextFilter): Promise<ExtensionContext[]> =>
+    new Promise<ExtensionContext[]>((resolve, reject) => {
+        runtime().getContexts(filter, contexts => {
+            try {
+                throwRuntimeError();
 
-            resolve(contexts);
-        } catch (e) {
-            reject(e);
-        }
+                resolve(contexts);
+            } catch (e) {
+                reject(e);
+            }
+        });
     });
-});
 
 export const getManifest = (): Manifest => runtime().getManifest();
 
-export const getPackageDirectoryEntry = (): Promise<FileSystemDirectoryEntry> => new Promise<FileSystemDirectoryEntry>((resolve, reject) => {
-    runtime().getPackageDirectoryEntry((directoryEntry) => {
-        try {
-            throwRuntimeError();
+export const getPackageDirectoryEntry = (): Promise<FileSystemDirectoryEntry> =>
+    new Promise<FileSystemDirectoryEntry>((resolve, reject) => {
+        runtime().getPackageDirectoryEntry(directoryEntry => {
+            try {
+                throwRuntimeError();
 
-            resolve(directoryEntry);
-        } catch (e) {
-            reject(e);
-        }
+                resolve(directoryEntry);
+            } catch (e) {
+                reject(e);
+            }
+        });
     });
-});
 
-export const getPlatformInfo = (): Promise<PlatformInfo> => new Promise<PlatformInfo>((resolve, reject) => {
-    runtime().getPlatformInfo((platformInfo) => {
-        try {
-            throwRuntimeError();
+export const getPlatformInfo = (): Promise<PlatformInfo> =>
+    new Promise<PlatformInfo>((resolve, reject) => {
+        runtime().getPlatformInfo(platformInfo => {
+            try {
+                throwRuntimeError();
 
-            resolve(platformInfo);
-        } catch (e) {
-            reject(e);
-        }
+                resolve(platformInfo);
+            } catch (e) {
+                reject(e);
+            }
+        });
     });
-});
 
 export const getUrl = (path: string): string => runtime().getURL(path);
 
-export const openOptionsPage = (): Promise<void> => new Promise<void>((resolve, reject) => {
-    runtime().openOptionsPage(() => {
-        try {
-            throwRuntimeError();
+export const openOptionsPage = (): Promise<void> =>
+    new Promise<void>((resolve, reject) => {
+        runtime().openOptionsPage(() => {
+            try {
+                throwRuntimeError();
 
-            resolve();
-        } catch (e) {
-            reject(e);
-        }
+                resolve();
+            } catch (e) {
+                reject(e);
+            }
+        });
     });
-});
 
 export const reload = (): void => runtime().reload();
 
-export const requestUpdateCheck = (): Promise<RequestUpdateCheck> => new Promise<RequestUpdateCheck>((resolve, reject) => {
-    runtime().requestUpdateCheck((status, details) => {
-        try {
-            throwRuntimeError();
+export const requestUpdateCheck = (): Promise<RequestUpdateCheck> =>
+    new Promise<RequestUpdateCheck>((resolve, reject) => {
+        runtime().requestUpdateCheck((status, details) => {
+            try {
+                throwRuntimeError();
 
-            resolve({status, details});
-        } catch (e) {
-            reject(e);
-        }
+                resolve({status, details});
+            } catch (e) {
+                reject(e);
+            }
+        });
     });
-});
 
 export const restart = (): void => runtime().restart();
 
-export const restartAfterDelay = (seconds: number): Promise<void> => new Promise<void>((resolve, reject) => {
-    runtime().restartAfterDelay(seconds, () => {
-        try {
-            throwRuntimeError();
+export const restartAfterDelay = (seconds: number): Promise<void> =>
+    new Promise<void>((resolve, reject) => {
+        runtime().restartAfterDelay(seconds, () => {
+            try {
+                throwRuntimeError();
 
-            resolve();
-        } catch (e) {
-            reject(e);
-        }
+                resolve();
+            } catch (e) {
+                reject(e);
+            }
+        });
     });
-});
 
-export const sendMessage = <M = any, R = any>(message: M): Promise<R> => new Promise<R>((resolve, reject) => {
-    runtime().sendMessage<M, R>(message, (response) => {
-        try {
-            throwRuntimeError();
+export const sendMessage = <M = any, R = any>(message: M): Promise<R> =>
+    new Promise<R>((resolve, reject) => {
+        runtime().sendMessage<M, R>(message, response => {
+            try {
+                throwRuntimeError();
 
-            resolve(response);
-        } catch (e) {
-            reject(e);
-        }
+                resolve(response);
+            } catch (e) {
+                reject(e);
+            }
+        });
     });
-});
 
-export const setUninstallUrl = (url: string): Promise<void> => new Promise<void>((resolve, reject) => {
-    runtime().setUninstallURL(url, () => {
-        try {
-            throwRuntimeError();
+export const setUninstallUrl = (url: string): Promise<void> =>
+    new Promise<void>((resolve, reject) => {
+        runtime().setUninstallURL(url, () => {
+            try {
+                throwRuntimeError();
 
-            resolve();
-        } catch (e) {
-            reject(e);
-        }
+                resolve();
+            } catch (e) {
+                reject(e);
+            }
+        });
     });
-});
-
 
 // Custom Methods
 export const getId = (): string => runtime().id;
@@ -137,53 +144,67 @@ export const throwRuntimeError = (): void => {
     if (error) {
         throw new Error(error.message);
     }
-}
+};
 
 // Events
-export const onConnect = (callback: Parameters<typeof chrome.runtime.onConnect.addListener>[0]): () => void => {
+export const onConnect = (callback: Parameters<typeof chrome.runtime.onConnect.addListener>[0]): (() => void) => {
     return handleListener(runtime().onConnect, callback);
-}
+};
 
-export const onConnectExternal = (callback: Parameters<typeof chrome.runtime.onConnectExternal.addListener>[0]): () => void => {
+export const onConnectExternal = (
+    callback: Parameters<typeof chrome.runtime.onConnectExternal.addListener>[0]
+): (() => void) => {
     return handleListener(runtime().onConnectExternal, callback);
-}
+};
 
-export const onInstalled = (callback: Parameters<typeof chrome.runtime.onInstalled.addListener>[0]): () => void => {
+export const onInstalled = (callback: Parameters<typeof chrome.runtime.onInstalled.addListener>[0]): (() => void) => {
     return handleListener(runtime().onInstalled, callback);
-}
+};
 
-export const onMessage = (callback: Parameters<typeof chrome.runtime.onMessage.addListener>[0]): () => void => {
+export const onMessage = (callback: Parameters<typeof chrome.runtime.onMessage.addListener>[0]): (() => void) => {
     return handleListener(runtime().onMessage, callback);
-}
+};
 
-export const onMessageExternal = (callback: Parameters<typeof chrome.runtime.onMessageExternal.addListener>[0]): () => void => {
+export const onMessageExternal = (
+    callback: Parameters<typeof chrome.runtime.onMessageExternal.addListener>[0]
+): (() => void) => {
     return handleListener(runtime().onMessageExternal, callback);
-}
+};
 
-export const onRestartRequired = (callback: Parameters<typeof chrome.runtime.onRestartRequired.addListener>[0]): () => void => {
+export const onRestartRequired = (
+    callback: Parameters<typeof chrome.runtime.onRestartRequired.addListener>[0]
+): (() => void) => {
     return handleListener(runtime().onRestartRequired, callback);
-}
+};
 
-export const onStartup = (callback: Parameters<typeof chrome.runtime.onStartup.addListener>[0]): () => void => {
+export const onStartup = (callback: Parameters<typeof chrome.runtime.onStartup.addListener>[0]): (() => void) => {
     return handleListener(runtime().onStartup, callback);
-}
+};
 
-export const onSuspend = (callback: Parameters<typeof chrome.runtime.onSuspend.addListener>[0]): () => void => {
+export const onSuspend = (callback: Parameters<typeof chrome.runtime.onSuspend.addListener>[0]): (() => void) => {
     return handleListener(runtime().onSuspend, callback);
-}
+};
 
-export const onSuspendCanceled = (callback: Parameters<typeof chrome.runtime.onSuspendCanceled.addListener>[0]): () => void => {
+export const onSuspendCanceled = (
+    callback: Parameters<typeof chrome.runtime.onSuspendCanceled.addListener>[0]
+): (() => void) => {
     return handleListener(runtime().onSuspendCanceled, callback);
-}
+};
 
-export const onUpdateAvailable = (callback: Parameters<typeof chrome.runtime.onUpdateAvailable.addListener>[0]): () => void => {
+export const onUpdateAvailable = (
+    callback: Parameters<typeof chrome.runtime.onUpdateAvailable.addListener>[0]
+): (() => void) => {
     return handleListener(runtime().onUpdateAvailable, callback);
-}
+};
 
-export const onUserScriptConnect = (callback: Parameters<typeof chrome.runtime.onUserScriptConnect.addListener>[0]): () => void => {
+export const onUserScriptConnect = (
+    callback: Parameters<typeof chrome.runtime.onUserScriptConnect.addListener>[0]
+): (() => void) => {
     return handleListener(runtime().onUserScriptConnect, callback);
-}
+};
 
-export const onUserScriptMessage = (callback: Parameters<typeof chrome.runtime.onUserScriptMessage.addListener>[0]): () => void => {
+export const onUserScriptMessage = (
+    callback: Parameters<typeof chrome.runtime.onUserScriptMessage.addListener>[0]
+): (() => void) => {
     return handleListener(runtime().onUserScriptMessage, callback);
-}
+};

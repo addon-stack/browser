@@ -1,44 +1,46 @@
 {
-  "name": "@adnbn/browser",
-  "version": "0.0.2",
-  "description": "TypeScript wrapper for Chrome extension APIs",
-  "keywords": [
-    "browser",
-    "addon",
-    "extension",
-    "google",
-    "chrome",
-    "opera",
-    "edge",
-    "firefox",
-    "safari",
-    "api"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:addonbone/browser.git"
-  },
-  "license": "MIT",
-  "author": "Addon Bone",
-  "type": "commonjs",
-  "main": "dist/index.cjs.js",
-  "module": "dist/index.esm.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "sideEffects": [
-    "./src/browser.ts"
-  ],
-  "scripts": {
-    "build": "tsup",
-    "build:watch": "tsup --watch"
-  },
-  "dependencies": {
-    "@types/chrome": "^0.0.326"
-  },
-  "devDependencies": {
-    "tsup": "^8.5.0",
-    "typescript": "^5.8.3"
-  }
+    "name": "@adnbn/browser",
+    "version": "0.0.2",
+    "description": "TypeScript wrapper for Chrome extension APIs",
+    "keywords": [
+        "browser",
+        "addon",
+        "extension",
+        "google",
+        "chrome",
+        "opera",
+        "edge",
+        "firefox",
+        "safari",
+        "api"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:addonbone/browser.git"
+    },
+    "license": "MIT",
+    "author": "Addon Bone",
+    "type": "commonjs",
+    "main": "dist/index.cjs.js",
+    "module": "dist/index.esm.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "sideEffects": [
+        "./src/browser.ts"
+    ],
+    "scripts": {
+        "format": "prettier --write .",
+        "build": "tsup",
+        "build:watch": "tsup --watch"
+    },
+    "dependencies": {
+        "@types/chrome": "^0.0.326"
+    },
+    "devDependencies": {
+        "prettier": "^3.5.3",
+        "tsup": "^8.5.0",
+        "typescript": "^5.8.3"
+    }
 }

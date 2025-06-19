@@ -15,7 +15,7 @@ export const isBackground = (): boolean => {
         return typeof window === "undefined";
     }
 
-    const backgroundPaths = ['/_generated_background_page.html'];
+    const backgroundPaths = ["/_generated_background_page.html"];
 
     return window !== undefined && backgroundPaths.includes(location.pathname);
-}
+};

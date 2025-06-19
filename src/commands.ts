@@ -7,20 +7,20 @@ type Command = chrome.commands.Command;
 const commands = () => browser().commands as typeof chrome.commands;
 
 // Methods
-export const getAllCommands = (): Promise<Command[]> => new Promise<Command[]>((resolve, reject) => {
-    commands().getAll((commands) => {
-        try {
-            throwRuntimeError();
+export const getAllCommands = (): Promise<Command[]> =>
+    new Promise<Command[]>((resolve, reject) => {
+        commands().getAll(commands => {
+            try {
+                throwRuntimeError();
 
-            resolve(commands);
-        } catch (e) {
-            reject(e);
-        }
+                resolve(commands);
+            } catch (e) {
+                reject(e);
+            }
+        });
     });
-});
-
 
 // Events
-export const onCommand = (callback: Parameters<typeof chrome.commands.onCommand.addListener>[0]): () => void => {
-    return handleListener(commands().onCommand, callback)
-}
+export const onCommand = (callback: Parameters<typeof chrome.commands.onCommand.addListener>[0]): (() => void) => {
+    return handleListener(commands().onCommand, callback);
+};
