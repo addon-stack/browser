@@ -28,14 +28,14 @@ declare namespace browser {
          * @param details Optional object with `windowId`; defaults to the topmost window.
          * @returns A promise fulfilled with `true` if the sidebar is open, otherwise `false`.
          */
-        function isOpen(details: {windowId?: number}): Promise<boolean>; //  [oai_citation:4‡developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/isOpen?utm_source=chatgpt.com)
+        function isOpen(details: { windowId?: number }): Promise<boolean>; //  [oai_citation:4‡developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/isOpen?utm_source=chatgpt.com)
 
         /**
          * Gets the URL of the HTML document defining the sidebar’s contents.
          * @param details Optional object with `tabId` and/or `windowId`; omitting both returns the global panel URL.
          * @returns A promise fulfilled with the fully qualified URL for the panel.
          */
-        function getPanel(details: {tabId?: number; windowId?: number}): Promise<string>; //  [oai_citation:5‡github.com](https://github.com/mdn/content/blob/main/files/en-us/mozilla/add-ons/webextensions/api/sidebaraction/getpanel/index.md?plain=1&utm_source=chatgpt.com)
+        function getPanel(details: { tabId?: number; windowId?: number }): Promise<string>; //  [oai_citation:5‡github.com](https://github.com/mdn/content/blob/main/files/en-us/mozilla/add-ons/webextensions/api/sidebaraction/getpanel/index.md?plain=1&utm_source=chatgpt.com)
 
         /**
          * Sets which HTML document to display in the sidebar.
@@ -44,14 +44,14 @@ declare namespace browser {
          *   - optional `tabId` or `windowId` to scope the change.
          * @returns A promise that is resolved once the panel is set.
          */
-        function setPanel(details: {panel: string | null; tabId?: number; windowId?: number}): Promise<void>; //  [oai_citation:6‡developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/setPanel?utm_source=chatgpt.com)
+        function setPanel(details: { panel: string | null; tabId?: number; windowId?: number }): Promise<void>; //  [oai_citation:6‡developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/setPanel?utm_source=chatgpt.com)
 
         /**
          * Gets the sidebar’s title.
          * @param details Optional object with `tabId` and/or `windowId`; omitting both returns the global title.
          * @returns A promise fulfilled with the current title string.
          */
-        function getTitle(details: {tabId?: number; windowId?: number}): Promise<string>; //  [oai_citation:7‡mdn.org.cn](https://mdn.org.cn/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/getTitle?utm_source=chatgpt.com)
+        function getTitle(details: { tabId?: number; windowId?: number }): Promise<string>; //  [oai_citation:7‡mdn.org.cn](https://mdn.org.cn/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/getTitle?utm_source=chatgpt.com)
 
         /**
          * Sets the sidebar’s title.
@@ -60,7 +60,7 @@ declare namespace browser {
          *   - optional `tabId` or `windowId` to scope the change.
          * @returns A promise that is resolved once the title is set.
          */
-        function setTitle(details: {title: string | null; tabId?: number; windowId?: number}): Promise<void>; //  [oai_citation:8‡www-igm.univ-mlv.fr](https://www-igm.univ-mlv.fr/~forax/MDN/developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/setTitle.html?utm_source=chatgpt.com)
+        function setTitle(details: { title: string | null; tabId?: number; windowId?: number }): Promise<void>; //  [oai_citation:8‡www-igm.univ-mlv.fr](https://www-igm.univ-mlv.fr/~forax/MDN/developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/setTitle.html?utm_source=chatgpt.com)
 
         /**
          * Sets the sidebar’s action icon.
@@ -256,5 +256,33 @@ declare namespace opr {
          * Fired when the sidebar loses focus.
          */
         const onBlur: SidebarEvent;
+    }
+}
+
+declare namespace chrome {
+    namespace tabs {
+        /**
+         * Removes CSS that was previously injected by insertCSS.
+         * @param tabId The ID of the tab from which to remove CSS.
+         * @param details Details about the CSS to remove.
+         * @param callback Optional callback function.
+         */
+        function removeCSS(
+            tabId: number,
+            details: chrome.extensionTypes.InjectDetails,
+            callback?: () => void
+        ): void;
+
+        /**
+         * Removes CSS that was previously injected by insertCSS (Promise version).
+         * @param tabId The ID of the tab from which to remove CSS.
+         * @param details Details about the CSS to remove.
+         * @returns A Promise that resolves when the CSS is removed.
+         */
+        function removeCSS(
+            tabId: number,
+            details: chrome.extensionTypes.InjectDetails
+        ): Promise<void>;
+
     }
 }

@@ -2289,9 +2289,9 @@ A promise-based wrapper for the Chrome `scripting` API to inject scripts and sty
 
 - [executeScript](#executeScript)
 - [getRegisteredContentScripts](#getRegisteredContentScripts)
-- [insertCSS](#insertCSS)
+- [insertCss](#insertCss)
 - [registerContentScripts](#registerContentScripts)
-- [removeCSS](#removeCSS)
+- [removeCss](#removeCss)
 - [unregisterContentScripts](#unregisterContentScripts)
 - [updateContentScripts](#updateContentScripts)
 - [isAvailableScripting](#isAvailableScripting)
@@ -2318,10 +2318,10 @@ Retrieves registered content scripts, optionally filtered by criteria.
 
 <a name="insertCSS"></a>
 
-### insertCSS
+### insertCss
 
 ```
-insertCSS(injection: chrome.scripting.CSSInjection): Promise<void>
+insertCss(injection: chrome.scripting.CSSInjection): Promise<void>
 ```
 
 Injects CSS into specified target pages.
@@ -2336,12 +2336,12 @@ registerContentScripts(scripts: chrome.scripting.RegisteredContentScript[]): Pro
 
 Registers one or more content scripts programmatically.
 
-<a name="removeCSS"></a>
+<a name="removeCss"></a>
 
-### removeCSS
+### removeCss
 
 ```
-removeCSS(injection: chrome.scripting.CSSInjection): Promise<void>
+removeCss(injection: chrome.scripting.CSSInjection): Promise<void>
 ```
 
 Removes previously injected CSS from specified target pages.
@@ -2659,7 +2659,9 @@ A promise-based wrapper for the Chrome `tabs` API, providing core tab operations
 - [setTabZoomSettings](#setTabZoomSettings)
 - [ungroupTab](#ungroupTab)
 - [updateTab](#updateTab)
-- [executeScriptTab](#executeScriptTab)
+- [executeScriptTab](#executeScriptTab) [MV2]
+- [insertCssTab](#insertCssTab) [MV2]
+- [removeCssTab](#removeCssTab) [MV2]
 - [getTabUrl](#getTabUrl)
 - [getActiveTab](#getActiveTab)
 - [queryTabIds](#queryTabIds)
@@ -2930,7 +2932,29 @@ Updates properties of the specified tab (e.g., URL, active state). Resolves with
 executeScriptTab(tabId: number, details: chrome.extensionTypes.InjectDetails): Promise<any[]>
 ```
 
-Injects JavaScript into the specified tab and returns execution results.
+Injects JavaScript into the specified tab and returns execution results. (Manifest V2 only).
+
+
+<a name="insertCssTab"></a>
+
+### insertCssTab
+
+```
+insertCssTab(tabId: number, details: chrome.extensionTypes.InjectDetails): Promise<void>
+```
+
+Injects CSS into a page. (Manifest V2 only).
+
+<a name="insertCssTab"></a>
+
+### removeCssTab
+
+```
+removeCssTab(tabId: number, details: chrome.extensionTypes.InjectDetails): Promise<void>
+```
+
+Removes from a page CSS that was previously injected by a call to `insertCssTab`. (Manifest V2 only).
+
 
 <a name="getTabUrl"></a>
 
