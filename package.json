@@ -1,6 +1,6 @@
 {
     "name": "@adnbn/browser",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "description": "TypeScript wrapper for Chrome extension APIs",
     "keywords": [
         "browser",
@@ -27,9 +27,7 @@
     "files": [
         "dist"
     ],
-    "sideEffects": [
-        "./src/browser.ts"
-    ],
+    "sideEffects": false,
     "scripts": {
         "format": "prettier --write .",
         "build": "tsup",
