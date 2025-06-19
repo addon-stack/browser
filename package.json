@@ -1,0 +1,19 @@
+{
+  "name": "@adnbn/browser",
+  "version": "0.0.1",
+  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:addonbone/browser.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@types/chrome": "^0.0.326"
+  }
+}
