@@ -1514,3 +1514,439 @@ onExtensionUninstalled(callback: (extensionId: string) => void): () => void
 
 Fires when an extension or app is uninstalled, passing its ID.
 
+<a name="offscreen"></a>
+## offscreen
+
+**Documentation:** [Chrome Offscreen API](https://developer.chrome.com/docs/extensions/reference/offscreen) [MV3]
+
+A promise-based wrapper for the Chrome `offscreen` API to create and manage offscreen documents.
+
+### Methods
+
+- [createOffscreen](#createOffscreen)
+- [closeOffscreen](#closeOffscreen)
+- [hasOffscreen](#hasOffscreen)
+
+<a name="createOffscreen"></a>
+### createOffscreen
+
+```
+createOffscreen(parameters: chrome.offscreen.CreateParameters): Promise<void>
+```
+
+Creates an offscreen document with the specified parameters.
+
+<a name="closeOffscreen"></a>
+### closeOffscreen
+
+```
+closeOffscreen(): Promise<void>
+```
+
+Closes the existing offscreen document.
+
+<a name="hasOffscreen"></a>
+### hasOffscreen
+
+```
+hasOffscreen(): Promise<boolean>
+```
+
+Checks whether an offscreen document is currently open.
+
+<a name="permissions"></a>
+## permissions
+
+**Documentation:** [Chrome Permissions API](https://developer.chrome.com/docs/extensions/reference/permissions)
+
+A promise-based wrapper for the Chrome `permissions` API to request and manage extension permissions.
+
+### Methods
+
+- [containsPermissions](#containsPermissions)
+- [getAllPermissions](#getAllPermissions)
+- [requestPermissions](#requestPermissions)
+- [removePermissions](#removePermissions)
+- [addHostAccessRequest](#addHostAccessRequest) [MV3]
+- [removeHostAccessRequest](#removeHostAccessRequest) [MV3]
+
+### Events
+
+- [onPermissionsAdded](#onPermissionsAdded)
+- [onPermissionsRemoved](#onPermissionsRemoved)
+
+<a name="containsPermissions"></a>
+### containsPermissions
+
+```
+containsPermissions(permissions: chrome.permissions.Permissions): Promise<boolean>
+```
+
+Checks whether the extension has the specified permissions.
+
+<a name="getAllPermissions"></a>
+### getAllPermissions
+
+```
+getAllPermissions(): Promise<chrome.permissions.Permissions>
+```
+
+Retrieves all granted permissions.
+
+<a name="requestPermissions"></a>
+### requestPermissions
+
+```
+requestPermissions(permissions: chrome.permissions.Permissions): Promise<boolean>
+```
+
+Prompts the user to grant additional permissions.
+
+<a name="removePermissions"></a>
+### removePermissions
+
+```
+removePermissions(permissions: chrome.permissions.Permissions): Promise<boolean>
+```
+
+Removes the specified permissions if granted.
+
+<a name="addHostAccessRequest"></a>
+### addHostAccessRequest [MV3]
+
+```
+addHostAccessRequest(request?: chrome.permissions.AddHostAccessRequest): Promise<void>
+```
+
+Requests additional host access at runtime (Manifest V3 only).
+
+<a name="removeHostAccessRequest"></a>
+### removeHostAccessRequest [MV3]
+
+```
+removeHostAccessRequest(request?: chrome.permissions.RemoveHostAccessRequest): Promise<void>
+```
+
+Clears a previously requested host access (Manifest V3 only).
+
+<a name="onPermissionsAdded"></a>
+### onPermissionsAdded
+
+```
+onPermissionsAdded(callback: (permissions: chrome.permissions.Permissions) => void): () => void
+```
+
+Fires when new permissions are granted.
+
+<a name="onPermissionsRemoved"></a>
+### onPermissionsRemoved
+
+```
+onPermissionsRemoved(callback: (permissions: chrome.permissions.Permissions) => void): () => void
+```
+
+Fires when permissions are removed.
+
+<a name="runtime"></a>
+## runtime
+
+**Documentation:** [Chrome Runtime API](https://developer.chrome.com/docs/extensions/reference/runtime)
+
+A wrapper for the Chrome `runtime` API, including messaging, updates, and lifecycle events.
+
+### Methods
+
+- [connect](#connect)
+- [connectNative](#connectNative)
+- [getContexts](#getContexts) [MV3]
+- [getManifest](#getManifest)
+- [getId](#getId)
+- [getManifestVersion](#getManifestVersion)
+- [isManifestVersion3](#isManifestVersion3)
+- [getPackageDirectoryEntry](#getPackageDirectoryEntry)
+- [getPlatformInfo](#getPlatformInfo)
+- [getUrl](#getUrl)
+- [openOptionsPage](#openOptionsPage)
+- [reload](#reload)
+- [requestUpdateCheck](#requestUpdateCheck)
+- [restart](#restart) [MV3]
+- [restartAfterDelay](#restartAfterDelay) [MV3]
+- [sendMessage](#sendMessage)
+- [setUninstallUrl](#setUninstallUrl)
+
+### Events
+
+- [onConnect](#onConnect)
+- [onConnectExternal](#onConnectExternal)
+- [onInstalled](#onInstalled)
+- [onMessage](#onMessage)
+- [onMessageExternal](#onMessageExternal)
+- [onRestartRequired](#onRestartRequired)
+- [onStartup](#onStartup)
+- [onSuspend](#onSuspend)
+- [onSuspendCanceled](#onSuspendCanceled)
+- [onUpdateAvailable](#onUpdateAvailable)
+- [onUserScriptConnect](#onUserScriptConnect)
+- [onUserScriptMessage](#onUserScriptMessage)
+
+<a name="connect"></a>
+### connect
+
+```
+connect(extensionId: string, connectInfo?: object): chrome.runtime.Port
+```
+
+Opens a long-lived connection to another extension or app.
+
+<a name="connectNative"></a>
+### connectNative
+
+```
+connectNative(application: string): chrome.runtime.Port
+```
+
+Connects to a native application.
+
+<a name="getContexts"></a>
+### getContexts [MV3]
+
+```
+getContexts(filter: chrome.runtime.ContextFilter): Promise<chrome.runtime.ExtensionContext[]>
+```
+
+Retrieves extension contexts matching the filter (Manifest V3 only).
+
+<a name="getManifest"></a>
+### getManifest
+
+```
+getManifest(): chrome.runtime.Manifest
+```
+
+Returns the extension's manifest details.
+
+<a name="getId"></a>
+### getId
+
+```
+getId(): string
+```
+
+Returns the extension ID.
+
+<a name="getManifestVersion"></a>
+### getManifestVersion
+
+```
+getManifestVersion(): 2 | 3
+```
+
+Retrieves the manifest version (2 or 3).
+
+<a name="isManifestVersion3"></a>
+### isManifestVersion3
+
+```
+isManifestVersion3(): boolean
+```
+
+Checks if the extension uses Manifest V3.
+
+<a name="getPackageDirectoryEntry"></a>
+### getPackageDirectoryEntry
+
+```
+getPackageDirectoryEntry(): Promise<FileSystemDirectoryEntry>
+```
+
+Gets the root directory of the extension package.
+
+<a name="getPlatformInfo"></a>
+### getPlatformInfo
+
+```
+getPlatformInfo(): Promise<chrome.runtime.PlatformInfo>
+```
+
+Returns information about the current platform.
+
+<a name="getUrl"></a>
+### getUrl
+
+```
+getUrl(path: string): string
+```
+
+Converts a relative path to an absolute extension URL.
+
+<a name="openOptionsPage"></a>
+### openOptionsPage
+
+```
+openOptionsPage(): Promise<void>
+```
+
+Opens the extension's options page.
+
+<a name="reload"></a>
+### reload
+
+```
+reload(): void
+```
+
+Reloads the extension.
+
+<a name="requestUpdateCheck"></a>
+### requestUpdateCheck
+
+```
+requestUpdateCheck(): Promise<{status: chrome.runtime.RequestUpdateCheckStatus; details?: chrome.runtime.UpdateCheckDetails;}>
+```
+
+Checks for an update and returns status and details.
+
+<a name="restart"></a>
+### restart [MV3]
+
+```
+restart(): void
+```
+
+Restarts the browser to apply updates (Manifest V3 only).
+
+<a name="restartAfterDelay"></a>
+### restartAfterDelay [MV3]
+
+```
+restartAfterDelay(seconds: number): Promise<void>
+```
+
+Schedules a browser restart after the given delay in seconds (Manifest V3 only).
+
+<a name="sendMessage"></a>
+### sendMessage
+
+```
+sendMessage<M = any, R = any>(message: M): Promise<R>
+```
+
+Sends a single message to the extension or app and awaits a response.
+
+<a name="setUninstallUrl"></a>
+### setUninstallUrl
+
+```
+setUninstallUrl(url: string): Promise<void>
+```
+
+Sets a URL to be opened upon uninstallation.
+
+<a name="onConnect"></a>
+### onConnect
+
+```
+onConnect(callback: (port: chrome.runtime.Port) => void): () => void
+```
+
+Fires when a connection is made by another extension or content script.
+
+<a name="onConnectExternal"></a>
+### onConnectExternal
+
+```
+onConnectExternal(callback: (port: chrome.runtime.Port) => void): () => void
+```
+
+Fires when an external extension connects.
+
+<a name="onInstalled"></a>
+### onInstalled
+
+```
+onInstalled(callback: chrome.runtime.InstalledDetails): () => void
+```
+
+Fires when the extension is installed or updated.
+
+<a name="onMessage"></a>
+### onMessage
+
+```
+onMessage(callback: (message: any, sender: chrome.runtime.MessageSender) => void): () => void
+```
+
+Fires when a message is received.
+
+<a name="onMessageExternal"></a>
+### onMessageExternal
+
+```
+onMessageExternal(callback: (message: any, sender: chrome.runtime.MessageSender) => void): () => void
+```
+
+Fires when an external extension sends a message.
+
+<a name="onRestartRequired"></a>
+### onRestartRequired
+
+```
+onRestartRequired(callback: (reason: chrome.runtime.OnRestartRequiredReason) => void): () => void
+```
+
+Fires when the extension requires a browser restart.
+
+<a name="onStartup"></a>
+### onStartup
+
+```
+onStartup(callback: () => void): () => void
+```
+
+Fires when the browser starts up.
+
+<a name="onSuspend"></a>
+### onSuspend
+
+```
+onSuspend(callback: () => void): () => void
+```
+
+Fires when the event page is about to be unloaded.
+
+<a name="onSuspendCanceled"></a>
+### onSuspendCanceled
+
+```
+onSuspendCanceled(callback: () => void): () => void
+```
+
+Fires when a suspend is canceled.
+
+<a name="onUpdateAvailable"></a>
+### onUpdateAvailable
+
+```
+onUpdateAvailable(callback: chrome.runtime.UpdateAvailableDetails): () => void
+```
+
+Fires when an update is available.
+
+<a name="onUserScriptConnect"></a>
+### onUserScriptConnect
+
+```
+onUserScriptConnect(callback: (port: chrome.runtime.Port) => void): () => void
+```
+
+Fires when a user script establishes a connection.
+
+<a name="onUserScriptMessage"></a>
+### onUserScriptMessage
+
+```
+onUserScriptMessage(callback: (message: any, sender: chrome.runtime.MessageSender) => void): () => void
+```
+
+Fires when a message arrives from a user script.
+
