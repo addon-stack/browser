@@ -64,6 +64,8 @@ A unified interface to the Chrome `action` API (`chrome.action` in Manifest V3, 
 - [setActionTitle(title, tabId)](#setActionTitle)
 - [getDefaultPopup()](#getDefaultPopup)
 - [clearBadgeText(tabId)](#clearBadgeText)
+
+### Events
 - [onActionClicked(callback)](#onActionClicked)
 - [onActionUserSettingsChanged(callback)](#onActionUserSettingsChanged) [MV3]
 
@@ -261,6 +263,9 @@ A promise-based wrapper for the Chrome `alarms` API.
 - [createAlarm(name, info)](#createAlarm)
 - [getAlarm(name)](#getAlarm)
 - [getAllAlarm()](#getAllAlarm)
+
+### Events
+
 - [onAlarm(callback)](#onAlarm)
 
 <a name="clearAlarm"></a>
@@ -331,6 +336,9 @@ A promise-based wrapper for the Chrome `audio` API.
 - [setAudioActiveDevices(ids)](#setAudioActiveDevices)
 - [setAudioMute(streamType, isMuted)](#setAudioMute)
 - [setAudioProperties(id, properties)](#setAudioProperties)
+
+### Events
+
 - [onAudioDeviceListChanged(callback)](#onAudioDeviceListChanged)
 - [onAudioLevelChanged(callback)](#onAudioLevelChanged)
 - [onAudioMuteChanged(callback)](#onAudioMuteChanged)
@@ -577,6 +585,9 @@ A promise-based wrapper for the Chrome `commands` API.
 ### Methods
 
 - [getAllCommands()](#getAllCommands)
+
+### Events
+
 - [onCommand(callback)](#onCommand)
 
 <a name="getAllCommands"></a>
@@ -610,6 +621,9 @@ A promise-based wrapper for the Chrome `contextMenus` API.
 - [removeContextMenus(menuItemId)](#removeContextMenus)
 - [removeAllContextMenus()](#removeAllContextMenus)
 - [updateContextMenus(id, updateProperties)](#updateContextMenus)
+
+### Events
+
 - [onContextMenusClicked(callback)](#onContextMenusClicked)
 
 <a name="createContextMenus"></a>
@@ -672,6 +686,9 @@ A promise-based wrapper for the Chrome `cookies` API.
 - [getCookiePartitionKey(details)](#getCookiePartitionKey)
 - [removeCookie(details)](#removeCookie)
 - [setCookie(details)](#setCookie)
+
+### Events
+
 - [onCookieChanged(callback)](#onCookieChanged)
 
 <a name="getCookie"></a>
@@ -862,6 +879,9 @@ A promise-based wrapper for the Chrome `downloads` API.
 - [findDownload](#findDownload)
 - [isDownloadExists](#isDownloadExists)
 - [getDownloadState](#getDownloadState)
+
+### Events
+
 - [onDownloadsChanged](#onDownloadsChanged)
 - [onDownloadsCreated](#onDownloadsCreated)
 - [onDownloadsDeterminingFilename](#onDownloadsDeterminingFilename)
