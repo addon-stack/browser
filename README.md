@@ -663,7 +663,7 @@ Retrieves all registered extension commands.
 ### onCommand
 
 ```
-onCommand(callback: (command: string) => void): () => void
+onCommand(callback: (command: string, tab: chrome.tabs.Tab) => void): () => void
 ```
 
 Adds a listener for extension command events.
