@@ -1,8 +1,10 @@
 import {defineConfig} from "tsup";
 
 export default defineConfig({
-    // Entry file(s)
+    // Single entry file for library bundle
     entry: ["src/index.ts"],
+    // Bundle into a single file per format (enables correct module specifiers and tree-shaking)
+    bundle: true,
     // Output directory
     outDir: "dist",
     // Generate both CommonJS and ESModule bundles
