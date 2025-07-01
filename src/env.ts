@@ -11,7 +11,8 @@ export const isBackground = (): boolean => {
         return false;
     }
 
-    if (manifest.manifest_version === 3) {
+    //@ts-ignore
+    if (manifest.manifest_version === 3 && !manifest.background.scripts) {
         return typeof window === "undefined";
     }
 
