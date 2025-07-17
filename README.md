@@ -2088,7 +2088,6 @@ getBrowserInfo(): Promise<{ name: string; vendor: string; version: string; build
 
 Returns information about browser. Only for Firefox
 
-
 <a name="getUrl"></a>
 
 ### getUrl

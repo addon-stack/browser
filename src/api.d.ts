@@ -31,14 +31,14 @@ declare namespace browser {
          * @param details Optional object with `windowId`; defaults to the topmost window.
          * @returns A promise fulfilled with `true` if the sidebar is open, otherwise `false`.
          */
-        function isOpen(details: { windowId?: number }): Promise<boolean>;
+        function isOpen(details: {windowId?: number}): Promise<boolean>;
 
         /**
          * Gets the URL of the HTML document defining the sidebar’s contents.
          * @param details Optional object with `tabId` and/or `windowId`; omitting both returns the global panel URL.
          * @returns A promise fulfilled with the fully qualified URL for the panel.
          */
-        function getPanel(details: { tabId?: number; windowId?: number }): Promise<string>;
+        function getPanel(details: {tabId?: number; windowId?: number}): Promise<string>;
 
         /**
          * Sets which HTML document to display in the sidebar.
@@ -47,14 +47,14 @@ declare namespace browser {
          *   - optional `tabId` or `windowId` to scope the change.
          * @returns A promise that is resolved once the panel is set.
          */
-        function setPanel(details: { panel: string | null; tabId?: number; windowId?: number }): Promise<void>;
+        function setPanel(details: {panel: string | null; tabId?: number; windowId?: number}): Promise<void>;
 
         /**
          * Gets the sidebar’s title.
          * @param details Optional object with `tabId` and/or `windowId`; omitting both returns the global title.
          * @returns A promise fulfilled with the current title string.
          */
-        function getTitle(details: { tabId?: number; windowId?: number }): Promise<string>;
+        function getTitle(details: {tabId?: number; windowId?: number}): Promise<string>;
 
         /**
          * Sets the sidebar’s title.
@@ -63,7 +63,7 @@ declare namespace browser {
          *   - optional `tabId` or `windowId` to scope the change.
          * @returns A promise that is resolved once the title is set.
          */
-        function setTitle(details: { title: string | null; tabId?: number; windowId?: number }): Promise<void>;
+        function setTitle(details: {title: string | null; tabId?: number; windowId?: number}): Promise<void>;
 
         /**
          * Sets the sidebar’s action icon.
@@ -99,7 +99,6 @@ declare namespace browser {
          */
         function getBrowserInfo(): Promise<BrowserInfo>;
     }
-
 }
 
 declare namespace opr {
