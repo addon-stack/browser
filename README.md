@@ -1963,7 +1963,7 @@ A wrapper for the Chrome `runtime` API, including messaging, updates, and lifecy
 - [isManifestVersion3](#isManifestVersion3)
 - [getPackageDirectoryEntry](#getPackageDirectoryEntry)
 - [getPlatformInfo](#getPlatformInfo)
-- [getBrowserInfo](#getBrowserInfo)
+- [getBrowserInfo](#getBrowserInfo) [Firefox]
 - [getUrl](#getUrl)
 - [openOptionsPage](#openOptionsPage)
 - [reload](#reload)
@@ -2086,7 +2086,7 @@ Returns information about the current platform.
 getBrowserInfo(): Promise<{ name: string; vendor: string; version: string; buildID: string;}>
 ```
 
-Returns information about browser.
+Returns information about browser. Only for Firefox
 
 
 <a name="getUrl"></a>
