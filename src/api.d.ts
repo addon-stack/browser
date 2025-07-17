@@ -77,6 +77,26 @@ declare namespace browser {
             windowId?: number;
         }): Promise<void>; //  [oai_citation:9‡developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/setIcon?utm_source=chatgpt.com)
     }
+
+    namespace runtime {
+        interface BrowserInfo {
+            /** string value representing the browser name, for example "Firefox". */
+            name: string;
+            /** string value representing the browser's vendor, for example "Mozilla". */
+            vendor: string;
+            /** string representing the browser's version, for example "51.0" or "51.0a2". */
+            version: string;
+            /** string representing the specific build of the browser, for example "20161018004015". */
+            buildID: string;
+        }
+
+        /**
+         * Returns information about the current browser.
+         * @returns Promise, resolved with an object containing browser info.
+         */
+        function getBrowserInfo(): Promise<BrowserInfo>;
+    }
+
 }
 
 declare namespace opr {
