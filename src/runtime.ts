@@ -1,5 +1,8 @@
 import {browser} from "./browser";
 import {handleListener} from "./utils";
+import {FirefoxRuntime} from "./types";
+
+type BrowserInfo = browser.runtime.BrowserInfo;
 
 type Port = chrome.runtime.Port;
 type Manifest = chrome.runtime.Manifest;
@@ -59,6 +62,10 @@ export const getPlatformInfo = (): Promise<PlatformInfo> =>
             }
         });
     });
+
+export const getBrowserInfo = (): Promise<BrowserInfo> => {
+    return (runtime() as unknown as FirefoxRuntime).getBrowserInfo();
+};
 
 export const getUrl = (path: string): string => runtime().getURL(path);
 
