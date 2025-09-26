@@ -10,7 +10,7 @@ type CookieDetails = chrome.cookies.CookieDetails;
 type GetAllDetails = chrome.cookies.GetAllDetails;
 type SetDetails = chrome.cookies.SetDetails;
 
-const cookies = () => browser().cookies as typeof chrome.cookies;
+const cookies = () => browser().cookies;
 
 // Methods
 export const getCookie = (details: CookieDetails): Promise<Cookie | null> =>

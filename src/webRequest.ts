@@ -4,7 +4,7 @@ import {throwRuntimeError} from "./runtime";
 
 type RequestFilter = chrome.webRequest.RequestFilter;
 
-const webRequest = () => browser().webRequest as typeof chrome.webRequest;
+const webRequest = () => browser().webRequest;
 
 // Methods
 export const handlerWebRequestBehaviorChanged = (): Promise<void> =>

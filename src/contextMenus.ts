@@ -4,7 +4,7 @@ import {throwRuntimeError} from "./runtime";
 
 type CreateProperties = chrome.contextMenus.CreateProperties;
 
-const contextMenus = () => browser().contextMenus as typeof chrome.contextMenus;
+const contextMenus = () => browser().contextMenus;
 
 // Methods
 export const createContextMenus = (createProperties?: CreateProperties): Promise<void> =>

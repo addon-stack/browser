@@ -6,7 +6,7 @@ type AddHostAccessRequest = chrome.permissions.AddHostAccessRequest;
 type RemoveHostAccessRequest = chrome.permissions.RemoveHostAccessRequest;
 type Permissions = chrome.permissions.Permissions;
 
-const permissions = () => browser().permissions as typeof chrome.permissions;
+const permissions = () => browser().permissions;
 
 // Methods
 export const addHostAccessRequest = (request?: AddHostAccessRequest): Promise<void> =>

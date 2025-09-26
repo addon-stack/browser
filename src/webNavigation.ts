@@ -7,7 +7,7 @@ type GetFrameResultDetails = chrome.webNavigation.GetFrameResultDetails;
 type GetAllFrameResultDetails = chrome.webNavigation.GetAllFrameResultDetails;
 type WebNavigationEventFilter = chrome.webNavigation.WebNavigationEventFilter;
 
-const webNavigation = () => browser().webNavigation as typeof chrome.webNavigation;
+const webNavigation = () => browser().webNavigation;
 
 // Methods
 export const getAllFrames = (tabId: number): Promise<GetAllFrameResultDetails[]> =>

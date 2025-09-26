@@ -5,7 +5,7 @@ type DataTypeSet = chrome.browsingData.DataTypeSet;
 type RemovalOptions = chrome.browsingData.RemovalOptions;
 type SettingsResult = chrome.browsingData.SettingsResult;
 
-const browsingData = () => browser().browsingData as typeof chrome.browsingData;
+const browsingData = () => browser().browsingData;
 
 // Methods
 export const removeBrowsingData = (options: RemovalOptions, dataToRemove: DataTypeSet): Promise<void> =>

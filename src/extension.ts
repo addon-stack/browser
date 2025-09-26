@@ -3,7 +3,7 @@ import {throwRuntimeError} from "./runtime";
 
 type FetchProperties = chrome.extension.FetchProperties;
 
-const extension = () => browser().extension as typeof chrome.extension;
+const extension = () => browser().extension;
 
 // Methods
 export const getBackgroundPage = (): Window | null => extension().getBackgroundPage();

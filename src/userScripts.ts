@@ -4,7 +4,7 @@ import {throwRuntimeError} from "./runtime";
 type WorldProperties = chrome.userScripts.WorldProperties;
 type RegisteredUserScript = chrome.userScripts.RegisteredUserScript;
 
-const userScripts = () => browser().userScripts as typeof chrome.userScripts;
+const userScripts = () => browser().userScripts;
 
 // Methods
 export const configureUserScriptsWorld = (properties?: WorldProperties): Promise<void> =>

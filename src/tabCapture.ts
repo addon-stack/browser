@@ -6,7 +6,7 @@ type CaptureInfo = chrome.tabCapture.CaptureInfo;
 type CaptureOptions = chrome.tabCapture.CaptureOptions;
 type GetMediaStreamOptions = chrome.tabCapture.GetMediaStreamOptions;
 
-const tabCapture = () => browser().tabCapture as typeof chrome.tabCapture;
+const tabCapture = () => browser().tabCapture;
 
 // Methods
 export const createTabCapture = (options: CaptureOptions): Promise<MediaStream | null> =>

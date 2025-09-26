@@ -15,7 +15,7 @@ type SetOptionsResponse<T> = chrome.documentScan.SetOptionsResponse<T>;
 type StartScanOptions = chrome.documentScan.StartScanOptions;
 type StartScanResponse<T> = chrome.documentScan.StartScanResponse<T>;
 
-const documentScan = () => browser().documentScan as typeof chrome.documentScan;
+const documentScan = () => browser().documentScan;
 
 // Methods
 export const cancelDocScanning = (job: string): Promise<CancelScanResponse<string>> =>

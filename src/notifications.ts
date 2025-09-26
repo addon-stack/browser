@@ -5,7 +5,7 @@ import {throwRuntimeError} from "./runtime";
 type NotificationOptions = chrome.notifications.NotificationOptions;
 type NotificationCreateOptions = chrome.notifications.NotificationCreateOptions;
 
-const notifications = () => browser().notifications as typeof chrome.notifications;
+const notifications = () => browser().notifications;
 
 // Methods
 export const clearNotification = (notificationId: string): Promise<boolean> =>

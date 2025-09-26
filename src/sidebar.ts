@@ -13,7 +13,7 @@ type PanelBehavior = chrome.sidePanel.PanelBehavior;
 const sidebarAction = (): SidebarAction => globalThis["browser"].sidebarAction || globalThis["opr"].sidebarAction;
 
 // Chromium standard
-const sidePanel = (): typeof chrome.sidePanel => browser().sidePanel;
+const sidePanel = () => browser().sidePanel;
 
 const isSidebarActionAvailable = (): boolean => !!sidebarAction();
 
