@@ -1,14 +1,29 @@
-import {defineConfig} from "tsup";
+import {defineConfig, type Options} from "tsup";
 
-export default defineConfig({
+const common: Options = {
     entry: ["src/index.ts"],
     bundle: true,
     outDir: "dist",
-    format: ["esm", "cjs"],
-    dts: true,
     sourcemap: true,
-    outExtension({format}) {
-        return {js: format === "cjs" ? ".cjs" : ".js"};
+};
+
+export default defineConfig([
+    {
+        ...common,
+        format: ["esm"],
+        dts: true,
+        outExtension() {
+            return {js: ".js"};
+        },
+        clean: true,
     },
-    clean: true,
-});
+    {
+        ...common,
+        format: ["cjs"],
+        dts: false,
+        outExtension() {
+            return {js: ".cjs"};
+        },
+        clean: false,
+    },
+]);
