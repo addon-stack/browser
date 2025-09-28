@@ -3,6 +3,8 @@ import {throwRuntimeError} from "./runtime";
 
 type WorldProperties = chrome.userScripts.WorldProperties;
 type RegisteredUserScript = chrome.userScripts.RegisteredUserScript;
+type UserScriptInjection = chrome.userScripts.UserScriptInjection;
+type InjectionResult = chrome.userScripts.InjectionResult;
 
 const userScripts = () => browser().userScripts;
 
@@ -22,7 +24,9 @@ export const configureUserScriptsWorld = (properties?: WorldProperties): Promise
 
 export const getUserScripts = (ids?: string[]): Promise<RegisteredUserScript[]> =>
     new Promise<RegisteredUserScript[]>((resolve, reject) => {
-        userScripts().getScripts({ids}, scripts => {
+        const filter = ids?.length ? {ids} : {};
+
+        userScripts().getScripts(filter, scripts => {
             try {
                 throwRuntimeError();
 
@@ -46,6 +50,19 @@ export const getUserScriptsWorldConfigs = (): Promise<WorldProperties[]> =>
         });
     });
 
+export const executeUserScript = (injection: UserScriptInjection): Promise<InjectionResult[]> =>
+    new Promise<InjectionResult[]>((resolve, reject) => {
+        userScripts().execute(injection, result => {
+            try {
+                throwRuntimeError();
+
+                resolve(result);
+            } catch (e) {
+                reject(e);
+            }
+        });
+    });
+
 export const registerUserScripts = (scripts: RegisteredUserScript[]): Promise<void> =>
     new Promise<void>((resolve, reject) => {
         userScripts().register(scripts, () => {
@@ -59,22 +76,29 @@ export const registerUserScripts = (scripts: RegisteredUserScript[]): Promise<vo
         });
     });
 
-export const resetUserScriptsWorldConfigs = (worldId: string): Promise<void> =>
+export const resetUserScriptsWorldConfigs = (worldId?: string): Promise<void> =>
     new Promise<void>((resolve, reject) => {
-        userScripts().resetWorldConfiguration(worldId, () => {
+        const callback = () => {
             try {
                 throwRuntimeError();
-
                 resolve();
             } catch (e) {
                 reject(e);
             }
-        });
+        };
+
+        const {resetWorldConfiguration} = userScripts();
+
+        if (typeof worldId === "string") {
+            resetWorldConfiguration(worldId, callback);
+        } else {
+            resetWorldConfiguration(callback);
+        }
     });
 
 export const unregisterUserScripts = (ids?: string[]): Promise<void> =>
     new Promise<void>((resolve, reject) => {
-        userScripts().unregister({ids}, () => {
+        const callback = () => {
             try {
                 throwRuntimeError();
 
@@ -82,7 +106,11 @@ export const unregisterUserScripts = (ids?: string[]): Promise<void> =>
             } catch (e) {
                 reject(e);
             }
-        });
+        };
+
+        const filter = ids?.length ? {ids} : {};
+
+        userScripts().unregister(filter, callback);
     });
 
 export const updateUserScripts = (scripts: RegisteredUserScript[]): Promise<void> =>
@@ -97,3 +125,6 @@ export const updateUserScripts = (scripts: RegisteredUserScript[]): Promise<void
             }
         });
     });
+
+// Custom Methods
+export const isAvailableUserScripts = (): boolean => !!userScripts();
