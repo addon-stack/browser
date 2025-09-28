@@ -1,6 +1,6 @@
 import {browser} from "./browser";
-import {handleListener} from "./utils";
 import {throwRuntimeError} from "./runtime";
+import {handleListener} from "./utils";
 
 type CaptureInfo = chrome.tabCapture.CaptureInfo;
 type CaptureOptions = chrome.tabCapture.CaptureOptions;

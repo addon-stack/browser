@@ -1,6 +1,6 @@
 import {browser} from "./browser";
-import {handleListener} from "./utils";
 import {throwRuntimeError} from "./runtime";
+import {handleListener} from "./utils";
 
 type Alarm = chrome.alarms.Alarm;
 type AlarmCreateInfo = chrome.alarms.AlarmCreateInfo;
