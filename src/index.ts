@@ -10,7 +10,6 @@ export * from "./documentScan";
 export * from "./downloads";
 export * from "./env";
 export * from "./extension";
-export * from "./fileBrowserHandler";
 export * from "./history";
 export * from "./i18n";
 export * from "./idle";
