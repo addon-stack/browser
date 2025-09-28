@@ -1,6 +1,6 @@
 import {browser} from "./browser";
-import {safeListener} from "./utils";
 import {throwRuntimeError} from "./runtime";
+import {safeListener} from "./utils";
 
 type RequestFilter = chrome.webRequest.RequestFilter;
 
