@@ -1,6 +1,6 @@
 import {browser} from "./browser";
-import {handleListener} from "./utils";
 import {throwRuntimeError} from "./runtime";
+import {handleListener} from "./utils";
 
 type NotificationOptions = chrome.notifications.NotificationOptions;
 type NotificationCreateOptions = chrome.notifications.NotificationCreateOptions;
@@ -90,7 +90,9 @@ export const isSupportNotifications = (): boolean => !!notifications();
 export const clearAllNotification = async (): Promise<void> => {
     const allNotificationIds = Object.keys(await getAllNotification());
 
-    allNotificationIds.forEach((id: string) => clearNotification(id));
+    const tasks = allNotificationIds.map((id: string) => clearNotification(id));
+
+    await Promise.all(tasks);
 };
 
 // Events
