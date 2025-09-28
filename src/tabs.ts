@@ -408,13 +408,25 @@ export const queryTabIds = async (queryInfo?: QueryInfo): Promise<number[]> =>
         return ids;
     }, [] as number[]);
 
-export const findTab = (queryInfo?: QueryInfo): Promise<Tab | undefined> =>
-    queryTabs(queryInfo).then(tabs => (tabs.length ? tabs[0] : undefined));
+export const findTab = async (queryInfo?: QueryInfo): Promise<Tab | undefined> => {
+    const tabs = await queryTabs(queryInfo);
 
-export const findTabById = (tabId: number): Promise<Tab | undefined> =>
-    getTab(tabId)
-        .then(tab => tab)
-        .catch(() => undefined);
+    return tabs.length ? tabs[0] : undefined;
+};
+
+export const findTabById = async (tabId: number): Promise<Tab | undefined> => {
+    try {
+        return getTab(tabId);
+    } catch {
+        return undefined;
+    }
+};
+
+export const findTabByUrl = async (url: string): Promise<Tab | undefined> => {
+    const tabs = await queryTabs({url});
+
+    return tabs.length ? tabs[0] : undefined;
+};
 
 export const updateTabAsSelected = (tabId: number): Promise<Tab | undefined> => updateTab(tabId, {highlighted: true});
 
@@ -431,6 +443,18 @@ export const openOrCreateTab = async (tab: Tab): Promise<void> => {
 
             return;
         }
+    }
+
+    await createTab({url});
+};
+
+export const openOrCreateTabByUrl = async (url: string): Promise<void> => {
+    const tab = await findTabByUrl(url);
+
+    if (tab?.id) {
+        await updateTabAsSelected(tab.id);
+
+        return;
     }
 
     await createTab({url});
