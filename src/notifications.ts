@@ -45,7 +45,7 @@ export const createNotification = (options: NotificationOptions, notificationId?
         });
     });
 
-export const getAllNotification = (): Promise<object> =>
+export const getAllNotifications = (): Promise<object> =>
     new Promise<object>((resolve, reject) => {
         notifications().getAll(notifications => {
             try {
@@ -87,8 +87,8 @@ export const updateNotification = (options: NotificationOptions, notificationId:
 // Custom Methods
 export const isAvailableNotifications = (): boolean => !!notifications();
 
-export const clearAllNotification = async (): Promise<void> => {
-    const allNotificationIds = Object.keys(await getAllNotification());
+export const clearAllNotifications = async (): Promise<void> => {
+    const allNotificationIds = Object.keys(await getAllNotifications());
 
     const tasks = allNotificationIds.map((id: string) => clearNotification(id));
 
