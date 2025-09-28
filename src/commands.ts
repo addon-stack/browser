@@ -1,6 +1,6 @@
 import {browser} from "./browser";
-import {handleListener} from "./utils";
 import {throwRuntimeError} from "./runtime";
+import {handleListener} from "./utils";
 
 type Command = chrome.commands.Command;
 type Tab = chrome.tabs.Tab;
@@ -26,10 +26,10 @@ export const onCommand = (callback: Parameters<typeof chrome.commands.onCommand.
     return handleListener(commands().onCommand, callback);
 };
 
-export const onSpecificCommand = (command: string, callback: ((tab?: Tab) => any)): (() => void) => {
+export const onSpecificCommand = (command: string, callback: (tab?: Tab) => any): (() => void) => {
     return onCommand((name, tab) => {
         if (command === name) {
             callback(tab);
         }
     });
-}
+};
