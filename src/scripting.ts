@@ -12,10 +12,11 @@ const scripting = () => browser().scripting;
 
 // Methods
 export const executeScript = <T = any>(injection: ScriptInjection<any, T>): Promise<InjectionResult<Awaited<T>>[]> =>
-    new Promise<InjectionResult<Awaited<T>>[]>(async (resolve, reject) => {
+    new Promise<InjectionResult<Awaited<T>>[]>((resolve, reject) => {
         scripting().executeScript(injection, result => {
             try {
                 throwRuntimeError();
+
                 resolve(result);
             } catch (e) {
                 reject(e);
