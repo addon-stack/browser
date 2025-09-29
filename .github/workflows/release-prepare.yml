@@ -24,6 +24,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -36,9 +37,19 @@ jobs:
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Install dependencies
-        run: npm install
+        env:
+          HUSKY: 0
+        run: npm ci
+
+      - name: Detect latest tag
+        run: echo "LATEST_TAG=$(git tag --list 'v*' --sort=-v:refname | head -n 1)" >> $GITHUB_ENV
 
       - name: Release (preview)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run release:preview
+        run: |
+          if [ -n "${LATEST_TAG}" ]; then
+            npm run release:preview -- --plugins.@release-it/conventional-changelog.gitRawCommitsOpts.from="${LATEST_TAG}"
+          else
+            npm run release:preview
+          fi
