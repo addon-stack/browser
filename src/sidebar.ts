@@ -181,7 +181,7 @@ export const setSidebarTitle = async (title: string | number, tabId?: number): P
     const sb = sidebarAction();
 
     if (!sb) {
-        console.warn("The opr.sidebarAction.setTitle API is supported only in Opera");
+        console.warn("The sidebarAction.setTitle API is supported only in Opera or Firefox");
 
         return;
     }
@@ -208,7 +208,7 @@ export const setSidebarBadgeText = async (text: string | number, tabId?: number)
 export const clearSidebarBadgeText = (tabId?: number): Promise<void> => setSidebarBadgeText("", tabId);
 
 export const setSidebarIcon = async (details: IconDetails): Promise<void> => {
-    const sb = sidebarAction() as OperaSidebarAction | undefined;
+    const sb = sidebarAction();
 
     if (sb) {
         const {setIcon} = sb;
@@ -220,7 +220,7 @@ export const setSidebarIcon = async (details: IconDetails): Promise<void> => {
         }
     }
 
-    console.warn("The opr.sidebarAction.setIcon API is supported only in Opera");
+    console.warn("The sidebarAction.setIcon API is supported only in Opera or Firefox");
 };
 
 export const setSidebarBadgeTextColor = async (color: Color, tabId?: number): Promise<void> => {
