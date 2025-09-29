@@ -1,12 +1,16 @@
 import {browser} from "./browser";
-import {handleListener, safeListener} from "./utils";
 import {throwRuntimeError} from "./runtime";
+import {handleListener, safeListener} from "./utils";
 
 type Window = chrome.windows.Window;
+type WindowType = chrome.windows.WindowType;
 type CreateData = chrome.windows.CreateData;
 type UpdateInfo = chrome.windows.UpdateInfo;
 type QueryOptions = chrome.windows.QueryOptions;
-type WindowEventFilter = chrome.windows.WindowEventFilter;
+
+export interface WindowEventFilter {
+    windowTypes: `${WindowType}`[];
+}
 
 const windows = () => browser().windows;
 

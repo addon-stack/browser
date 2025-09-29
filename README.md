@@ -52,6 +52,7 @@ pnpm add @addon-core/browser
 - [userScripts](docs/userScripts.md)
 - [webNavigation](docs/webNavigation.md)
 - [webRequest](docs/webRequest.md)
+- [windows](docs/windows.md)
 
 ## Why this package
 
@@ -129,4 +130,3 @@ These commonly used WebExtensions/Chrome Extension APIs are not wrapped here yet
 - topSites
 - tts
 - ttsEngine
-- windows
