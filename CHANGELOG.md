@@ -1,5 +1,38 @@
 # Changelog
 
+## 🚀 Release `@addon-core/browser` v0.5.0 (2025-09-29)
+
+### 🐛 Bug Fixed
+
+* **sidebar:** update compatibility warnings for Firefox support ([8878ec0](https://github.com/addon-stack/browser/commit/8878ec0636a45ad638fea903085bac0fed1e4f47))
+
+
+
+### 🤖 CI
+
+* improve release workflows with tag detection and npm ci ([b58de5f](https://github.com/addon-stack/browser/commit/b58de5fd162a3ca6a7709c31dbd30aa81fabccc5))
+
+  - Added `fetch-tags: true` for `checkout` actions to improve tag availability.
+  - Updated dependency installation to use `npm ci` with `HUSKY=0` environment variable.
+  - Implemented logic to detect the latest tag and include it in release commands.
+  - Enhanced `release` and `release:preview` steps with conditional latest tag usage.
+
+* simplify release workflows by removing latest tag detection logic ([0b96c03](https://github.com/addon-stack/browser/commit/0b96c03b5dc5269a95f853c12740517dd4617e20))
+
+  - Removed latest tag detection from `release-publish.yml` and `release-prepare.yml` workflows.
+  - Updated `.release-it.cjs` to handle tag detection and related logic internally.
+  - Improved commit classification and sorting with refined logic in the release configuration.
+
+
+### 🛠️ Refactoring
+
+* **browser:** improve WebExtension API support detection ([d00cc3a](https://github.com/addon-stack/browser/commit/d00cc3abca2a2b714c309769680a7a35c05b3894))
+
+  - Enhanced detection of the WebExtension API by checking `runtime.id` availability.
+  - Added fallback to `globalThis.chrome` when `globalThis.browser` is unavailable.
+  - Throw an error when no supported WebExtension API is available in the current context.
+  - Updated `api.d.ts` with `runtime.id` declaration and consistent formatting for parameters.
+
 ## 🚀 Release `@addon-core/browser` v0.4.0 (2025-09-29)
 
 ### ✨ Features
@@ -134,4 +167,3 @@
   - Streamlined Promise logic by reducing duplicate statements and improving clarity.
 
 * **tabs:** update method typings and reorder imports for consistency ([fb8a64a](https://github.com/addon-stack/browser/commit/fb8a64ad6a23ce987afc90c1f9173d94c478af4f))
-
