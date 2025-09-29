@@ -19,7 +19,9 @@ A promise-based wrapper around Chrome's side panel (`chrome.sidePanel`, MV3) and
 - [setSidebarPath(path, tabId?)](#setSidebarPath)
 - [getSidebarPath(tabId?)](#getSidebarPath)
 - [setSidebarTitle(title, tabId?)](#setSidebarTitle) [Opera]
+- [setSidebarIcon(details)](#setSidebarIcon) [Opera]
 - [setSidebarBadgeText(text, tabId?)](#setSidebarBadgeText) [Opera]
+- [clearSidebarBadgeText(tabId?)](#clearSidebarBadgeText) [Opera]
 - [setSidebarBadgeTextColor(color, tabId?)](#setSidebarBadgeTextColor) [Opera]
 - [setSidebarBadgeBgColor(color, tabId?)](#setSidebarBadgeBgColor) [Opera]
 - [getSidebarTitle(tabId?)](#getSidebarTitle) [Opera]
@@ -119,6 +121,16 @@ setSidebarTitle(title: string | number, tabId?: number): Promise<void>
 
 Sets the sidebar title via `opr.sidebarAction.setTitle()` (Opera only). Logs a warning if unsupported.
 
+<a name="setSidebarIcon"></a>
+
+### setSidebarIcon [Opera]
+
+```
+setSidebarIcon(details: opr.sidebarAction.IconDetails): Promise<void>
+```
+
+Sets the sidebar icon via `opr.sidebarAction.setIcon()` (Opera only). Logs a warning if unsupported.
+
 <a name="setSidebarBadgeText"></a>
 
 ### setSidebarBadgeText [Opera]
@@ -128,6 +140,16 @@ setSidebarBadgeText(text: string | number, tabId?: number): Promise<void>
 ```
 
 Sets the sidebar badge text via `opr.sidebarAction.setBadgeText()` (Opera only). Logs a warning if unsupported.
+
+<a name="clearSidebarBadgeText"></a>
+
+### clearSidebarBadgeText [Opera]
+
+```
+clearSidebarBadgeText(tabId?: number): Promise<void>
+```
+
+Clears the sidebar badge text (equivalent to setting an empty string) via `opr.sidebarAction.setBadgeText()` (Opera only).
 
 <a name="setSidebarBadgeTextColor"></a>
 
