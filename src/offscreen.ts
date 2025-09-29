@@ -3,7 +3,7 @@ import {throwRuntimeError} from "./runtime";
 
 type CreateParameters = chrome.offscreen.CreateParameters;
 
-const offscreen = () => browser().offscreen as typeof chrome.offscreen;
+const offscreen = () => browser().offscreen;
 
 // Methods
 export const closeOffscreen = (): Promise<void> =>

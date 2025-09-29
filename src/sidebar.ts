@@ -1,6 +1,6 @@
 import {browser} from "./browser";
 import {throwRuntimeError} from "./runtime";
-import {FirefoxSidebarAction, OperaSidebarAction, SidebarAction} from "./types";
+import type {FirefoxSidebarAction, OperaSidebarAction, SidebarAction} from "./types";
 
 type Color = string | ColorArray;
 type ColorArray = chrome.action.ColorArray;
@@ -8,25 +8,25 @@ type ColorArray = chrome.action.ColorArray;
 type OpenOptions = chrome.sidePanel.OpenOptions;
 type PanelOptions = chrome.sidePanel.PanelOptions;
 type PanelBehavior = chrome.sidePanel.PanelBehavior;
+type IconDetails = opr.sidebarAction.IconDetails;
 
 // Available in Firefox and Opera
-const sidebarAction = (): SidebarAction => globalThis["browser"].sidebarAction || globalThis["opr"].sidebarAction;
+const sidebarAction = (): SidebarAction | undefined =>
+    globalThis?.browser?.sidebarAction || globalThis?.opr?.sidebarAction;
 
 // Chromium standard
-const sidePanel = (): typeof chrome.sidePanel => browser().sidePanel;
-
-const isSidebarActionAvailable = (): boolean => !!sidebarAction();
-
-const isSidePanelAvailable = (): boolean => !!sidePanel();
+const sidePanel = (): typeof chrome.sidePanel | undefined => browser().sidePanel;
 
 // Methods
 export const getSidebarOptions = (tabId?: number): Promise<PanelOptions> =>
     new Promise<PanelOptions>((resolve, reject) => {
-        if (!isSidePanelAvailable()) {
+        const sp = sidePanel();
+
+        if (!sp) {
             throw new Error("The chrome.sidePanel.getOptions API is not supported for this browser");
         }
 
-        sidePanel().getOptions({tabId}, options => {
+        sp.getOptions({tabId}, options => {
             try {
                 throwRuntimeError();
 
@@ -39,11 +39,13 @@ export const getSidebarOptions = (tabId?: number): Promise<PanelOptions> =>
 
 export const getSidebarBehavior = (): Promise<PanelBehavior> =>
     new Promise<PanelBehavior>((resolve, reject) => {
-        if (!isSidePanelAvailable()) {
+        const sp = sidePanel();
+
+        if (!sp) {
             throw new Error("The chrome.sidePanel.getPanelBehavior API is not supported in this browser");
         }
 
-        sidePanel().getPanelBehavior(behavior => {
+        sp.getPanelBehavior(behavior => {
             try {
                 throwRuntimeError();
 
@@ -55,13 +57,25 @@ export const getSidebarBehavior = (): Promise<PanelBehavior> =>
     });
 
 export const canOpenSidebar = (): boolean => {
-    return isSidePanelAvailable() || (isSidebarActionAvailable() && !!(sidebarAction() as FirefoxSidebarAction).open);
+    if (sidePanel()) {
+        return true;
+    }
+
+    const sb = (sidebarAction() as FirefoxSidebarAction) || undefined;
+
+    if (sb) {
+        return !!sb.open;
+    }
+
+    return false;
 };
 
 export const openSidebar = (options: OpenOptions): Promise<void> =>
     new Promise<void>((resolve, reject) => {
-        if (isSidePanelAvailable()) {
-            sidePanel().open(options, () => {
+        const sp = sidePanel();
+
+        if (sp) {
+            sp.open(options, () => {
                 try {
                     throwRuntimeError();
 
@@ -72,10 +86,13 @@ export const openSidebar = (options: OpenOptions): Promise<void> =>
             });
 
             return;
-        } else if (isSidebarActionAvailable()) {
-            // Available only in Firefox
+        }
 
-            const {open} = sidebarAction() as FirefoxSidebarAction;
+        const sb = sidebarAction() as FirefoxSidebarAction | undefined;
+
+        if (sb) {
+            // Available only in Firefox
+            const {open} = sb;
 
             if (open) {
                 open().then(resolve).catch(reject);
@@ -89,13 +106,15 @@ export const openSidebar = (options: OpenOptions): Promise<void> =>
 
 export const setSidebarOptions = (options?: PanelOptions): Promise<void> =>
     new Promise<void>((resolve, reject) => {
-        if (!isSidePanelAvailable()) {
+        const sp = sidePanel();
+
+        if (!sp) {
             console.warn("The chrome.sidePanel.setOptions API is not supported for this browser");
 
             return;
         }
 
-        sidePanel().setOptions(options || {}, () => {
+        sp.setOptions(options || {}, () => {
             try {
                 throwRuntimeError();
 
@@ -108,13 +127,15 @@ export const setSidebarOptions = (options?: PanelOptions): Promise<void> =>
 
 export const setSidebarBehavior = (behavior?: PanelBehavior): Promise<void> =>
     new Promise<void>((resolve, reject) => {
-        if (!isSidePanelAvailable()) {
+        const sp = sidePanel();
+
+        if (!sp) {
             console.warn("The chrome.sidePanel.setPanelBehavior API is not supported in this browser");
 
             return;
         }
 
-        sidePanel().setPanelBehavior(behavior || {}, () => {
+        sp.setPanelBehavior(behavior || {}, () => {
             try {
                 throwRuntimeError();
 
@@ -127,40 +148,52 @@ export const setSidebarBehavior = (behavior?: PanelBehavior): Promise<void> =>
 
 // Customs methods
 export const setSidebarPath = async (path: string, tabId?: number): Promise<void> => {
-    if (isSidePanelAvailable()) {
+    if (sidePanel()) {
         await setSidebarOptions({tabId, path});
-    } else if (isSidebarActionAvailable()) {
-        await sidebarAction().setPanel({tabId, panel: path});
-    } else {
-        throw new Error("The sidebar set path API is not supported for this browser");
     }
+
+    const sb = sidebarAction();
+
+    if (sb) {
+        await sb.setPanel({tabId, panel: path});
+    }
+
+    throw new Error("The sidebar set path API is not supported for this browser");
 };
 
 export const getSidebarPath = async (tabId?: number): Promise<string | undefined> => {
-    if (isSidePanelAvailable()) {
+    if (sidePanel()) {
         return (await getSidebarOptions(tabId)).path;
-    } else if (isSidebarActionAvailable()) {
+    }
+
+    const sb = sidebarAction();
+
+    if (sb) {
         // opr.sidebarAction.getPanel returned path in the following format
         // chrome-extension://{extension_id}/sidebar.html
-        return new URL(await sidebarAction().getPanel({tabId})).pathname;
-    } else {
-        throw new Error("The sidebar get path API is not supported for this browser");
+        return new URL(await sb.getPanel({tabId})).pathname;
     }
+
+    throw new Error("The sidebar get path API is not supported for this browser");
 };
 
 export const setSidebarTitle = async (title: string | number, tabId?: number): Promise<void> => {
-    if (!isSidebarActionAvailable()) {
+    const sb = sidebarAction();
+
+    if (!sb) {
         console.warn("The opr.sidebarAction.setTitle API is supported only in Opera");
 
         return;
     }
 
-    await sidebarAction().setTitle({tabId, title: title.toString()});
+    await sb.setTitle({tabId, title: title.toString()});
 };
 
 export const setSidebarBadgeText = async (text: string | number, tabId?: number): Promise<void> => {
-    if (isSidebarActionAvailable()) {
-        const {setBadgeText} = sidebarAction() as OperaSidebarAction;
+    const sb = sidebarAction() as OperaSidebarAction | undefined;
+
+    if (sb) {
+        const {setBadgeText} = sb;
 
         if (setBadgeText) {
             setBadgeText({tabId, text: text.toString()});
@@ -172,9 +205,29 @@ export const setSidebarBadgeText = async (text: string | number, tabId?: number)
     console.warn("The opr.sidebarAction.setBadgeText API is supported only in Opera");
 };
 
+export const clearSidebarBadgeText = (tabId?: number): Promise<void> => setSidebarBadgeText("", tabId);
+
+export const setSidebarIcon = async (details: IconDetails): Promise<void> => {
+    const sb = sidebarAction() as OperaSidebarAction | undefined;
+
+    if (sb) {
+        const {setIcon} = sb;
+
+        if (setIcon) {
+            setIcon(details);
+
+            return;
+        }
+    }
+
+    console.warn("The opr.sidebarAction.setIcon API is supported only in Opera");
+};
+
 export const setSidebarBadgeTextColor = async (color: Color, tabId?: number): Promise<void> => {
-    if (isSidebarActionAvailable()) {
-        const {setBadgeTextColor} = sidebarAction() as OperaSidebarAction;
+    const sb = sidebarAction() as OperaSidebarAction | undefined;
+
+    if (sb) {
+        const {setBadgeTextColor} = sb;
 
         if (setBadgeTextColor) {
             setBadgeTextColor({tabId, color});
@@ -187,8 +240,10 @@ export const setSidebarBadgeTextColor = async (color: Color, tabId?: number): Pr
 };
 
 export const setSidebarBadgeBgColor = async (color: Color, tabId?: number): Promise<void> => {
-    if (isSidebarActionAvailable()) {
-        const {setBadgeBackgroundColor} = sidebarAction() as OperaSidebarAction;
+    const sb = sidebarAction() as OperaSidebarAction | undefined;
+
+    if (sb) {
+        const {setBadgeBackgroundColor} = sb;
 
         if (setBadgeBackgroundColor) {
             setBadgeBackgroundColor({tabId, color});
@@ -201,17 +256,21 @@ export const setSidebarBadgeBgColor = async (color: Color, tabId?: number): Prom
 };
 
 export const getSidebarTitle = async (tabId?: number): Promise<string> => {
-    if (!isSidebarActionAvailable()) {
+    const sb = sidebarAction();
+
+    if (!sb) {
         throw new Error("The sidebar get title API is supported only for this browser");
     }
 
-    return sidebarAction().getTitle({tabId});
+    return sb.getTitle({tabId});
 };
 
 export const getSidebarBadgeText = (tabId?: number): Promise<string> =>
     new Promise<string>((resolve, reject) => {
-        if (isSidebarActionAvailable()) {
-            const {getBadgeText} = sidebarAction() as OperaSidebarAction;
+        const sb = sidebarAction() as OperaSidebarAction | undefined;
+
+        if (sb) {
+            const {getBadgeText} = sb;
 
             if (getBadgeText) {
                 getBadgeText({tabId}, (text: string) => {
@@ -233,8 +292,10 @@ export const getSidebarBadgeText = (tabId?: number): Promise<string> =>
 
 export const getSidebarBadgeTextColor = (tabId?: number): Promise<ColorArray> =>
     new Promise<ColorArray>((resolve, reject) => {
-        if (isSidebarActionAvailable()) {
-            const {getBadgeTextColor} = sidebarAction() as OperaSidebarAction;
+        const sb = sidebarAction() as OperaSidebarAction | undefined;
+
+        if (sb) {
+            const {getBadgeTextColor} = sb;
 
             if (getBadgeTextColor) {
                 getBadgeTextColor({tabId}, (color: ColorArray) => {
@@ -256,8 +317,10 @@ export const getSidebarBadgeTextColor = (tabId?: number): Promise<ColorArray> =>
 
 export const getSidebarBadgeBgColor = (tabId?: number): Promise<ColorArray> =>
     new Promise<ColorArray>((resolve, reject) => {
-        if (isSidebarActionAvailable()) {
-            const {getBadgeBackgroundColor} = sidebarAction() as OperaSidebarAction;
+        const sb = sidebarAction() as OperaSidebarAction | undefined;
+
+        if (sb) {
+            const {getBadgeBackgroundColor} = sb;
 
             if (getBadgeBackgroundColor) {
                 getBadgeBackgroundColor({tabId}, color => {

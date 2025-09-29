@@ -1,22 +1,29 @@
-import {defineConfig} from "tsup";
+import {defineConfig, type Options} from "tsup";
 
-export default defineConfig({
-    // Single entry file for library bundle
+const common: Options = {
     entry: ["src/index.ts"],
-    // Bundle into a single file per format (enables correct module specifiers and tree-shaking)
     bundle: true,
-    // Output directory
     outDir: "dist",
-    // Generate both CommonJS and ESModule bundles
-    format: ["esm", "cjs"],
-    // Emit declaration files
-    dts: true,
-    // Generate source maps
     sourcemap: true,
-    // Adjust file extensions for output bundles
-    outExtension({format}) {
-        return {js: format === "cjs" ? ".cjs.js" : ".js"};
+};
+
+export default defineConfig([
+    {
+        ...common,
+        format: ["esm"],
+        dts: true,
+        outExtension() {
+            return {js: ".js"};
+        },
+        clean: true,
     },
-    // Clean output directory before each build
-    clean: true,
-});
+    {
+        ...common,
+        format: ["cjs"],
+        dts: false,
+        outExtension() {
+            return {js: ".cjs"};
+        },
+        clean: false,
+    },
+]);

@@ -1,6 +1,6 @@
 import {browser} from "./browser";
-import {handleListener} from "./utils";
 import {getManifest, isManifestVersion3, throwRuntimeError} from "./runtime";
+import {handleListener} from "./utils";
 
 type Action = typeof chrome.action;
 type BrowserAction = typeof chrome.browserAction;

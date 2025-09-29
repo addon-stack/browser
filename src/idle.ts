@@ -1,10 +1,10 @@
 import {browser} from "./browser";
-import {handleListener} from "./utils";
 import {throwRuntimeError} from "./runtime";
+import {handleListener} from "./utils";
 
 type IdleState = chrome.idle.IdleState;
 
-const idle = () => browser().idle as typeof chrome.idle;
+const idle = () => browser().idle;
 
 // Methods
 export const getIdleAutoLockDelay = (): Promise<number> =>
@@ -20,8 +20,8 @@ export const getIdleAutoLockDelay = (): Promise<number> =>
         });
     });
 
-export const queryIdleState = (detectionIntervalInSeconds: number): Promise<IdleState> =>
-    new Promise<IdleState>((resolve, reject) => {
+export const queryIdleState = (detectionIntervalInSeconds: number): Promise<`${IdleState}`> =>
+    new Promise<`${IdleState}`>((resolve, reject) => {
         idle().queryState(detectionIntervalInSeconds, newState => {
             try {
                 throwRuntimeError();

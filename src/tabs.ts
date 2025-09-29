@@ -1,6 +1,6 @@
 import {browser} from "./browser";
-import {handleListener} from "./utils";
 import {throwRuntimeError} from "./runtime";
+import {handleListener} from "./utils";
 
 type Tab = chrome.tabs.Tab;
 type Port = chrome.runtime.Port;
@@ -68,8 +68,8 @@ export const detectTabLanguage = (tabId: number): Promise<string> =>
         });
     });
 
-export const discardTab = (tabId: number): Promise<Tab> =>
-    new Promise<Tab>((resolve, reject) => {
+export const discardTab = (tabId: number): Promise<Tab | undefined> =>
+    new Promise<Tab | undefined>((resolve, reject) => {
         tabs().discard(tabId, tab => {
             try {
                 throwRuntimeError();
@@ -307,7 +307,7 @@ export const setTabZoomSettings = (tabId: number, zoomSettings: ZoomSettings): P
         });
     });
 
-export const ungroupTab = (tabIds: number | number[]): Promise<void> =>
+export const ungroupTab = (tabIds: number | [number, ...number[]]): Promise<void> =>
     new Promise<void>((resolve, reject) => {
         tabs().ungroup(tabIds, () => {
             try {
@@ -333,8 +333,8 @@ export const updateTab = (tabId: number, updateProperties: UpdateProperties): Pr
         });
     });
 
-export const executeScriptTab = (tabId: number, details: InjectDetails): Promise<any[]> =>
-    new Promise<any[]>((resolve, reject) => {
+export const executeScriptTab = (tabId: number, details: InjectDetails): Promise<any[] | undefined> =>
+    new Promise<any[] | undefined>((resolve, reject) => {
         tabs().executeScript(tabId, details, result => {
             try {
                 throwRuntimeError();
@@ -402,19 +402,31 @@ export const getActiveTab = async (): Promise<Tab> => {
 export const queryTabIds = async (queryInfo?: QueryInfo): Promise<number[]> =>
     (await queryTabs(queryInfo)).reduce((ids, {id}) => {
         if (typeof id === "number") {
-            return [...ids, id];
+            ids.push(id);
         }
 
         return ids;
     }, [] as number[]);
 
-export const findTab = (queryInfo?: QueryInfo): Promise<Tab | undefined> =>
-    queryTabs(queryInfo).then(tabs => (tabs.length ? tabs[0] : undefined));
+export const findTab = async (queryInfo?: QueryInfo): Promise<Tab | undefined> => {
+    const tabs = await queryTabs(queryInfo);
 
-export const findTabById = (tabId: number): Promise<Tab | undefined> =>
-    getTab(tabId)
-        .then(tab => tab)
-        .catch(() => undefined);
+    return tabs.length ? tabs[0] : undefined;
+};
+
+export const findTabById = async (tabId: number): Promise<Tab | undefined> => {
+    try {
+        return getTab(tabId);
+    } catch {
+        return undefined;
+    }
+};
+
+export const findTabByUrl = async (url: string): Promise<Tab | undefined> => {
+    const tabs = await queryTabs({url});
+
+    return tabs.length ? tabs[0] : undefined;
+};
 
 export const updateTabAsSelected = (tabId: number): Promise<Tab | undefined> => updateTab(tabId, {highlighted: true});
 
@@ -431,6 +443,18 @@ export const openOrCreateTab = async (tab: Tab): Promise<void> => {
 
             return;
         }
+    }
+
+    await createTab({url});
+};
+
+export const openOrCreateTabByUrl = async (url: string): Promise<void> => {
+    const tab = await findTabByUrl(url);
+
+    if (tab?.id) {
+        await updateTabAsSelected(tab.id);
+
+        return;
     }
 
     await createTab({url});

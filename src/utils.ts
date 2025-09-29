@@ -1,7 +1,7 @@
 type Event<T extends (...args: any) => void> = chrome.events.Event<T>;
 
 export function safeListener<T extends (...args: any[]) => any>(listener: T): T {
-    return ((...args: Parameters<T>): ReturnType<T> | void => {
+    return ((...args: Parameters<T>): ReturnType<T> | undefined => {
         try {
             const result = listener(...args);
 
