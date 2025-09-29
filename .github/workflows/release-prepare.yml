@@ -41,15 +41,7 @@ jobs:
           HUSKY: 0
         run: npm ci
 
-      - name: Detect latest tag
-        run: echo "LATEST_TAG=$(git tag --list 'v*' --sort=-v:refname | head -n 1)" >> $GITHUB_ENV
-
       - name: Release (preview)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if [ -n "${LATEST_TAG}" ]; then
-            npm run release:preview -- --plugins.@release-it/conventional-changelog.gitRawCommitsOpts.from="${LATEST_TAG}"
-          else
-            npm run release:preview
-          fi
+        run: npm run release:preview

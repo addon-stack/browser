@@ -1,4 +1,5 @@
 const pkg = require("./package.json");
+const {execSync} = require("node:child_process");
 
 const types = [
     {type: "feat", section: "✨ Features", hidden: false},
@@ -14,7 +15,52 @@ const types = [
 ];
 
 const typesMap = new Map(types.map(t => [t.type, t]));
-const repoUrl = pkg && pkg.repository && pkg.repository.url ? pkg.repository.url.replace(/\.git$/, "") : null;
+const repoUrl = pkg?.repository?.url ? pkg.repository.url.replace(/\.git$/, "") : null;
+
+function sh(cmd) {
+    try {
+        return execSync(cmd, {encoding: "utf8"}).trim();
+    } catch {
+        return "";
+    }
+}
+
+const latestTag = sh("git tag --list 'v*' --sort=-v:refname | head -n 1") || null;
+
+function getCommits() {
+    const range = latestTag ? `${latestTag}..HEAD` : "HEAD";
+    const raw = sh(`git log ${range} --pretty=format:%H%n%s%n%b%n----END----`);
+
+    if (!raw) {
+        return [];
+    }
+
+    const blocks = raw
+        .split("----END----\n")
+        .map(b => b.trim())
+        .filter(Boolean);
+
+    const commits = [];
+
+    for (const block of blocks) {
+        const [hashLine, ...rest] = block.split("\n");
+
+        if (!hashLine) {
+            continue;
+        }
+
+        const hash = hashLine.trim();
+        const header = (rest[0] || "").trim();
+        const body = rest.slice(1).join("\n");
+        const notes = /(^|\n)BREAKING CHANGE(?::|\b)/.test(body) ? [{title: "BREAKING CHANGE", text: body}] : [];
+        const m = header.match(/^([a-zA-Z]+)(\([^)]+\))?!?:\s*(.*)$/);
+        const type = m ? m[1].toLowerCase() : "";
+
+        commits.push({hash, header, body, type, notes});
+    }
+
+    return commits;
+}
 
 /** @type {import('release-it').Config} */
 module.exports = {
@@ -26,13 +72,18 @@ module.exports = {
                 name: pkg.name,
                 pkg: {name: pkg.name},
                 repoUrl,
+                previousTag: latestTag || undefined,
             },
             presetConfig: {
                 types,
             },
+            gitRawCommitsOpts: latestTag ? {from: latestTag} : {},
             recommendedBumpOpts: {
-                whatBump(commits) {
+                whatBump() {
+                    const commits = getCommits(latestTag);
+
                     const patchTypes = new Set(["fix", "perf", "refactor", "ci"]);
+
                     const isBreaking = c => Array.isArray(c.notes) && c.notes.length > 0;
 
                     // Major
@@ -51,7 +102,7 @@ module.exports = {
 
                     // Patch
                     if (commits.some(c => patchTypes.has((c.type || "").toLowerCase()))) {
-                        return {level: 2, reason: "patch-level types (fix/perf/refactor/chore/ci/build)"};
+                        return {level: 2, reason: "patch-level types (fix/perf/refactor/ci)"};
                     }
 
                     return null;
@@ -71,11 +122,10 @@ module.exports = {
                 commitsSort: ["scope", "subject"],
                 transform: commit => {
                     const nextCommit = {...commit};
-
                     const type = (nextCommit.type || "").toLowerCase();
                     const value = typesMap.get(type);
 
-                    if (value && value.hidden) {
+                    if (value?.hidden) {
                         return false;
                     }
 
@@ -85,10 +135,9 @@ module.exports = {
 
                     if (nextCommit.body) {
                         const body = nextCommit.body.replace(/\r\n/g, "\n").trim();
-
                         nextCommit.body = body
                             .split("\n")
-                            .map(line => (line ? "  " + line : ""))
+                            .map(line => (line ? `  ${line}` : ""))
                             .join("\n");
                     }
 
@@ -110,11 +159,15 @@ module.exports = {
         requireUpstream: false,
         requireBranch: false,
         commit: true,
+        // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
         commitMessage: "chore(release): v${version} [skip ci]",
         tag: true,
+        // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
         tagName: "v${version}",
+        // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
         tagAnnotation: "v${version}",
         push: true,
+        tagMatch: "v*",
     },
     npm: {
         publish: true,
@@ -123,6 +176,7 @@ module.exports = {
     },
     github: {
         release: true,
+        // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
         releaseName: "v${version}",
     },
     ci: true,
