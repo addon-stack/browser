@@ -1,10 +1,10 @@
 import {browser} from "./browser";
-import {handleListener} from "./utils";
 import {throwRuntimeError} from "./runtime";
+import {handleListener} from "./utils";
 
 type ExtensionInfo = chrome.management.ExtensionInfo;
 
-const management = () => browser().management as typeof chrome.management;
+const management = () => browser().management;
 
 // Methods
 export const createAppShortcut = async (id: string): Promise<void> =>

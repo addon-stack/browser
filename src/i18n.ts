@@ -3,7 +3,7 @@ import {getManifest, throwRuntimeError} from "./runtime";
 
 type LanguageDetectionResult = chrome.i18n.LanguageDetectionResult;
 
-const i18n = () => browser().i18n as typeof chrome.i18n;
+const i18n = () => browser().i18n;
 
 // Methods
 export const detectI18Language = (text: string): Promise<LanguageDetectionResult> =>

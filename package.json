@@ -1,6 +1,6 @@
 {
-  "name": "@adnbn/browser",
-  "version": "0.1.7",
+  "name": "@addon-core/browser",
+  "version": "0.2.0",
   "description": "TypeScript wrapper for Chrome extension APIs",
   "keywords": [
     "browser",
@@ -16,18 +16,26 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git@github.com:addonbone/browser.git"
+    "url": "https://github.com/addon-stack/browser"
+  },
+  "homepage": "https://github.com/addon-stack/browser",
+  "bugs": {
+    "url": "https://github.com/addon-stack/browser/issues"
   },
   "license": "MIT",
-  "author": "Addon Bone",
+  "author": "Addon Stack <addonbonedev@gmail.com>",
+  "contributors": [
+    "Anjey Tsibylskij (https://github.com/atldays)"
+  ],
   "type": "module",
-  "main": "dist/index.cjs.js",
+  "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs.js"
+      "require": "./dist/index.cjs"
     }
   },
   "files": [
@@ -35,16 +43,55 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "format": "prettier --write .",
+    "prepare": "husky",
     "build": "tsup",
-    "build:watch": "tsup --watch"
+    "prepublishOnly": "npm run build",
+    "dev": "tsup --watch",
+    "format": "biome format --write .",
+    "format:check": "biome check --formatter-enabled=true --linter-enabled=false .",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "lint:fix:unsafe": "biome check --write --unsafe .",
+    "test": "jest",
+    "test:ci": "jest --ci --passWithNoTests",
+    "test:related": "jest --bail --passWithNoTests --findRelatedTests",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "release": "release-it",
+    "release:preview": "release-it --no-github.release --no-npm.publish --no-git.tag --ci"
   },
-  "dependencies": {
-    "@types/chrome": "^0.0.326"
+  "lint-staged": {
+    "src/**/*.{js,jsx,ts,tsx,cjs,mjs}": [
+      "biome check --write --unsafe",
+      "npm run test:related --"
+    ],
+    "*.{json,css,scss,html}": [
+      "biome format --write"
+    ]
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.2.4",
+    "@commitlint/cli": "^20.0.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "@release-it/conventional-changelog": "^10.0.1",
+    "@types/chrome": "^0.1.12",
+    "@types/jest": "^30.0.0",
+    "husky": "^9.1.7",
+    "jest": "^30.1.3",
+    "lint-staged": "^16.2.1",
     "prettier": "^3.5.3",
+    "release-it": "^19.0.5",
     "tsup": "^8.5.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.2"
+  },
+  "peerDependencies": {
+    "@types/chrome": "*"
+  },
+  "overrides": {
+    "test-exclude": {
+      "glob": "^9.3.5"
+    },
+    "tsup": {
+      "source-map": "^0.7.4"
+    }
   }
 }

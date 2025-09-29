@@ -1,10 +1,10 @@
 import {browser} from "./browser";
-import {safeListener} from "./utils";
 import {throwRuntimeError} from "./runtime";
+import {safeListener} from "./utils";
 
 type RequestFilter = chrome.webRequest.RequestFilter;
 
-const webRequest = () => browser().webRequest as typeof chrome.webRequest;
+const webRequest = () => browser().webRequest;
 
 // Methods
 export const handlerWebRequestBehaviorChanged = (): Promise<void> =>

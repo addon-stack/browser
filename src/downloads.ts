@@ -1,14 +1,14 @@
 import {browser} from "./browser";
-import {handleListener} from "./utils";
 import {throwRuntimeError} from "./runtime";
+import {handleListener} from "./utils";
 
 type DownloadItem = chrome.downloads.DownloadItem;
 type DownloadQuery = chrome.downloads.DownloadQuery;
-type DownloadState = chrome.downloads.DownloadState;
+type DownloadState = chrome.downloads.State;
 type DownloadOptions = chrome.downloads.DownloadOptions;
 type GetFileIconOptions = chrome.downloads.GetFileIconOptions;
 
-const downloads = () => browser().downloads as typeof chrome.downloads;
+const downloads = () => browser().downloads;
 
 export class BlockDownloadError extends Error {}
 
@@ -89,8 +89,8 @@ export const eraseDownload = (query: DownloadQuery): Promise<number[]> =>
         });
     });
 
-export const getDownloadFileIcon = (downloadId: number, options: GetFileIconOptions): Promise<string> =>
-    new Promise<string>((resolve, reject) => {
+export const getDownloadFileIcon = (downloadId: number, options: GetFileIconOptions): Promise<string | undefined> =>
+    new Promise<string | undefined>((resolve, reject) => {
         downloads().getFileIcon(downloadId, options, iconURL => {
             try {
                 throwRuntimeError();
@@ -102,7 +102,7 @@ export const getDownloadFileIcon = (downloadId: number, options: GetFileIconOpti
         });
     });
 
-export const openDownload = (downloadId: number): void => downloads().open(downloadId);
+export const openDownload = (downloadId: number): Promise<void> => downloads().open(downloadId);
 
 export const pauseDownload = (downloadId: number): Promise<void> =>
     new Promise<void>((resolve, reject) => {
@@ -171,6 +171,7 @@ export const setDownloadsUiOptions = (enabled: boolean): Promise<void> =>
 
 export const showDownloadFolder = (): void => downloads().showDefaultFolder();
 
+// Custom Methods
 export const showDownload = async (downloadId: number): Promise<boolean> => {
     if (!(await isDownloadExists(downloadId))) {
         return false;
@@ -181,7 +182,6 @@ export const showDownload = async (downloadId: number): Promise<boolean> => {
     return true;
 };
 
-// Custom Methods
 export const findDownload = async (downloadId: number): Promise<DownloadItem | undefined> => {
     const items = await searchDownloads({id: downloadId});
 
@@ -194,7 +194,7 @@ export const isDownloadExists = async (downloadId: number): Promise<boolean | un
     return item?.exists;
 };
 
-export const getDownloadState = async (downloadId?: number): Promise<DownloadState | undefined> => {
+export const getDownloadState = async (downloadId?: number): Promise<`${DownloadState}` | undefined> => {
     if (downloadId === undefined) {
         return;
     }

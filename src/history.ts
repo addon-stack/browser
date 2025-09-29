@@ -1,14 +1,14 @@
 import {browser} from "./browser";
-import {handleListener} from "./utils";
 import {throwRuntimeError} from "./runtime";
+import {handleListener} from "./utils";
 
-type Url = chrome.history.Url;
+type UrlDetails = chrome.history.UrlDetails;
 type Range = chrome.history.Range;
 type VisitItem = chrome.history.VisitItem;
 type HistoryQuery = chrome.history.HistoryQuery;
 type HistoryItem = chrome.history.HistoryItem;
 
-const history = () => browser().history as typeof chrome.history;
+const history = () => browser().history;
 
 // Methods
 export const addHistoryUrl = (url: string): Promise<void> =>
@@ -50,7 +50,7 @@ export const deleteRangeHistory = (range: Range): Promise<void> =>
         });
     });
 
-export const deleteHistoryUrl = (details: Url): Promise<void> =>
+export const deleteHistoryUrl = (details: UrlDetails): Promise<void> =>
     new Promise<void>((resolve, reject) => {
         history().deleteUrl(details, () => {
             try {

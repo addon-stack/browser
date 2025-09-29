@@ -1,11 +1,11 @@
 import {browser} from "./browser";
-import {handleListener} from "./utils";
 import {throwRuntimeError} from "./runtime";
+import {handleListener} from "./utils";
 
 type NotificationOptions = chrome.notifications.NotificationOptions;
 type NotificationCreateOptions = chrome.notifications.NotificationCreateOptions;
 
-const notifications = () => browser().notifications as typeof chrome.notifications;
+const notifications = () => browser().notifications;
 
 // Methods
 export const clearNotification = (notificationId: string): Promise<boolean> =>
@@ -45,7 +45,7 @@ export const createNotification = (options: NotificationOptions, notificationId?
         });
     });
 
-export const getAllNotification = (): Promise<object> =>
+export const getAllNotifications = (): Promise<object> =>
     new Promise<object>((resolve, reject) => {
         notifications().getAll(notifications => {
             try {
@@ -85,19 +85,21 @@ export const updateNotification = (options: NotificationOptions, notificationId:
     });
 
 // Custom Methods
-export const isSupportNotifications = (): boolean => !!notifications();
+export const isAvailableNotifications = (): boolean => !!notifications();
 
-export const clearAllNotification = async (): Promise<void> => {
-    const allNotificationIds = Object.keys(await getAllNotification());
+export const clearAllNotifications = async (): Promise<void> => {
+    const allNotificationIds = Object.keys(await getAllNotifications());
 
-    allNotificationIds.forEach((id: string) => clearNotification(id));
+    const tasks = allNotificationIds.map((id: string) => clearNotification(id));
+
+    await Promise.all(tasks);
 };
 
 // Events
 export const onNotificationsButtonClicked = (
     callback: Parameters<typeof chrome.notifications.onButtonClicked.addListener>[0]
 ): (() => void) => {
-    if (!isSupportNotifications()) {
+    if (!isAvailableNotifications()) {
         console.warn("chrome.notifications API is not supported");
 
         return () => ({});
@@ -109,7 +111,7 @@ export const onNotificationsButtonClicked = (
 export const onNotificationsClicked = (
     callback: Parameters<typeof chrome.notifications.onClicked.addListener>[0]
 ): (() => void) => {
-    if (!isSupportNotifications()) {
+    if (!isAvailableNotifications()) {
         console.warn("chrome.notifications API is not supported");
 
         return () => ({});
@@ -121,7 +123,7 @@ export const onNotificationsClicked = (
 export const onNotificationsClosed = (
     callback: Parameters<typeof chrome.notifications.onClosed.addListener>[0]
 ): (() => void) => {
-    if (!isSupportNotifications()) {
+    if (!isAvailableNotifications()) {
         console.warn("chrome.notifications API is not supported");
 
         return () => ({});
@@ -133,7 +135,7 @@ export const onNotificationsClosed = (
 export const onNotificationsPermissionLevelChanged = (
     callback: Parameters<typeof chrome.notifications.onPermissionLevelChanged.addListener>[0]
 ): (() => void) => {
-    if (!isSupportNotifications()) {
+    if (!isAvailableNotifications()) {
         console.warn("chrome.notifications API is not supported");
 
         return () => ({});

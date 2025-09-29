@@ -1,6 +1,6 @@
 import {browser} from "./browser";
 import {handleListener} from "./utils";
-import {FirefoxRuntime} from "./types";
+import type {FirefoxRuntime} from "./types";
 
 type BrowserInfo = browser.runtime.BrowserInfo;
 
@@ -11,7 +11,7 @@ type ContextFilter = chrome.runtime.ContextFilter;
 type ExtensionContext = chrome.runtime.ExtensionContext;
 
 interface RequestUpdateCheck {
-    status: chrome.runtime.RequestUpdateCheckStatus;
+    status: `${chrome.runtime.RequestUpdateCheckStatus}`;
     details?: chrome.runtime.UpdateCheckDetails;
 }
 

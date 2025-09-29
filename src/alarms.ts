@@ -1,11 +1,11 @@
 import {browser} from "./browser";
-import {handleListener} from "./utils";
 import {throwRuntimeError} from "./runtime";
+import {handleListener} from "./utils";
 
 type Alarm = chrome.alarms.Alarm;
 type AlarmCreateInfo = chrome.alarms.AlarmCreateInfo;
 
-const alarms = () => browser().alarms as typeof chrome.alarms;
+const alarms = () => browser().alarms;
 
 // Methods
 export const clearAlarm = (name: string): Promise<boolean> =>
@@ -47,8 +47,8 @@ export const createAlarm = (name: string, info: AlarmCreateInfo): Promise<void> 
         });
     });
 
-export const getAlarm = (name: string): Promise<Alarm> =>
-    new Promise<Alarm>((resolve, reject) => {
+export const getAlarm = (name: string): Promise<Alarm | undefined> =>
+    new Promise<Alarm | undefined>((resolve, reject) => {
         alarms().get(name, alarm => {
             try {
                 throwRuntimeError();

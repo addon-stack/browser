@@ -1,6 +1,6 @@
 import {browser} from "./browser";
-import {handleListener} from "./utils";
 import {throwRuntimeError} from "./runtime";
+import {handleListener} from "./utils";
 
 type AudioDeviceInfo = chrome.audio.AudioDeviceInfo;
 type DeviceFilter = chrome.audio.DeviceFilter;
@@ -8,7 +8,7 @@ type DeviceIdLists = chrome.audio.DeviceIdLists;
 type DeviceProperties = chrome.audio.DeviceProperties;
 type StreamType = chrome.audio.StreamType;
 
-const audio = () => browser().audio as typeof chrome.audio;
+const audio = () => browser().audio;
 
 // Methods
 export const getAudioDevices = (filter?: DeviceFilter): Promise<AudioDeviceInfo[]> =>

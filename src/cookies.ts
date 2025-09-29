@@ -1,6 +1,6 @@
 import {browser} from "./browser";
-import {handleListener} from "./utils";
 import {throwRuntimeError} from "./runtime";
+import {handleListener} from "./utils";
 
 type Cookie = chrome.cookies.Cookie;
 type CookieStore = chrome.cookies.CookieStore;
@@ -10,7 +10,7 @@ type CookieDetails = chrome.cookies.CookieDetails;
 type GetAllDetails = chrome.cookies.GetAllDetails;
 type SetDetails = chrome.cookies.SetDetails;
 
-const cookies = () => browser().cookies as typeof chrome.cookies;
+const cookies = () => browser().cookies;
 
 // Methods
 export const getCookie = (details: CookieDetails): Promise<Cookie | null> =>
