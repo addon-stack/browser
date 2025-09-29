@@ -119,7 +119,7 @@ module.exports = {
     npm: {
         publish: true,
         versionArgs: ["--no-git-tag-version"],
-        publishArgs: ["--provenance"],
+        publishArgs: ["--provenance", "--access", "public"],
     },
     github: {
         release: true,
