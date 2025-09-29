@@ -8,6 +8,7 @@ type ColorArray = chrome.action.ColorArray;
 type OpenOptions = chrome.sidePanel.OpenOptions;
 type PanelOptions = chrome.sidePanel.PanelOptions;
 type PanelBehavior = chrome.sidePanel.PanelBehavior;
+type IconDetails = opr.sidebarAction.IconDetails;
 
 // Available in Firefox and Opera
 const sidebarAction = (): SidebarAction | undefined =>
@@ -202,6 +203,24 @@ export const setSidebarBadgeText = async (text: string | number, tabId?: number)
     }
 
     console.warn("The opr.sidebarAction.setBadgeText API is supported only in Opera");
+};
+
+export const clearSidebarBadgeText = (tabId?: number): Promise<void> => setSidebarBadgeText("", tabId);
+
+export const setSidebarIcon = async (details: IconDetails): Promise<void> => {
+    const sb = sidebarAction() as OperaSidebarAction | undefined;
+
+    if (sb) {
+        const {setIcon} = sb;
+
+        if (setIcon) {
+            setIcon(details);
+
+            return;
+        }
+    }
+
+    console.warn("The opr.sidebarAction.setIcon API is supported only in Opera");
 };
 
 export const setSidebarBadgeTextColor = async (color: Color, tabId?: number): Promise<void> => {
