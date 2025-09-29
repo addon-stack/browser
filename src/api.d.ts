@@ -1,4 +1,9 @@
 declare namespace browser {
+    export namespace runtime {
+        /** The ID of the extension/app. */
+        export const id: string;
+    }
+
     /**
      * @see: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction
      */

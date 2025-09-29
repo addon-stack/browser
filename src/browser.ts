@@ -1,6 +1,8 @@
 export const browser = (): typeof chrome => {
-    if (globalThis.browser) {
-        return globalThis.browser as unknown as typeof chrome;
+    const api = globalThis.browser?.runtime?.id ? globalThis.browser : globalThis.chrome;
+
+    if (!api) {
+        throw new Error("WebExtension API not available in this context");
     }
 
     return chrome;
