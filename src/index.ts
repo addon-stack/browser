@@ -25,3 +25,4 @@ export * from "./tabs";
 export * from "./userScripts";
 export * from "./webNavigation";
 export * from "./webRequest";
+export * from "./windows";
