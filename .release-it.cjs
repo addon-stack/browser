@@ -1,4 +1,4 @@
-const {execSync} = require("child_process");
+const {execSync} = require("node:child_process");
 const pkg = require("./package.json");
 
 function deriveGithubFromEmail(email) {
@@ -50,8 +50,8 @@ function getContributors() {
 
             const count = Number(m?.[1] || 0);
 
-            const displayName = ((m?.[2] || "").trim()) || undefined;
-            const displayEmail = ((m?.[3] || "").trim()) || undefined;
+            const displayName = (m?.[2] || "").trim() || undefined;
+            const displayEmail = (m?.[3] || "").trim() || undefined;
 
             const lcName = (displayName || "").toLowerCase();
             const lcEmail = (displayEmail || "").toLowerCase();
@@ -64,7 +64,7 @@ function getContributors() {
             const gh = deriveGithubFromEmail(displayEmail);
             const loginKey = gh.login ? gh.login.toLowerCase() : null;
 
-            const key = loginKey ? `gh:${loginKey}` : (lcEmail ? `em:${lcEmail}` : `nm:${lcName}`);
+            const key = loginKey ? `gh:${loginKey}` : lcEmail ? `em:${lcEmail}` : `nm:${lcName}`;
 
             const existing = map.get(key);
 
@@ -105,7 +105,7 @@ const types = new Map([
 ]);
 
 const normalizeRepoUrl = url => url.replace(/^git\+/, "").replace(/\.git$/, "");
-const repoUrl = pkg && pkg.repository && pkg.repository.url ? normalizeRepoUrl(pkg.repository.url) : null;
+const repoUrl = pkg?.repository?.url ? normalizeRepoUrl(pkg.repository.url) : null;
 
 module.exports = () => {
     const contributors = getContributors();
@@ -118,15 +118,19 @@ module.exports = () => {
             requireUpstream: false,
             requireBranch: false,
             commit: true,
+            // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
             commitMessage: "chore(release): v${version}",
             tag: true,
+            // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
             tagName: "v${version}",
+            // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
             tagAnnotation: "v${version}",
             push: true,
         },
 
         github: {
             release: true,
+            // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
             releaseName: "v${version}",
             autoGenerate: false,
             // Ensure GitHub receives exactly the generated changelog body
@@ -169,10 +173,7 @@ module.exports = () => {
                         let isPatch = false;
 
                         for (const commit of commits) {
-                            if (
-                                commit.notes &&
-                                commit.notes.some(n => /BREAKING CHANGE/i.test(n.title || n.text || ""))
-                            ) {
+                            if (commit.notes?.some(n => /BREAKING CHANGE/i.test(n.title || n.text || ""))) {
                                 isMajor = true;
                                 break;
                             }
@@ -216,7 +217,7 @@ module.exports = () => {
                         // If header had a '!' (captured into `breaking` by parser), ensure we surface a BREAKING note
                         if (nextCommit.breaking && (!nextCommit.notes || nextCommit.notes.length === 0)) {
                             const text = nextCommit.subject || nextCommit.header;
-                            nextCommit.notes = [{ title: "BREAKING CHANGE", text }];
+                            nextCommit.notes = [{title: "BREAKING CHANGE", text}];
                         }
 
                         // Normalize type: lowercase and drop trailing '!' so 'feat!' maps to 'feat'
@@ -234,7 +235,7 @@ module.exports = () => {
 
                             nextCommit.body = body
                                 .split("\n")
-                                .map(line => (line ? "  " + line : ""))
+                                .map(line => (line ? `  ${line}` : ""))
                                 .join("\n");
                         }
 
