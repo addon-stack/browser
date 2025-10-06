@@ -33,7 +33,8 @@
     "indentStyle": "space",
     "indentWidth": 4,
     "lineWidth": 120,
-    "bracketSpacing": false
+    "bracketSpacing": false,
+    "lineEnding": "lf"
   },
   "javascript": {
     "formatter": {

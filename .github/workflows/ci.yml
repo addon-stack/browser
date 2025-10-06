@@ -48,6 +48,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Configure git EOL (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          git config core.autocrlf false
+          git config core.eol lf
+
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
