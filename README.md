@@ -22,7 +22,9 @@ pnpm add @addon-core/browser
 - Google Chrome (MV2 & MV3)
 - Microsoft Edge (Chromium)
 - Opera (Chromium) — plus sidebar helpers
+- Other Chromium-based browsers (e.g., Brave, Vivaldi, Arc, Yandex, Chromium) — expected to work; behavior aligns with Chrome.
 - Firefox — partial support via compatible helpers (e.g., `sidebarAction`, `runtime.getBrowserInfo`)
+- Apple Safari — limited WebExtensions support; many Chromium-specific APIs are not available, so some helpers won’t work.
 
 ## Supported Chrome APIs
 

@@ -2,9 +2,9 @@
 
 Documentation:
 
-- Chrome Side Panel API (MV3): https://developer.chrome.com/docs/extensions/reference/sidePanel
-- Opera Sidebar Action API: https://help.opera.com/en/extensions/sidebar-action-api/
-- Firefox Sidebar Action API: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction
+- [Chrome Side Panel API](https://developer.chrome.com/docs/extensions/reference/sidePanel) [MV3]
+- [Opera Sidebar Action API](https://help.opera.com/en/extensions/sidebar-action-api/)
+- [Firefox Sidebar Action API](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction)
 
 A promise-based wrapper around Chrome's side panel (`chrome.sidePanel`, MV3) and Firefox/Opera `sidebarAction` APIs. Methods provide unified behavior to get/set options and behavior, open the panel, and, where supported (Opera), manage title and badge.
 
