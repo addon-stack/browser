@@ -1,5 +1,91 @@
 # Changelog
 
+## 🚀 Release `@addon-core/browser` v0.2.1 (2025-10-06)
+
+
+### 🐛 Bug Fixed
+
+* **sidebar:** update compatibility warnings for Firefox support ([8878ec0](https://github.com/addon-stack/browser/commit/8878ec0636a45ad638fea903085bac0fed1e4f47))
+
+
+
+
+### 📝 Documentation
+
+* **changelog:** update with release v0.4.0 details ([fd3b420](https://github.com/addon-stack/browser/commit/fd3b420ed0f61b932171190da5287681d7983599))
+
+
+* **README:** update browser compatibility details ([af86fdc](https://github.com/addon-stack/browser/commit/af86fdc1a1053c007ec1e1adf25c869b60cd3856))
+
+
+* **sidebar:** format sidebar links using Markdown syntax ([11922cc](https://github.com/addon-stack/browser/commit/11922cc52591bc89c95e3278928f92a25494a5f7))
+
+
+
+
+### 🤖 CI
+
+* enforce consistent line endings and configure git EOL ([0a0e05a](https://github.com/addon-stack/browser/commit/0a0e05a1faff56556f5912538869ab9a47509057))
+
+  - Added `.gitattributes` to enforce LF line endings for text files while retaining CRLF for scripts.
+  - Updated `ci.yml` to configure git EOL settings explicitly for Windows runners.
+  - Modified `biome.json` to specify LF as the default line ending.
+
+* improve release workflows with tag detection and npm ci ([b58de5f](https://github.com/addon-stack/browser/commit/b58de5fd162a3ca6a7709c31dbd30aa81fabccc5))
+
+  - Added `fetch-tags: true` for `checkout` actions to improve tag availability.
+  - Updated dependency installation to use `npm ci` with `HUSKY=0` environment variable.
+  - Implemented logic to detect the latest tag and include it in release commands.
+  - Enhanced `release` and `release:preview` steps with conditional latest tag usage.
+
+* merge release workflows and replace deprecated processes ([7c0f4c7](https://github.com/addon-stack/browser/commit/7c0f4c7b612494125e7705ad5d13b1598f3d406d))
+
+  - Consolidated `release-prepare.yml` and `release-publish.yml` into a unified `release.yml`.
+  - Enhanced CI workflow with dynamic OS/Node matrix computation for efficient testing.
+  - Improved test command in `package.json` to include coverage reporting in CI.
+  - Updated `.release-it.cjs` with enhanced contributor parsing and changelog formatting.
+
+* simplify release workflows by removing latest tag detection logic ([0b96c03](https://github.com/addon-stack/browser/commit/0b96c03b5dc5269a95f853c12740517dd4617e20))
+
+  - Removed latest tag detection from `release-publish.yml` and `release-prepare.yml` workflows.
+  - Updated `.release-it.cjs` to handle tag detection and related logic internally.
+  - Improved commit classification and sorting with refined logic in the release configuration.
+
+
+
+### 🧹 Chores
+
+* **release:** bump version to 0.4.0 ([d38c4f9](https://github.com/addon-stack/browser/commit/d38c4f9dc209898f14a99247dd021dc4cbf23cbc))
+
+
+
+
+### 🛠️ Refactoring
+
+* **browser:** improve WebExtension API support detection ([d00cc3a](https://github.com/addon-stack/browser/commit/d00cc3abca2a2b714c309769680a7a35c05b3894))
+
+  - Enhanced detection of the WebExtension API by checking `runtime.id` availability.
+  - Added fallback to `globalThis.chrome` when `globalThis.browser` is unavailable.
+  - Throw an error when no supported WebExtension API is available in the current context.
+  - Updated `api.d.ts` with `runtime.id` declaration and consistent formatting for parameters.
+
+* improve code readability and simplify expressions ([6a9d820](https://github.com/addon-stack/browser/commit/6a9d820b2ccda47a928f96bd8e53124b21e37c45))
+
+  - Replaced `require("child_process")` with `require("node:child_process")` for modern module import.
+  - Simplified ternary expressions and conditionals to reduce complexity.
+  - Used optional chaining and nullish coalescing for safer property access.
+  - Adjusted formatting for consistency in object and array handling.
+  - Added comments to ignore biome lint warnings for release-it placeholders.
+
+
+
+
+### 🙌 Contributors
+
+- [Addon Bone](addonbonedev@gmail.com) — 13 commits
+- [Addon Stack](https://github.com/addon-stack) (@addon-stack) — 3 commits
+- [Rostyslav Nihrutsa](rostyslav.nihrutsa@gmail.com) — 1 commits
+
 ## 🚀 Release `@addon-core/browser` v0.2.0 (2025-09-29)
 
 ### ✨ Features
@@ -134,4 +220,3 @@
   - Streamlined Promise logic by reducing duplicate statements and improving clarity.
 
 * **tabs:** update method typings and reorder imports for consistency ([fb8a64a](https://github.com/addon-stack/browser/commit/fb8a64ad6a23ce987afc90c1f9173d94c478af4f))
-
