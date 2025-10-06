@@ -1,6 +1,6 @@
 # Changelog
 
-## 🚀 Release `@addon-core/browser` v0.4.0 (2025-09-29)
+## 🚀 Release `@addon-core/browser` v0.2.0 (2025-09-29)
 
 ### ✨ Features
 
