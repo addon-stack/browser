@@ -131,6 +131,9 @@ setSidebarIcon(details: opr.sidebarAction.IconDetails): Promise<void>
 
 Sets the sidebar icon via `opr.sidebarAction.setIcon()` (Opera only). Logs a warning if unsupported.
 
+> Known issue (Opera): The `opr.sidebarAction.setIcon` API is currently broken and may fail with "Access to extension API denied".
+> See: https://forums.opera.com/topic/75680/opr-sidebaraction-seticon-api-is-broken-access-to-extension-api-denied
+
 <a name="setSidebarBadgeText"></a>
 
 ### setSidebarBadgeText [Opera]

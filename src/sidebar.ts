@@ -3,7 +3,7 @@ import {throwRuntimeError} from "./runtime";
 import type {FirefoxSidebarAction, OperaSidebarAction, SidebarAction} from "./types";
 
 type Color = string | ColorArray;
-type ColorArray = chrome.action.ColorArray;
+type ColorArray = chrome.extensionTypes.ColorArray;
 
 type OpenOptions = chrome.sidePanel.OpenOptions;
 type PanelOptions = chrome.sidePanel.PanelOptions;
@@ -207,6 +207,10 @@ export const setSidebarBadgeText = async (text: string | number, tabId?: number)
 
 export const clearSidebarBadgeText = (tabId?: number): Promise<void> => setSidebarBadgeText("", tabId);
 
+/**
+ * Note (Opera): The opr.sidebarAction.setIcon API appears to be broken ("Access to extension API denied").
+ * See: https://forums.opera.com/topic/75680/opr-sidebaraction-seticon-api-is-broken-access-to-extension-api-denied
+ */
 export const setSidebarIcon = async (details: IconDetails): Promise<void> => {
     const sb = sidebarAction();
 
