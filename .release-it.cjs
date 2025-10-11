@@ -97,12 +97,11 @@ const types = new Map([
     ["perf", "⚡️ Performance Improvements"],
     ["refactor", "🛠️ Refactoring"],
     ["docs", "📝 Documentation"],
-    ["test", "Tests"],
+    ["test", "🧪 Tests"],
     ["build", "🏗️ Build System"],
     ["ci", "🤖 CI"],
     ["chore", "🧹 Chores"],
     ["revert", "⏪ Reverts"],
-    ["test", "🧪 Tests"],
 ]);
 
 const normalizeRepoUrl = url => url.replace(/^git\+/, "").replace(/\.git$/, "");
