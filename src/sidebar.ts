@@ -3,7 +3,7 @@ import {throwRuntimeError} from "./runtime";
 import type {FirefoxSidebarAction, OperaSidebarAction, SidebarAction} from "./types";
 
 type Color = string | ColorArray;
-type ColorArray = chrome.action.ColorArray;
+type ColorArray = chrome.extensionTypes.ColorArray;
 
 type OpenOptions = chrome.sidePanel.OpenOptions;
 type PanelOptions = chrome.sidePanel.PanelOptions;
@@ -12,7 +12,9 @@ type IconDetails = opr.sidebarAction.IconDetails;
 
 // Available in Firefox and Opera
 const sidebarAction = (): SidebarAction | undefined =>
-    globalThis?.browser?.sidebarAction || globalThis?.opr?.sidebarAction;
+    globalThis?.opr?.sidebarAction || globalThis?.browser?.sidebarAction;
+
+const isAvailableOperaSidebar = (): boolean => globalThis?.opr?.sidebarAction !== undefined;
 
 // Chromium standard
 const sidePanel = (): typeof chrome.sidePanel | undefined => browser().sidePanel;
@@ -102,6 +104,8 @@ export const openSidebar = (options: OpenOptions): Promise<void> =>
         }
 
         console.warn("The sidebar open API is not supported in this browser");
+
+        return resolve();
     });
 
 export const setSidebarOptions = (options?: PanelOptions): Promise<void> =>
@@ -111,7 +115,7 @@ export const setSidebarOptions = (options?: PanelOptions): Promise<void> =>
         if (!sp) {
             console.warn("The chrome.sidePanel.setOptions API is not supported for this browser");
 
-            return;
+            return resolve();
         }
 
         sp.setOptions(options || {}, () => {
@@ -132,7 +136,7 @@ export const setSidebarBehavior = (behavior?: PanelBehavior): Promise<void> =>
         if (!sp) {
             console.warn("The chrome.sidePanel.setPanelBehavior API is not supported in this browser");
 
-            return;
+            return resolve();
         }
 
         sp.setPanelBehavior(behavior || {}, () => {
@@ -150,12 +154,20 @@ export const setSidebarBehavior = (behavior?: PanelBehavior): Promise<void> =>
 export const setSidebarPath = async (path: string, tabId?: number): Promise<void> => {
     if (sidePanel()) {
         await setSidebarOptions({tabId, path});
+
+        return;
     }
 
     const sb = sidebarAction();
 
     if (sb) {
-        await sb.setPanel({tabId, panel: path});
+        const result = sb.setPanel({tabId, panel: path});
+
+        if (result instanceof Promise) {
+            await result;
+        }
+
+        return;
     }
 
     throw new Error("The sidebar set path API is not supported for this browser");
@@ -168,10 +180,30 @@ export const getSidebarPath = async (tabId?: number): Promise<string | undefined
 
     const sb = sidebarAction();
 
-    if (sb) {
-        // opr.sidebarAction.getPanel returned path in the following format
-        // chrome-extension://{extension_id}/sidebar.html
-        return new URL(await sb.getPanel({tabId})).pathname;
+    const {getPanel} = sb as OperaSidebarAction;
+
+    if (getPanel) {
+        // Opera: callback-based getPanel(details, callback)
+        if (isAvailableOperaSidebar()) {
+            const fullUrl: string = await new Promise((resolve, reject) => {
+                getPanel({tabId}, (url: string) => {
+                    try {
+                        throwRuntimeError();
+
+                        resolve(url);
+                    } catch (e) {
+                        reject(e);
+                    }
+                });
+            });
+
+            // Opera returns a full URL like chrome-extension://{extension_id}/sidebar.html
+            return new URL(fullUrl).pathname;
+        }
+
+        const fullUrl = await getPanel({tabId});
+
+        return new URL(fullUrl).pathname;
     }
 
     throw new Error("The sidebar get path API is not supported for this browser");
@@ -207,6 +239,10 @@ export const setSidebarBadgeText = async (text: string | number, tabId?: number)
 
 export const clearSidebarBadgeText = (tabId?: number): Promise<void> => setSidebarBadgeText("", tabId);
 
+/**
+ * Note (Opera): The opr.sidebarAction.setIcon API appears to be broken ("Access to extension API denied").
+ * See: https://forums.opera.com/topic/75680/opr-sidebaraction-seticon-api-is-broken-access-to-extension-api-denied
+ */
 export const setSidebarIcon = async (details: IconDetails): Promise<void> => {
     const sb = sidebarAction();
 
@@ -214,7 +250,15 @@ export const setSidebarIcon = async (details: IconDetails): Promise<void> => {
         const {setIcon} = sb;
 
         if (setIcon) {
-            setIcon(details);
+            if (isAvailableOperaSidebar()) {
+                console.warn(
+                    "The opr.sidebarAction.setIcon API is broken in Opera. More info: https://forums.opera.com/topic/75680/opr-sidebaraction-seticon-api-is-broken-access-to-extension-api-denied"
+                );
+
+                return;
+            }
+
+            await setIcon(details);
 
             return;
         }
@@ -259,10 +303,31 @@ export const getSidebarTitle = async (tabId?: number): Promise<string> => {
     const sb = sidebarAction();
 
     if (!sb) {
-        throw new Error("The sidebar get title API is supported only for this browser");
+        throw new Error("The sidebarAction.getTitle API is supported only in Firefox or Opera");
     }
 
-    return sb.getTitle({tabId});
+    const {getTitle} = sb as OperaSidebarAction;
+
+    if (getTitle) {
+        // Opera: callback-based getTitle(details, callback)
+        if (isAvailableOperaSidebar()) {
+            return await new Promise<string>((resolve, reject) => {
+                getTitle({tabId}, (title: string) => {
+                    try {
+                        throwRuntimeError();
+
+                        resolve(title);
+                    } catch (e) {
+                        reject(e);
+                    }
+                });
+            });
+        }
+
+        return getTitle({tabId});
+    }
+
+    throw new Error("The sidebarAction.getTitle API not available");
 };
 
 export const getSidebarBadgeText = (tabId?: number): Promise<string> =>

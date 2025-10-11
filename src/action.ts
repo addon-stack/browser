@@ -5,7 +5,7 @@ import {handleListener} from "./utils";
 type Action = typeof chrome.action;
 type BrowserAction = typeof chrome.browserAction;
 
-type ColorArray = chrome.action.ColorArray;
+type ColorArray = chrome.extensionTypes.ColorArray;
 type TabIconDetails = chrome.action.TabIconDetails;
 type UserSettings = chrome.action.UserSettings;
 type Color = string | ColorArray;

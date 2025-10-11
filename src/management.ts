@@ -3,6 +3,7 @@ import {throwRuntimeError} from "./runtime";
 import {handleListener} from "./utils";
 
 type ExtensionInfo = chrome.management.ExtensionInfo;
+type LaunchType = chrome.management.LaunchType;
 
 const management = () => browser().management;
 
@@ -124,7 +125,7 @@ export const setExtensionEnabled = async (id: string, enabled: boolean): Promise
         });
     });
 
-export const setExtensionLaunchType = async (id: string, launchType: string): Promise<void> =>
+export const setExtensionLaunchType = async (id: string, launchType: `${LaunchType}`): Promise<void> =>
     new Promise<void>((resolve, reject) => {
         management().setLaunchType(id, launchType, () => {
             try {

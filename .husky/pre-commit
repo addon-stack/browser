@@ -2,4 +2,6 @@
 
 # Husky pre-commit hook: format and run related tests on staged files
 
-npx --no -- lint-staged
+npm run test:related
+npm run lint:fix:unsafe
+npm run format
