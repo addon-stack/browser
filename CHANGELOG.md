@@ -1,5 +1,43 @@
 # Changelog
 
+## 🚀 Release `@addon-core/browser` v0.2.2 (2025-10-11)
+
+
+### 🐛 Bug Fixed
+
+* **sidebar:** address incorrect type for `ColorArray` and document Opera API issue ([272b151](https://github.com/addon-stack/browser/commit/272b1512b8a40308c8eb1a8cd40f7b750fca2f31))
+
+  - Updated `ColorArray` to use `chrome.extensionTypes.ColorArray` for correct type reference.
+  - Documented known Opera issue with `opr.sidebarAction.setIcon API` in code and `docs/sidebar.md`.
+
+
+
+### 🛠️ Refactoring
+
+* **ci:** cleanup husky pre-commit and remove lint-staged configuration ([93a1d39](https://github.com/addon-stack/browser/commit/93a1d39951ff5f5b23000722ee19865d00d7760c))
+
+  - Replaced `lint-staged` usage in pre-commit with explicit `npm run` commands.
+  - Removed `lint-staged` and `prettier` dependencies from `package.json`.
+  - Updated `.mailmap` for email alias consistency.
+  - Bumped dependencies (`@biomejs/biome`, `@commitlint/cli`, `@octokit/*`) to the latest versions.
+
+* **management:** use stricter typing for launchType ([9f55dc7](https://github.com/addon-stack/browser/commit/9f55dc703e9c829fc5870181d4f09548cc4dba7f))
+
+
+* **sidebar:** enhance sidebar API support for Opera and Firefox ([cd26f6c](https://github.com/addon-stack/browser/commit/cd26f6c224c691eab4db760d8233271f7bccaca7))
+
+  - Improved handling of `sidebarAction` and `sidePanel` APIs across supported browsers.
+  - Added Opera-specific checks like `isAvailableOperaSidebar` for feature detection.
+  - Resolved potential API call issues by properly handling promises and warnings.
+  - Updated documentation to reflect accurate cross-browser sidebar feature support.
+
+
+
+
+### 🙌 Contributors
+
+- [Addon Stack](mailto:addonbonedev@gmail.com) — commits: 5
+
 ## 🚀 Release `@addon-core/browser` v0.2.1 (2025-10-06)
 
 
