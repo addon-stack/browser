@@ -119,7 +119,11 @@ export const onWindowCreated = (
 ): (() => void) => {
     const listener = safeListener(callback);
 
-    windows().onCreated.addListener(listener, filter);
+    const args: Parameters<typeof chrome.windows.onCreated.addListener> = [listener];
+
+    if (filter) args.push(filter);
+
+    windows().onCreated.addListener(...args);
 
     return () => windows().onCreated.removeListener(listener);
 };
@@ -130,7 +134,11 @@ export const onWindowFocusChanged = (
 ): (() => void) => {
     const listener = safeListener(callback);
 
-    windows().onFocusChanged.addListener(listener, filter);
+    const args: Parameters<typeof chrome.windows.onFocusChanged.addListener> = [listener];
+
+    if (filter) args.push(filter);
+
+    windows().onFocusChanged.addListener(...args);
 
     return () => windows().onFocusChanged.removeListener(listener);
 };
@@ -141,7 +149,11 @@ export const onWindowRemoved = (
 ): (() => void) => {
     const listener = safeListener(callback);
 
-    windows().onRemoved.addListener(listener, filter);
+    const args: Parameters<typeof chrome.windows.onRemoved.addListener> = [listener];
+
+    if (filter) args.push(filter);
+
+    windows().onRemoved.addListener(...args);
 
     return () => windows().onRemoved.removeListener(listener);
 };
