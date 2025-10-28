@@ -7,14 +7,3 @@ export const browser = (): typeof chrome => {
 
     return chrome;
 };
-
-export const isFirefox = (): boolean => {
-    let isFirefox = false;
-
-    try {
-        // @ts-expect-error
-        isFirefox = !!browser().runtime.getBrowserInfo;
-    } catch (_e) {}
-
-    return isFirefox;
-};

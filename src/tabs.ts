@@ -1,4 +1,4 @@
-import {browser, isFirefox} from "./browser";
+import {browser} from "./browser";
 import {throwRuntimeError} from "./runtime";
 import {handleListener} from "./utils";
 
@@ -270,9 +270,6 @@ export const sendTabMessage = <M = any, R = any>(
     options: MessageSendOptions = {}
 ): Promise<R> =>
     new Promise<R>((resolve, reject) => {
-        // Firefox does not support `documentId` option
-        if (isFirefox()) delete options.documentId;
-
         tabs().sendMessage<M, R>(tabId, message, options, response => {
             try {
                 throwRuntimeError();
