@@ -1,5 +1,31 @@
 # Changelog
 
+## 🚀 Release `@addon-core/browser` v0.2.3 (2025-10-13)
+
+
+### 🐛 Bug Fixed
+
+* **windows:** handle optional filter parameter in event listeners ([b5ce785](https://github.com/addon-stack/browser/commit/b5ce785b2ef1bb6c9319cbfe7ae76733a6629589))
+
+
+
+
+### 🧹 Chores
+
+* **config:** remove duplicate "test" entry from commit type mapping ([5a98228](https://github.com/addon-stack/browser/commit/5a98228baac403d2cf89e46d82c7b9661ed138d1))
+
+
+* **mailmap:** update email mappings for contributor aliases ([a609811](https://github.com/addon-stack/browser/commit/a609811e3c86839ed6dc4341b7f1d1139cecb5d0))
+
+
+
+
+
+### 🙌 Contributors
+
+- [Addon Stack](https://github.com/addon-stack) (@addon-stack) — commits: 5
+- [Rostyslav Nihrutsa](mailto:rostyslav.nihrutsa@gmail.com) — commits: 1
+
 ## 🚀 Release `@addon-core/browser` v0.2.2 (2025-10-11)
 
 
