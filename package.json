@@ -16,7 +16,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/addon-stack/browser"
+    "url": "git+https://github.com/addon-stack/browser.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "homepage": "https://github.com/addon-stack/browser",
   "bugs": {
