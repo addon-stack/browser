@@ -1,4 +1,27 @@
+import {browser} from "./browser";
+
 type Event<T extends (...args: any) => void> = chrome.events.Event<T>;
+
+export const throwRuntimeError = (): void => {
+    const error = browser().runtime.lastError;
+
+    if (error) {
+        throw new Error(error.message);
+    }
+};
+
+export function callWithPromise<T>(executor: (callback: (result: T) => void) => void): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+        executor((result: T) => {
+            try {
+                throwRuntimeError();
+                resolve(result);
+            } catch (e) {
+                reject(e);
+            }
+        });
+    });
+}
 
 export function safeListener<T extends (...args: any[]) => any>(listener: T): T {
     return ((...args: Parameters<T>): ReturnType<T> | undefined => {

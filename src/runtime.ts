@@ -1,5 +1,5 @@
 import {browser} from "./browser";
-import {handleListener} from "./utils";
+import {callWithPromise, handleListener} from "./utils";
 import type {FirefoxRuntime} from "./types";
 
 type BrowserInfo = browser.runtime.BrowserInfo;
@@ -17,51 +17,22 @@ interface RequestUpdateCheck {
 
 const runtime = () => browser().runtime as typeof chrome.runtime;
 
+export {throwRuntimeError} from "./utils";
+
 // Methods
 export const connect = (extensionId: string, connectInfo?: object): Port => runtime().connect(extensionId, connectInfo);
 
 export const connectNative = (application: string): Port => runtime().connectNative(application);
 
 export const getContexts = (filter: ContextFilter): Promise<ExtensionContext[]> =>
-    new Promise<ExtensionContext[]>((resolve, reject) => {
-        runtime().getContexts(filter, contexts => {
-            try {
-                throwRuntimeError();
-
-                resolve(contexts);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => runtime().getContexts(filter, cb));
 
 export const getManifest = (): Manifest => runtime().getManifest();
 
 export const getPackageDirectoryEntry = (): Promise<FileSystemDirectoryEntry> =>
-    new Promise<FileSystemDirectoryEntry>((resolve, reject) => {
-        runtime().getPackageDirectoryEntry(directoryEntry => {
-            try {
-                throwRuntimeError();
+    callWithPromise(cb => runtime().getPackageDirectoryEntry(cb));
 
-                resolve(directoryEntry);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
-
-export const getPlatformInfo = (): Promise<PlatformInfo> =>
-    new Promise<PlatformInfo>((resolve, reject) => {
-        runtime().getPlatformInfo(platformInfo => {
-            try {
-                throwRuntimeError();
-
-                resolve(platformInfo);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+export const getPlatformInfo = (): Promise<PlatformInfo> => callWithPromise(cb => runtime().getPlatformInfo(cb));
 
 export const getBrowserInfo = (): Promise<BrowserInfo> => {
     return (runtime() as unknown as FirefoxRuntime).getBrowserInfo();
@@ -69,74 +40,23 @@ export const getBrowserInfo = (): Promise<BrowserInfo> => {
 
 export const getUrl = (path: string): string => runtime().getURL(path);
 
-export const openOptionsPage = (): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        runtime().openOptionsPage(() => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+export const openOptionsPage = (): Promise<void> => callWithPromise(cb => runtime().openOptionsPage(cb));
 
 export const reload = (): void => runtime().reload();
 
 export const requestUpdateCheck = (): Promise<RequestUpdateCheck> =>
-    new Promise<RequestUpdateCheck>((resolve, reject) => {
-        runtime().requestUpdateCheck((status, details) => {
-            try {
-                throwRuntimeError();
-
-                resolve({status, details});
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => runtime().requestUpdateCheck((status, details) => cb({status, details})));
 
 export const restart = (): void => runtime().restart();
 
 export const restartAfterDelay = (seconds: number): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        runtime().restartAfterDelay(seconds, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => runtime().restartAfterDelay(seconds, cb));
 
 export const sendMessage = <M = any, R = any>(message: M): Promise<R> =>
-    new Promise<R>((resolve, reject) => {
-        runtime().sendMessage<M, R>(message, response => {
-            try {
-                throwRuntimeError();
-
-                resolve(response);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => runtime().sendMessage<M, R>(message, cb));
 
 export const setUninstallUrl = (url: string): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        runtime().setUninstallURL(url, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => runtime().setUninstallURL(url, cb));
 
 // Custom Methods
 export const getId = (): string => runtime().id;
@@ -144,14 +64,6 @@ export const getId = (): string => runtime().id;
 export const getManifestVersion = (): 2 | 3 => getManifest().manifest_version;
 
 export const isManifestVersion3 = (): boolean => getManifestVersion() === 3;
-
-export const throwRuntimeError = (): void => {
-    const error = runtime().lastError;
-
-    if (error) {
-        throw new Error(error.message);
-    }
-};
 
 // Events
 export const onConnect = (callback: Parameters<typeof chrome.runtime.onConnect.addListener>[0]): (() => void) => {
