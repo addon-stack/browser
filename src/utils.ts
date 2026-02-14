@@ -10,16 +10,43 @@ export const throwRuntimeError = (): void => {
     }
 };
 
-export function callWithPromise<T>(executor: (callback: (result: T) => void) => void): Promise<T> {
+export function callWithPromise<T>(executor: (callback: (result: T) => void) => any): Promise<T> {
     return new Promise<T>((resolve, reject) => {
-        executor((result: T) => {
+        let isResolved = false;
+
+        const cb = (result: T) => {
+            if (isResolved) return;
+            isResolved = true;
             try {
                 throwRuntimeError();
                 resolve(result);
             } catch (e) {
                 reject(e);
             }
-        });
+        };
+
+        try {
+            const result = executor(cb);
+
+            if (result && typeof result.then === "function") {
+                result.then(
+                    (val: T) => {
+                        if (!isResolved) {
+                            isResolved = true;
+                            resolve(val);
+                        }
+                    },
+                    (err: any) => {
+                        if (!isResolved) {
+                            isResolved = true;
+                            reject(err);
+                        }
+                    }
+                );
+            }
+        } catch (e) {
+            reject(e);
+        }
     });
 }
 

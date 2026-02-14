@@ -74,11 +74,19 @@ describe("utils", () => {
             await expect(callWithPromise(executor)).rejects.toThrow(errorMessage);
         });
 
-        test("should reject when executor throws", async () => {
-            const executor = () => {
-                throw new Error("Executor error");
-            };
-            await expect(callWithPromise(executor)).rejects.toThrow("Executor error");
+        test("should resolve with result from returned Promise", async () => {
+            const expectedResult = {foo: "bar"};
+            const executor = () => Promise.resolve(expectedResult);
+
+            const result = await callWithPromise(executor);
+            expect(result).toBe(expectedResult);
+        });
+
+        test("should reject when returned Promise rejects", async () => {
+            const errorMessage = "Promise fail";
+            const executor = () => Promise.reject(new Error(errorMessage));
+
+            await expect(callWithPromise(executor)).rejects.toThrow(errorMessage);
         });
     });
 

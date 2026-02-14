@@ -10,7 +10,7 @@ const userScripts = () => browser().userScripts;
 
 // Methods
 export const configureUserScriptsWorld = (properties?: WorldProperties): Promise<void> =>
-    callWithPromise(cb => userScripts().configureWorld(properties || {}, cb));
+    callWithPromise(() => userScripts().configureWorld(properties || {}));
 
 export const getUserScripts = (ids?: string[]): Promise<RegisteredUserScript[]> => {
     const filter = ids?.length ? {ids} : {};
@@ -19,33 +19,33 @@ export const getUserScripts = (ids?: string[]): Promise<RegisteredUserScript[]> 
 };
 
 export const getUserScriptsWorldConfigs = (): Promise<WorldProperties[]> =>
-    callWithPromise(cb => userScripts().getWorldConfigurations(cb));
+    callWithPromise(() => userScripts().getWorldConfigurations());
 
 export const executeUserScript = (injection: UserScriptInjection): Promise<InjectionResult[]> =>
-    callWithPromise(cb => userScripts().execute(injection, cb));
+    callWithPromise(() => userScripts().execute(injection));
 
 export const registerUserScripts = (scripts: RegisteredUserScript[]): Promise<void> =>
-    callWithPromise(cb => userScripts().register(scripts, cb));
+    callWithPromise(() => userScripts().register(scripts));
 
 export const resetUserScriptsWorldConfigs = (worldId?: string): Promise<void> =>
-    callWithPromise(cb => {
+    callWithPromise(() => {
         const {resetWorldConfiguration} = userScripts();
 
         if (typeof worldId === "string") {
-            resetWorldConfiguration(worldId, cb);
-        } else {
-            resetWorldConfiguration(cb);
+            return resetWorldConfiguration(worldId);
         }
+
+        return resetWorldConfiguration();
     });
 
 export const unregisterUserScripts = (ids?: string[]): Promise<void> => {
     const filter = ids?.length ? {ids} : {};
 
-    return callWithPromise(cb => userScripts().unregister(filter, cb));
+    return callWithPromise(() => userScripts().unregister(filter));
 };
 
 export const updateUserScripts = (scripts: RegisteredUserScript[]): Promise<void> =>
-    callWithPromise(cb => userScripts().update(scripts, cb));
+    callWithPromise(() => userScripts().update(scripts));
 
 // Custom Methods
 export const isAvailableUserScripts = (): boolean => !!userScripts();
