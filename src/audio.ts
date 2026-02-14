@@ -1,6 +1,5 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
-import {handleListener} from "./utils";
+import {callWithPromise, handleListener} from "./utils";
 
 type AudioDeviceInfo = chrome.audio.AudioDeviceInfo;
 type DeviceFilter = chrome.audio.DeviceFilter;
@@ -12,69 +11,19 @@ const audio = () => browser().audio;
 
 // Methods
 export const getAudioDevices = (filter?: DeviceFilter): Promise<AudioDeviceInfo[]> =>
-    new Promise<AudioDeviceInfo[]>((resolve, reject) => {
-        audio().getDevices(filter || {}, devices => {
-            try {
-                throwRuntimeError();
-
-                resolve(devices);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => audio().getDevices(filter || {}, cb));
 
 export const getAudioMute = (streamType: StreamType): Promise<boolean> =>
-    new Promise<boolean>((resolve, reject) => {
-        audio().getMute(streamType, value => {
-            try {
-                throwRuntimeError();
-
-                resolve(value);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => audio().getMute(streamType, cb));
 
 export const setAudioActiveDevices = (ids?: DeviceIdLists): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        audio().setActiveDevices(ids || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => audio().setActiveDevices(ids || {}, cb));
 
 export const setAudioMute = (streamType: StreamType, isMuted: boolean): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        audio().setMute(streamType, isMuted, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => audio().setMute(streamType, isMuted, cb));
 
 export const setAudioProperties = (id: string, properties?: DeviceProperties): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        audio().setProperties(id, properties || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => audio().setProperties(id, properties || {}, cb));
 
 // Events
 export const onAudioDeviceListChanged = (

@@ -1,5 +1,5 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
+import {callWithPromise} from "./utils";
 
 type DataTypeSet = chrome.browsingData.DataTypeSet;
 type RemovalOptions = chrome.browsingData.RemovalOptions;
@@ -9,196 +9,46 @@ const browsingData = () => browser().browsingData;
 
 // Methods
 export const removeBrowsingData = (options: RemovalOptions, dataToRemove: DataTypeSet): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        browsingData().remove(options, dataToRemove, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => browsingData().remove(options, dataToRemove, cb));
 
 export const removeAppcacheData = (options?: RemovalOptions): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        browsingData().removeAppcache(options || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => browsingData().removeAppcache(options || {}, cb));
 
 export const removeCacheData = (options?: RemovalOptions): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        browsingData().removeCache(options || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => browsingData().removeCache(options || {}, cb));
 
 export const removeCacheStorageData = (options?: RemovalOptions): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        browsingData().removeCacheStorage(options || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => browsingData().removeCacheStorage(options || {}, cb));
 
 export const removeCookiesData = (options?: RemovalOptions): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        browsingData().removeCookies(options || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => browsingData().removeCookies(options || {}, cb));
 
 export const removeDownloadsData = (options?: RemovalOptions): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        browsingData().removeDownloads(options || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => browsingData().removeDownloads(options || {}, cb));
 
 export const removeFileSystemsData = (options?: RemovalOptions): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        browsingData().removeFileSystems(options || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => browsingData().removeFileSystems(options || {}, cb));
 
 export const removeFormData = (options?: RemovalOptions): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        browsingData().removeFormData(options || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => browsingData().removeFormData(options || {}, cb));
 
 export const removeHistoryData = (options?: RemovalOptions): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        browsingData().removeHistory(options || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => browsingData().removeHistory(options || {}, cb));
 
 export const removeIndexedDBData = (options?: RemovalOptions): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        browsingData().removeIndexedDB(options || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => browsingData().removeIndexedDB(options || {}, cb));
 
 export const removeLocalStorageData = (options?: RemovalOptions): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        browsingData().removeLocalStorage(options || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => browsingData().removeLocalStorage(options || {}, cb));
 
 export const removePasswordsData = (options?: RemovalOptions): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        browsingData().removePasswords(options || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => browsingData().removePasswords(options || {}, cb));
 
 export const removeServiceWorkersData = (options?: RemovalOptions): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        browsingData().removeServiceWorkers(options || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => browsingData().removeServiceWorkers(options || {}, cb));
 
 export const removeWebSQLData = (options?: RemovalOptions): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        browsingData().removeAppcache(options || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => browsingData().removeWebSQL(options || {}, cb));
 
 export const getBrowsingDataSettings = (): Promise<SettingsResult> =>
-    new Promise<SettingsResult>((resolve, reject) => {
-        browsingData().settings(result => {
-            try {
-                throwRuntimeError();
-
-                resolve(result);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => browsingData().settings(cb));

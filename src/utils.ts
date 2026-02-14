@@ -15,10 +15,15 @@ export function callWithPromise<T>(executor: (callback: (result: T) => void) => 
         let isResolved = false;
 
         const cb = (result: T) => {
-            if (isResolved) return;
+            if (isResolved) {
+                return;
+            }
+
             isResolved = true;
+
             try {
                 throwRuntimeError();
+
                 resolve(result);
             } catch (e) {
                 reject(e);
