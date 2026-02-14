@@ -1,6 +1,5 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
-import {handleListener} from "./utils";
+import {callWithPromise, handleListener} from "./utils";
 
 type Cookie = chrome.cookies.Cookie;
 type CookieStore = chrome.cookies.CookieStore;
@@ -14,82 +13,21 @@ const cookies = () => browser().cookies;
 
 // Methods
 export const getCookie = (details: CookieDetails): Promise<Cookie | null> =>
-    new Promise<Cookie | null>((resolve, reject) => {
-        cookies().get(details, cookie => {
-            try {
-                throwRuntimeError();
-
-                resolve(cookie);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => cookies().get(details, cb));
 
 export const getAllCookie = (details?: GetAllDetails): Promise<Cookie[]> =>
-    new Promise<Cookie[]>((resolve, reject) => {
-        cookies().getAll(details || {}, cookies => {
-            try {
-                throwRuntimeError();
+    callWithPromise(cb => cookies().getAll(details || {}, cb));
 
-                resolve(cookies);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
-
-export const getAllCookieStores = (): Promise<CookieStore[]> =>
-    new Promise<CookieStore[]>((resolve, reject) => {
-        cookies().getAllCookieStores(cookieStores => {
-            try {
-                throwRuntimeError();
-
-                resolve(cookieStores);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+export const getAllCookieStores = (): Promise<CookieStore[]> => callWithPromise(cb => cookies().getAllCookieStores(cb));
 
 export const getCookiePartitionKey = (details: FrameDetails): Promise<CookiePartitionKey> =>
-    new Promise<CookiePartitionKey>((resolve, reject) => {
-        cookies().getPartitionKey(details, details => {
-            try {
-                throwRuntimeError();
-
-                resolve(details.partitionKey);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => cookies().getPartitionKey(details, result => cb(result.partitionKey)));
 
 export const removeCookie = (details: CookieDetails): Promise<CookieDetails> =>
-    new Promise<CookieDetails>((resolve, reject) => {
-        cookies().remove(details, details => {
-            try {
-                throwRuntimeError();
-
-                resolve(details);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => cookies().remove(details, cb));
 
 export const setCookie = (details: SetDetails): Promise<Cookie | null> =>
-    new Promise<Cookie | null>((resolve, reject) => {
-        cookies().set(details, cookie => {
-            try {
-                throwRuntimeError();
-
-                resolve(cookie);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => cookies().set(details, cb));
 
 // Events
 export const onCookieChanged = (callback: Parameters<typeof chrome.cookies.onChanged.addListener>[0]): (() => void) => {
