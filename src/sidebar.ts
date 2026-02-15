@@ -1,5 +1,5 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
+import {callWithPromise} from "./utils";
 import type {FirefoxSidebarAction, OperaSidebarAction, SidebarAction} from "./types";
 
 type Color = string | ColorArray;
@@ -21,41 +21,25 @@ const sidePanel = (): typeof chrome.sidePanel | undefined => browser().sidePanel
 
 // Methods
 export const getSidebarOptions = (tabId?: number): Promise<PanelOptions> =>
-    new Promise<PanelOptions>((resolve, reject) => {
+    callWithPromise(cb => {
         const sp = sidePanel();
 
         if (!sp) {
             throw new Error("The chrome.sidePanel.getOptions API is not supported for this browser");
         }
 
-        sp.getOptions({tabId}, options => {
-            try {
-                throwRuntimeError();
-
-                resolve(options);
-            } catch (e) {
-                reject(e);
-            }
-        });
+        sp.getOptions({tabId}, cb);
     });
 
 export const getSidebarBehavior = (): Promise<PanelBehavior> =>
-    new Promise<PanelBehavior>((resolve, reject) => {
+    callWithPromise(cb => {
         const sp = sidePanel();
 
         if (!sp) {
             throw new Error("The chrome.sidePanel.getPanelBehavior API is not supported in this browser");
         }
 
-        sp.getPanelBehavior(behavior => {
-            try {
-                throwRuntimeError();
-
-                resolve(behavior);
-            } catch (e) {
-                reject(e);
-            }
-        });
+        sp.getPanelBehavior(cb);
     });
 
 export const canOpenSidebar = (): boolean => {
@@ -73,135 +57,91 @@ export const canOpenSidebar = (): boolean => {
 };
 
 export const openSidebar = (options: OpenOptions): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
+    callWithPromise(cb => {
         const sp = sidePanel();
 
         if (sp) {
-            sp.open(options, () => {
-                try {
-                    throwRuntimeError();
-
-                    resolve();
-                } catch (e) {
-                    reject(e);
-                }
-            });
-
-            return;
+            return sp.open(options, cb);
         }
 
         const sb = sidebarAction() as FirefoxSidebarAction | undefined;
 
-        if (sb) {
-            // Available only in Firefox
-            const {open} = sb;
-
-            if (open) {
-                open().then(resolve).catch(reject);
-
-                return;
-            }
+        if (sb?.open) {
+            return sb.open();
         }
 
         console.warn("The sidebar open API is not supported in this browser");
 
-        return resolve();
+        cb();
     });
 
 export const setSidebarOptions = (options?: PanelOptions): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
+    callWithPromise(cb => {
         const sp = sidePanel();
 
         if (!sp) {
             console.warn("The chrome.sidePanel.setOptions API is not supported for this browser");
 
-            return resolve();
+            return cb();
         }
 
-        sp.setOptions(options || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
+        sp.setOptions(options || {}, cb);
     });
 
 export const setSidebarBehavior = (behavior?: PanelBehavior): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
+    callWithPromise(cb => {
         const sp = sidePanel();
 
         if (!sp) {
             console.warn("The chrome.sidePanel.setPanelBehavior API is not supported in this browser");
 
-            return resolve();
+            return cb();
         }
 
-        sp.setPanelBehavior(behavior || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
+        sp.setPanelBehavior(behavior || {}, cb);
     });
 
 // Customs methods
-export const setSidebarPath = async (path: string, tabId?: number): Promise<void> => {
-    if (sidePanel()) {
-        await setSidebarOptions({tabId, path});
+export const setSidebarPath = (path: string, tabId?: number): Promise<void> =>
+    callWithPromise(async cb => {
+        if (sidePanel()) {
+            await setSidebarOptions({tabId, path});
 
-        return;
-    }
-
-    const sb = sidebarAction();
-
-    if (sb) {
-        const result = sb.setPanel({tabId, panel: path});
-
-        if (result instanceof Promise) {
-            await result;
+            return cb();
         }
 
-        return;
-    }
+        const sb = sidebarAction();
 
-    throw new Error("The sidebar set path API is not supported for this browser");
-};
+        if (sb) {
+            const result = sb.setPanel({tabId, panel: path});
+
+            if (result instanceof Promise) {
+                await result;
+            }
+
+            return cb();
+        }
+
+        throw new Error("The sidebar set path API is not supported for this browser");
+    });
 
 export const getSidebarPath = async (tabId?: number): Promise<string | undefined> => {
     if (sidePanel()) {
-        return (await getSidebarOptions(tabId)).path;
+        const options = await getSidebarOptions(tabId);
+
+        return options.path;
     }
 
-    const sb = sidebarAction();
+    const sb = sidebarAction() as OperaSidebarAction | undefined;
 
-    const {getPanel} = sb as OperaSidebarAction;
+    if (sb?.getPanel) {
+        const fullUrl = await callWithPromise<string>(cb => {
+            if (isAvailableOperaSidebar()) {
+                return sb.getPanel({tabId}, cb);
+            }
 
-    if (getPanel) {
-        // Opera: callback-based getPanel(details, callback)
-        if (isAvailableOperaSidebar()) {
-            const fullUrl: string = await new Promise((resolve, reject) => {
-                getPanel({tabId}, (url: string) => {
-                    try {
-                        throwRuntimeError();
-
-                        resolve(url);
-                    } catch (e) {
-                        reject(e);
-                    }
-                });
-            });
-
-            // Opera returns a full URL like chrome-extension://{extension_id}/sidebar.html
-            return new URL(fullUrl).pathname;
-        }
-
-        const fullUrl = await getPanel({tabId});
+            return (sb as any).getPanel({tabId});
+        });
 
         return new URL(fullUrl).pathname;
     }
@@ -209,33 +149,39 @@ export const getSidebarPath = async (tabId?: number): Promise<string | undefined
     throw new Error("The sidebar get path API is not supported for this browser");
 };
 
-export const setSidebarTitle = async (title: string | number, tabId?: number): Promise<void> => {
-    const sb = sidebarAction();
+export const setSidebarTitle = (title: string | number, tabId?: number): Promise<void> =>
+    callWithPromise(async cb => {
+        const sb = sidebarAction();
 
-    if (!sb) {
-        console.warn("The sidebarAction.setTitle API is supported only in Opera or Firefox");
+        if (!sb) {
+            console.warn("The sidebarAction.setTitle API is supported only in Opera or Firefox");
 
-        return;
-    }
-
-    await sb.setTitle({tabId, title: title.toString()});
-};
-
-export const setSidebarBadgeText = async (text: string | number, tabId?: number): Promise<void> => {
-    const sb = sidebarAction() as OperaSidebarAction | undefined;
-
-    if (sb) {
-        const {setBadgeText} = sb;
-
-        if (setBadgeText) {
-            setBadgeText({tabId, text: text.toString()});
-
-            return;
+            return cb();
         }
-    }
 
-    console.warn("The opr.sidebarAction.setBadgeText API is supported only in Opera");
-};
+        const result = sb.setTitle({tabId, title: title.toString()});
+
+        if (result instanceof Promise) {
+            await result;
+        }
+
+        cb();
+    });
+
+export const setSidebarBadgeText = (text: string | number, tabId?: number): Promise<void> =>
+    callWithPromise(cb => {
+        const sb = sidebarAction() as OperaSidebarAction | undefined;
+
+        if (sb?.setBadgeText) {
+            sb.setBadgeText({tabId, text: text.toString()});
+
+            return cb();
+        }
+
+        console.warn("The opr.sidebarAction.setBadgeText API is supported only in Opera");
+
+        cb();
+    });
 
 export const clearSidebarBadgeText = (tabId?: number): Promise<void> => setSidebarBadgeText("", tabId);
 
@@ -243,163 +189,106 @@ export const clearSidebarBadgeText = (tabId?: number): Promise<void> => setSideb
  * Note (Opera): The opr.sidebarAction.setIcon API appears to be broken ("Access to extension API denied").
  * See: https://forums.opera.com/topic/75680/opr-sidebaraction-seticon-api-is-broken-access-to-extension-api-denied
  */
-export const setSidebarIcon = async (details: IconDetails): Promise<void> => {
-    const sb = sidebarAction();
+export const setSidebarIcon = (details: IconDetails): Promise<void> =>
+    callWithPromise(async cb => {
+        const sb = sidebarAction();
 
-    if (sb) {
-        const {setIcon} = sb;
-
-        if (setIcon) {
+        if (sb?.setIcon) {
             if (isAvailableOperaSidebar()) {
                 console.warn(
                     "The opr.sidebarAction.setIcon API is broken in Opera. More info: https://forums.opera.com/topic/75680/opr-sidebaraction-seticon-api-is-broken-access-to-extension-api-denied"
                 );
 
-                return;
+                return cb();
             }
 
-            await setIcon(details);
+            const result = sb.setIcon(details);
 
-            return;
-        }
-    }
+            if (result instanceof Promise) {
+                await result;
+            }
 
-    console.warn("The sidebarAction.setIcon API is supported only in Opera or Firefox");
-};
-
-export const setSidebarBadgeTextColor = async (color: Color, tabId?: number): Promise<void> => {
-    const sb = sidebarAction() as OperaSidebarAction | undefined;
-
-    if (sb) {
-        const {setBadgeTextColor} = sb;
-
-        if (setBadgeTextColor) {
-            setBadgeTextColor({tabId, color});
-
-            return;
-        }
-    }
-
-    console.warn("The opr.sidebarAction.setBadgeTextColor API is supported only in Opera");
-};
-
-export const setSidebarBadgeBgColor = async (color: Color, tabId?: number): Promise<void> => {
-    const sb = sidebarAction() as OperaSidebarAction | undefined;
-
-    if (sb) {
-        const {setBadgeBackgroundColor} = sb;
-
-        if (setBadgeBackgroundColor) {
-            setBadgeBackgroundColor({tabId, color});
-
-            return;
-        }
-    }
-
-    console.warn("The opr.sidebarAction.setBadgeBackgroundColor API is supported only in Opera");
-};
-
-export const getSidebarTitle = async (tabId?: number): Promise<string> => {
-    const sb = sidebarAction();
-
-    if (!sb) {
-        throw new Error("The sidebarAction.getTitle API is supported only in Firefox or Opera");
-    }
-
-    const {getTitle} = sb as OperaSidebarAction;
-
-    if (getTitle) {
-        // Opera: callback-based getTitle(details, callback)
-        if (isAvailableOperaSidebar()) {
-            return await new Promise<string>((resolve, reject) => {
-                getTitle({tabId}, (title: string) => {
-                    try {
-                        throwRuntimeError();
-
-                        resolve(title);
-                    } catch (e) {
-                        reject(e);
-                    }
-                });
-            });
+            return cb();
         }
 
-        return getTitle({tabId});
-    }
+        console.warn("The sidebarAction.setIcon API is supported only in Opera or Firefox");
 
-    throw new Error("The sidebarAction.getTitle API not available");
-};
+        cb();
+    });
 
-export const getSidebarBadgeText = (tabId?: number): Promise<string> =>
-    new Promise<string>((resolve, reject) => {
+export const setSidebarBadgeTextColor = (color: Color, tabId?: number): Promise<void> =>
+    callWithPromise(cb => {
         const sb = sidebarAction() as OperaSidebarAction | undefined;
 
-        if (sb) {
-            const {getBadgeText} = sb;
+        if (sb?.setBadgeTextColor) {
+            sb.setBadgeTextColor({tabId, color});
 
-            if (getBadgeText) {
-                getBadgeText({tabId}, (text: string) => {
-                    try {
-                        throwRuntimeError();
+            return cb();
+        }
 
-                        resolve(text);
-                    } catch (e) {
-                        reject(e);
-                    }
-                });
+        console.warn("The opr.sidebarAction.setBadgeTextColor API is supported only in Opera");
 
-                return;
+        cb();
+    });
+
+export const setSidebarBadgeBgColor = (color: Color, tabId?: number): Promise<void> =>
+    callWithPromise(cb => {
+        const sb = sidebarAction() as OperaSidebarAction | undefined;
+
+        if (sb?.setBadgeBackgroundColor) {
+            sb.setBadgeBackgroundColor({tabId, color});
+
+            return cb();
+        }
+
+        console.warn("The opr.sidebarAction.setBadgeBackgroundColor API is supported only in Opera");
+
+        cb();
+    });
+
+export const getSidebarTitle = (tabId?: number): Promise<string> =>
+    callWithPromise<string>(cb => {
+        const sb = sidebarAction() as OperaSidebarAction | undefined;
+
+        if (sb?.getTitle) {
+            if (isAvailableOperaSidebar()) {
+                return sb.getTitle({tabId}, cb);
             }
+
+            return (sb as any).getTitle({tabId});
+        }
+
+        throw new Error("The sidebarAction.getTitle API not available");
+    });
+
+export const getSidebarBadgeText = (tabId?: number): Promise<string> =>
+    callWithPromise(cb => {
+        const sb = sidebarAction() as OperaSidebarAction | undefined;
+
+        if (sb?.getBadgeText) {
+            return sb.getBadgeText({tabId}, cb);
         }
 
         throw new Error("The opr.sidebarAction.getBadgeText API is supported only in Opera");
     });
 
 export const getSidebarBadgeTextColor = (tabId?: number): Promise<ColorArray> =>
-    new Promise<ColorArray>((resolve, reject) => {
+    callWithPromise(cb => {
         const sb = sidebarAction() as OperaSidebarAction | undefined;
 
-        if (sb) {
-            const {getBadgeTextColor} = sb;
-
-            if (getBadgeTextColor) {
-                getBadgeTextColor({tabId}, (color: ColorArray) => {
-                    try {
-                        throwRuntimeError();
-
-                        resolve(color);
-                    } catch (e) {
-                        reject(e);
-                    }
-                });
-
-                return;
-            }
+        if (sb?.getBadgeTextColor) {
+            return sb.getBadgeTextColor({tabId}, cb);
         }
 
         throw new Error("The opr.sidebarAction.getBadgeTextColor API is supported only in Opera");
     });
 
 export const getSidebarBadgeBgColor = (tabId?: number): Promise<ColorArray> =>
-    new Promise<ColorArray>((resolve, reject) => {
+    callWithPromise(cb => {
         const sb = sidebarAction() as OperaSidebarAction | undefined;
 
-        if (sb) {
-            const {getBadgeBackgroundColor} = sb;
-
-            if (getBadgeBackgroundColor) {
-                getBadgeBackgroundColor({tabId}, color => {
-                    try {
-                        throwRuntimeError();
-
-                        resolve(color);
-                    } catch (e) {
-                        reject(e);
-                    }
-                });
-
-                return;
-            }
+        if (sb?.getBadgeBackgroundColor) {
+            return sb.getBadgeBackgroundColor({tabId}, cb);
         }
 
         throw new Error("The opr.sidebarAction.getBadgeBackgroundColor API is supported only in Opera");

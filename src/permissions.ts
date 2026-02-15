@@ -1,6 +1,5 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
-import {handleListener} from "./utils";
+import {callWithPromise, handleListener} from "./utils";
 
 type AddHostAccessRequest = chrome.permissions.AddHostAccessRequest;
 type RemoveHostAccessRequest = chrome.permissions.RemoveHostAccessRequest;
@@ -10,82 +9,21 @@ const permissions = () => browser().permissions;
 
 // Methods
 export const addHostAccessRequest = (request?: AddHostAccessRequest): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        permissions().addHostAccessRequest(request || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => permissions().addHostAccessRequest(request || {}, cb));
 
 export const containsPermissions = (permission: Permissions): Promise<boolean> =>
-    new Promise<boolean>((resolve, reject) => {
-        permissions().contains(permission, result => {
-            try {
-                throwRuntimeError();
+    callWithPromise(cb => permissions().contains(permission, cb));
 
-                resolve(result);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
-
-export const getAllPermissions = (): Promise<Permissions> =>
-    new Promise<Permissions>((resolve, reject) => {
-        permissions().getAll(permissions => {
-            try {
-                throwRuntimeError();
-
-                resolve(permissions);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+export const getAllPermissions = (): Promise<Permissions> => callWithPromise(cb => permissions().getAll(cb));
 
 export const removePermissions = (permission: Permissions): Promise<boolean> =>
-    new Promise<boolean>((resolve, reject) => {
-        permissions().remove(permission, removed => {
-            try {
-                throwRuntimeError();
-
-                resolve(removed);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => permissions().remove(permission, cb));
 
 export const removeHostAccessRequest = (request?: RemoveHostAccessRequest): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        permissions().removeHostAccessRequest(request || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => permissions().removeHostAccessRequest(request || {}, cb));
 
 export const requestPermissions = (permission: Permissions): Promise<boolean> =>
-    new Promise<boolean>((resolve, reject) => {
-        permissions().request(permission, granted => {
-            try {
-                throwRuntimeError();
-
-                resolve(granted);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => permissions().request(permission, cb));
 
 // Events
 export const onPermissionsAdded = (

@@ -1,6 +1,5 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
-import {handleListener} from "./utils";
+import {callWithPromise, handleListener} from "./utils";
 
 type UrlDetails = chrome.history.UrlDetails;
 type Range = chrome.history.Range;
@@ -11,83 +10,21 @@ type HistoryItem = chrome.history.HistoryItem;
 const history = () => browser().history;
 
 // Methods
-export const addHistoryUrl = (url: string): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        history().addUrl({url}, () => {
-            try {
-                throwRuntimeError();
+export const addHistoryUrl = (url: string): Promise<void> => callWithPromise(cb => history().addUrl({url}, cb));
 
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
-
-export const deleteAllHistory = (): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        history().deleteAll(() => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+export const deleteAllHistory = (): Promise<void> => callWithPromise(cb => history().deleteAll(cb));
 
 export const deleteRangeHistory = (range: Range): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        history().deleteRange(range, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => history().deleteRange(range, cb));
 
 export const deleteHistoryUrl = (details: UrlDetails): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        history().deleteUrl(details, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => history().deleteUrl(details, cb));
 
 export const getHistoryVisits = (url: string): Promise<VisitItem[]> =>
-    new Promise<VisitItem[]>((resolve, reject) => {
-        history().getVisits({url}, results => {
-            try {
-                throwRuntimeError();
-
-                resolve(results);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => history().getVisits({url}, cb));
 
 export const searchHistory = (query: HistoryQuery): Promise<HistoryItem[]> =>
-    new Promise<HistoryItem[]>((resolve, reject) => {
-        history().search(query, results => {
-            try {
-                throwRuntimeError();
-
-                resolve(results);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => history().search(query, cb));
 
 // Events
 export const onHistoryVisited = (

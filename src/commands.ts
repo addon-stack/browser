@@ -1,6 +1,5 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
-import {handleListener} from "./utils";
+import {callWithPromise, handleListener} from "./utils";
 
 type Command = chrome.commands.Command;
 type Tab = chrome.tabs.Tab;
@@ -8,18 +7,7 @@ type Tab = chrome.tabs.Tab;
 const commands = () => browser().commands;
 
 // Methods
-export const getAllCommands = (): Promise<Command[]> =>
-    new Promise<Command[]>((resolve, reject) => {
-        commands().getAll(commands => {
-            try {
-                throwRuntimeError();
-
-                resolve(commands);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+export const getAllCommands = (): Promise<Command[]> => callWithPromise(cb => commands().getAll(cb));
 
 // Events
 export const onCommand = (callback: Parameters<typeof chrome.commands.onCommand.addListener>[0]): (() => void) => {

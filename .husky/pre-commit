@@ -1,7 +1,5 @@
 #!/usr/bin/env sh
 
-# Husky pre-commit hook: format and run related tests on staged files
-
+# Husky pre-commit hook: run tests and check linting/formatting
 npm run test:related
-npm run lint:fix:unsafe
-npm run format
+npm run lint

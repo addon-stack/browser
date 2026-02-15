@@ -1,5 +1,5 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
+import {callWithPromise} from "./utils";
 
 type FetchProperties = chrome.extension.FetchProperties;
 
@@ -11,29 +11,9 @@ export const getBackgroundPage = (): Window | null => extension().getBackgroundP
 export const getViews = (properties?: FetchProperties): Window[] => extension().getViews(properties);
 
 export const isAllowedFileSchemeAccess = (): Promise<boolean> =>
-    new Promise<boolean>((resolve, reject) => {
-        extension().isAllowedFileSchemeAccess(isAllowedAccess => {
-            try {
-                throwRuntimeError();
-
-                resolve(isAllowedAccess);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => extension().isAllowedFileSchemeAccess(cb));
 
 export const isAllowedIncognitoAccess = (): Promise<boolean> =>
-    new Promise<boolean>((resolve, reject) => {
-        extension().isAllowedIncognitoAccess(isAllowedAccess => {
-            try {
-                throwRuntimeError();
-
-                resolve(isAllowedAccess);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => extension().isAllowedIncognitoAccess(cb));
 
 export const setUpdateUrlData = (data: string): void => extension().setUpdateUrlData(data);

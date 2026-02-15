@@ -1,5 +1,5 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
+import {callWithPromise} from "./utils";
 
 type CancelScanResponse<T> = chrome.documentScan.CancelScanResponse<T>;
 type CloseScannerResponse<T> = chrome.documentScan.CloseScannerResponse<T>;
@@ -19,124 +19,32 @@ const documentScan = () => browser().documentScan;
 
 // Methods
 export const cancelDocScanning = (job: string): Promise<CancelScanResponse<string>> =>
-    new Promise<CancelScanResponse<string>>((resolve, reject) => {
-        documentScan().cancelScan(job, response => {
-            try {
-                throwRuntimeError();
-
-                resolve(response);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => documentScan().cancelScan(job, cb));
 
 export const closeDocScanner = (scannerHandle: string): Promise<CloseScannerResponse<string>> =>
-    new Promise<CloseScannerResponse<string>>((resolve, reject) => {
-        documentScan().closeScanner(scannerHandle, response => {
-            try {
-                throwRuntimeError();
-
-                resolve(response);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => documentScan().closeScanner(scannerHandle, cb));
 
 export const getDocScannerOptionGroups = (scannerHandle: string): Promise<GetOptionGroupsResponse<string>> =>
-    new Promise<GetOptionGroupsResponse<string>>((resolve, reject) => {
-        documentScan().getOptionGroups(scannerHandle, response => {
-            try {
-                throwRuntimeError();
-
-                resolve(response);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => documentScan().getOptionGroups(scannerHandle, cb));
 
 export const getDocScannerList = (filter: DeviceFilter): Promise<GetScannerListResponse> =>
-    new Promise<GetScannerListResponse>((resolve, reject) => {
-        documentScan().getScannerList(filter, response => {
-            try {
-                throwRuntimeError();
-
-                resolve(response);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => documentScan().getScannerList(filter, cb));
 
 export const openDocScanner = (scannerId: string): Promise<OpenScannerResponse<string>> =>
-    new Promise<OpenScannerResponse<string>>((resolve, reject) => {
-        documentScan().openScanner(scannerId, response => {
-            try {
-                throwRuntimeError();
-
-                resolve(response);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => documentScan().openScanner(scannerId, cb));
 
 export const readDocScanningData = (job: string): Promise<ReadScanDataResponse<string>> =>
-    new Promise<ReadScanDataResponse<string>>((resolve, reject) => {
-        documentScan().readScanData(job, response => {
-            try {
-                throwRuntimeError();
-
-                resolve(response);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => documentScan().readScanData(job, cb));
 
 export const docScanning = (options: ScanOptions): Promise<ScanResults> =>
-    new Promise<ScanResults>((resolve, reject) => {
-        documentScan().scan(options, result => {
-            try {
-                throwRuntimeError();
-
-                resolve(result);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => documentScan().scan(options, cb));
 
 export const setDocScannerOptions = (
     scannerHandle: string,
     options: OptionSetting[]
-): Promise<SetOptionsResponse<string>> =>
-    new Promise<SetOptionsResponse<string>>((resolve, reject) => {
-        documentScan().setOptions(scannerHandle, options, response => {
-            try {
-                throwRuntimeError();
-
-                resolve(response);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+): Promise<SetOptionsResponse<string>> => callWithPromise(cb => documentScan().setOptions(scannerHandle, options, cb));
 
 export const startDocScanning = (
     scannerHandle: string,
     options: StartScanOptions
-): Promise<StartScanResponse<string>> =>
-    new Promise<StartScanResponse<string>>((resolve, reject) => {
-        documentScan().startScan(scannerHandle, options, response => {
-            try {
-                throwRuntimeError();
-
-                resolve(response);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+): Promise<StartScanResponse<string>> => callWithPromise(cb => documentScan().startScan(scannerHandle, options, cb));

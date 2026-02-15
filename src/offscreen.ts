@@ -1,46 +1,14 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
+import {callWithPromise} from "./utils";
 
 type CreateParameters = chrome.offscreen.CreateParameters;
 
 const offscreen = () => browser().offscreen;
 
 // Methods
-export const closeOffscreen = (): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        offscreen().closeDocument(() => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+export const closeOffscreen = (): Promise<void> => callWithPromise(cb => offscreen().closeDocument(cb));
 
 export const createOffscreen = (parameters: CreateParameters): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        offscreen().createDocument(parameters, () => {
-            try {
-                throwRuntimeError();
+    callWithPromise(cb => offscreen().createDocument(parameters, cb));
 
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
-
-export const hasOffscreen = (): Promise<boolean> =>
-    new Promise<boolean>((resolve, reject) => {
-        offscreen().hasDocument(hasDocument => {
-            try {
-                throwRuntimeError();
-
-                resolve(hasDocument);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+export const hasOffscreen = (): Promise<boolean> => callWithPromise(cb => offscreen().hasDocument(cb));

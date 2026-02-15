@@ -24,7 +24,6 @@
   "files": {
     "includes": [
       "src/**/*.{ts,tsx,js,jsx}",
-      "!src/**/*.test.{ts,tsx,js,jsx}",
       "**/*.{json,jsonc,md,mdx,cjs,mjs}",
       "!dist/**/*"
     ]

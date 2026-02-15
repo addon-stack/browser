@@ -1,6 +1,5 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
-import {handleListener} from "./utils";
+import {callWithPromise, handleListener} from "./utils";
 
 type Alarm = chrome.alarms.Alarm;
 type AlarmCreateInfo = chrome.alarms.AlarmCreateInfo;
@@ -8,70 +7,16 @@ type AlarmCreateInfo = chrome.alarms.AlarmCreateInfo;
 const alarms = () => browser().alarms;
 
 // Methods
-export const clearAlarm = (name: string): Promise<boolean> =>
-    new Promise<boolean>((resolve, reject) => {
-        alarms().clear(name, wasCleared => {
-            try {
-                throwRuntimeError();
+export const clearAlarm = (name: string): Promise<boolean> => callWithPromise(cb => alarms().clear(name, cb));
 
-                resolve(wasCleared);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
-
-export const clearAllAlarm = (): Promise<boolean> =>
-    new Promise<boolean>((resolve, reject) => {
-        alarms().clearAll(wasCleared => {
-            try {
-                throwRuntimeError();
-
-                resolve(wasCleared);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+export const clearAllAlarm = (): Promise<boolean> => callWithPromise(cb => alarms().clearAll(cb));
 
 export const createAlarm = (name: string, info: AlarmCreateInfo): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        alarms().create(name, info, () => {
-            try {
-                throwRuntimeError();
+    callWithPromise(cb => alarms().create(name, info, cb));
 
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+export const getAlarm = (name: string): Promise<Alarm | undefined> => callWithPromise(cb => alarms().get(name, cb));
 
-export const getAlarm = (name: string): Promise<Alarm | undefined> =>
-    new Promise<Alarm | undefined>((resolve, reject) => {
-        alarms().get(name, alarm => {
-            try {
-                throwRuntimeError();
-
-                resolve(alarm);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
-
-export const getAllAlarm = (): Promise<Alarm[]> =>
-    new Promise<Alarm[]>((resolve, reject) => {
-        alarms().getAll(alarms => {
-            try {
-                throwRuntimeError();
-
-                resolve(alarms);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+export const getAllAlarm = (): Promise<Alarm[]> => callWithPromise(cb => alarms().getAll(cb));
 
 // Events
 export const onAlarm = (callback: Parameters<typeof chrome.alarms.onAlarm.addListener>[0]): (() => void) => {

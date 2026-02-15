@@ -1,5 +1,5 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
+import {callWithPromise} from "./utils";
 
 type Awaited<T> = chrome.scripting.Awaited<T>;
 type ContentScriptFilter = chrome.scripting.ContentScriptFilter;
@@ -12,95 +12,25 @@ const scripting = () => browser().scripting;
 
 // Methods
 export const executeScript = <T = any>(injection: ScriptInjection<any, T>): Promise<InjectionResult<Awaited<T>>[]> =>
-    new Promise<InjectionResult<Awaited<T>>[]>((resolve, reject) => {
-        scripting().executeScript(injection, result => {
-            try {
-                throwRuntimeError();
-
-                resolve(result);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => scripting().executeScript(injection, cb));
 
 export const getRegisteredContentScripts = (filter?: ContentScriptFilter): Promise<RegisteredContentScript[]> =>
-    new Promise<RegisteredContentScript[]>((resolve, reject) => {
-        scripting().getRegisteredContentScripts(filter || {}, scripts => {
-            try {
-                throwRuntimeError();
-
-                resolve(scripts);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => scripting().getRegisteredContentScripts(filter || {}, cb));
 
 export const insertCss = (injection: CSSInjection): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        scripting().insertCSS(injection, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => scripting().insertCSS(injection, cb));
 
 export const registerContentScripts = (scripts: RegisteredContentScript[]): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        scripting().registerContentScripts(scripts, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => scripting().registerContentScripts(scripts, cb));
 
 export const removeCss = (injection: CSSInjection): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        scripting().removeCSS(injection, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => scripting().removeCSS(injection, cb));
 
 export const unregisterContentScripts = (filter?: ContentScriptFilter): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        scripting().unregisterContentScripts(filter || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => scripting().unregisterContentScripts(filter || {}, cb));
 
 export const updateContentScripts = (scripts: RegisteredContentScript[]): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        scripting().updateContentScripts(scripts, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => scripting().updateContentScripts(scripts, cb));
 
 // Custom Methods
 export const isAvailableScripting = (): boolean => !!scripting();

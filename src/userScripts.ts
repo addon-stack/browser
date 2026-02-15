@@ -1,5 +1,5 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
+import {callWithPromise} from "./utils";
 
 type WorldProperties = chrome.userScripts.WorldProperties;
 type RegisteredUserScript = chrome.userScripts.RegisteredUserScript;
@@ -10,121 +10,42 @@ const userScripts = () => browser().userScripts;
 
 // Methods
 export const configureUserScriptsWorld = (properties?: WorldProperties): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        userScripts().configureWorld(properties || {}, () => {
-            try {
-                throwRuntimeError();
+    callWithPromise(() => userScripts().configureWorld(properties || {}));
 
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+export const getUserScripts = (ids?: string[]): Promise<RegisteredUserScript[]> => {
+    const filter = ids?.length ? {ids} : {};
 
-export const getUserScripts = (ids?: string[]): Promise<RegisteredUserScript[]> =>
-    new Promise<RegisteredUserScript[]>((resolve, reject) => {
-        const filter = ids?.length ? {ids} : {};
-
-        userScripts().getScripts(filter, scripts => {
-            try {
-                throwRuntimeError();
-
-                resolve(scripts);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    return callWithPromise(cb => userScripts().getScripts(filter, cb));
+};
 
 export const getUserScriptsWorldConfigs = (): Promise<WorldProperties[]> =>
-    new Promise<WorldProperties[]>((resolve, reject) => {
-        userScripts().getWorldConfigurations(worlds => {
-            try {
-                throwRuntimeError();
-
-                resolve(worlds);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(() => userScripts().getWorldConfigurations());
 
 export const executeUserScript = (injection: UserScriptInjection): Promise<InjectionResult[]> =>
-    new Promise<InjectionResult[]>((resolve, reject) => {
-        userScripts().execute(injection, result => {
-            try {
-                throwRuntimeError();
-
-                resolve(result);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(() => userScripts().execute(injection));
 
 export const registerUserScripts = (scripts: RegisteredUserScript[]): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        userScripts().register(scripts, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(() => userScripts().register(scripts));
 
 export const resetUserScriptsWorldConfigs = (worldId?: string): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        const callback = () => {
-            try {
-                throwRuntimeError();
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        };
-
+    callWithPromise(() => {
         const {resetWorldConfiguration} = userScripts();
 
         if (typeof worldId === "string") {
-            resetWorldConfiguration(worldId, callback);
-        } else {
-            resetWorldConfiguration(callback);
+            return resetWorldConfiguration(worldId);
         }
+
+        return resetWorldConfiguration();
     });
 
-export const unregisterUserScripts = (ids?: string[]): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        const callback = () => {
-            try {
-                throwRuntimeError();
+export const unregisterUserScripts = (ids?: string[]): Promise<void> => {
+    const filter = ids?.length ? {ids} : {};
 
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        };
-
-        const filter = ids?.length ? {ids} : {};
-
-        userScripts().unregister(filter, callback);
-    });
+    return callWithPromise(() => userScripts().unregister(filter));
+};
 
 export const updateUserScripts = (scripts: RegisteredUserScript[]): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        userScripts().update(scripts, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(() => userScripts().update(scripts));
 
 // Custom Methods
 export const isAvailableUserScripts = (): boolean => !!userScripts();
