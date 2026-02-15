@@ -1,7 +1,7 @@
 {
   "name": "@addon-core/browser",
   "version": "0.2.3",
-  "description": "TypeScript wrapper for Chrome extension APIs",
+  "description": "TypeScript wrapper for Web Extension APIs",
   "keywords": [
     "browser",
     "addon",
@@ -27,10 +27,7 @@
     "url": "https://github.com/addon-stack/browser/issues"
   },
   "license": "MIT",
-  "author": "Addon Stack <addonbonedev@gmail.com>",
-  "contributors": [
-    "Anjey Tsibylskij (https://github.com/atldays)"
-  ],
+  "author": "Anjey Tsibylskij (https://github.com/atldays)",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
