@@ -1,6 +1,5 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
-import {handleListener} from "./utils";
+import {callWithPromise, handleListener} from "./utils";
 
 type NotificationOptions = chrome.notifications.NotificationOptions;
 type NotificationCreateOptions = chrome.notifications.NotificationCreateOptions;
@@ -9,20 +8,10 @@ const notifications = () => browser().notifications;
 
 // Methods
 export const clearNotification = (notificationId: string): Promise<boolean> =>
-    new Promise<boolean>((resolve, reject) => {
-        notifications().clear(notificationId, wasCleared => {
-            try {
-                throwRuntimeError();
-
-                resolve(wasCleared);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => notifications().clear(notificationId, cb));
 
 export const createNotification = (options: NotificationOptions, notificationId?: string): Promise<string> =>
-    new Promise<string>((resolve, reject) => {
+    callWithPromise(cb => {
         const defaultOptions: NotificationCreateOptions = {
             type: "basic",
             title: "",
@@ -30,59 +19,22 @@ export const createNotification = (options: NotificationOptions, notificationId?
             iconUrl: "",
         };
 
-        if (typeof notificationId !== "string") {
-            notificationId = Date.now().toString();
+        const finalOptions = {...defaultOptions, ...options};
+
+        if (typeof notificationId === "string" && notificationId !== "") {
+            notifications().create(notificationId, finalOptions, cb);
+        } else {
+            notifications().create(finalOptions, cb);
         }
-
-        notifications().create(notificationId, {...defaultOptions, ...options}, notificationId => {
-            try {
-                throwRuntimeError();
-
-                resolve(notificationId);
-            } catch (e) {
-                reject(e);
-            }
-        });
     });
 
-export const getAllNotifications = (): Promise<object> =>
-    new Promise<object>((resolve, reject) => {
-        notifications().getAll(notifications => {
-            try {
-                throwRuntimeError();
-
-                resolve(notifications);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+export const getAllNotifications = (): Promise<object> => callWithPromise(cb => notifications().getAll(cb));
 
 export const getNotificationPermissionLevel = (): Promise<string> =>
-    new Promise<string>((resolve, reject) => {
-        notifications().getPermissionLevel(level => {
-            try {
-                throwRuntimeError();
-
-                resolve(level);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => notifications().getPermissionLevel(cb));
 
 export const updateNotification = (options: NotificationOptions, notificationId: string): Promise<boolean> =>
-    new Promise<boolean>((resolve, reject) => {
-        notifications().update(notificationId, options, wasUpdated => {
-            try {
-                throwRuntimeError();
-
-                resolve(wasUpdated);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => notifications().update(notificationId, options, cb));
 
 // Custom Methods
 export const isAvailableNotifications = (): boolean => !!notifications();

@@ -1,6 +1,5 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
-import {handleListener} from "./utils";
+import {callWithPromise, handleListener} from "./utils";
 
 type ExtensionInfo = chrome.management.ExtensionInfo;
 type LaunchType = chrome.management.LaunchType;
@@ -9,160 +8,38 @@ const management = () => browser().management;
 
 // Methods
 export const createAppShortcut = async (id: string): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        management().createAppShortcut(id, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => management().createAppShortcut(id, cb));
 
 export const generateAppForLink = async (url: string, title: string): Promise<ExtensionInfo> =>
-    new Promise<ExtensionInfo>((resolve, reject) => {
-        management().generateAppForLink(url, title, extensionInfo => {
-            try {
-                throwRuntimeError();
-
-                resolve(extensionInfo);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => management().generateAppForLink(url, title, cb));
 
 export const getExtensionInfo = async (id: string): Promise<ExtensionInfo> =>
-    new Promise<ExtensionInfo>((resolve, reject) => {
-        management().get(id, extensionInfo => {
-            try {
-                throwRuntimeError();
+    callWithPromise(cb => management().get(id, cb));
 
-                resolve(extensionInfo);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
-
-export const getAllExtensionInfo = async (): Promise<ExtensionInfo[]> =>
-    new Promise<ExtensionInfo[]>((resolve, reject) => {
-        management().getAll(extensionsInfo => {
-            try {
-                throwRuntimeError();
-
-                resolve(extensionsInfo);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+export const getAllExtensionInfo = async (): Promise<ExtensionInfo[]> => callWithPromise(cb => management().getAll(cb));
 
 export const getPermissionWarningsById = async (id: string): Promise<string[]> =>
-    new Promise<string[]>((resolve, reject) => {
-        management().getPermissionWarningsById(id, permissionWarnings => {
-            try {
-                throwRuntimeError();
-
-                resolve(permissionWarnings);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => management().getPermissionWarningsById(id, cb));
 
 export const getPermissionWarningsByManifest = async (manifestStr: string): Promise<string[]> =>
-    new Promise<string[]>((resolve, reject) => {
-        management().getPermissionWarningsByManifest(manifestStr, permissionWarnings => {
-            try {
-                throwRuntimeError();
+    callWithPromise(cb => management().getPermissionWarningsByManifest(manifestStr, cb));
 
-                resolve(permissionWarnings);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
-
-export const getCurrentExtension = async (): Promise<ExtensionInfo> =>
-    new Promise<ExtensionInfo>((resolve, reject) => {
-        management().getSelf(extensionInfo => {
-            try {
-                throwRuntimeError();
-
-                resolve(extensionInfo);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+export const getCurrentExtension = async (): Promise<ExtensionInfo> => callWithPromise(cb => management().getSelf(cb));
 
 export const launchExtensionApp = async (id: string): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        management().launchApp(id, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => management().launchApp(id, cb));
 
 export const setExtensionEnabled = async (id: string, enabled: boolean): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        management().setEnabled(id, enabled, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => management().setEnabled(id, enabled, cb));
 
 export const setExtensionLaunchType = async (id: string, launchType: `${LaunchType}`): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        management().setLaunchType(id, launchType, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => management().setLaunchType(id, launchType, cb));
 
 export const uninstallExtension = async (id: string, showConfirmDialog?: boolean): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        management().uninstall(id, {showConfirmDialog}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => management().uninstall(id, {showConfirmDialog}, cb));
 
 export const uninstallCurrentExtension = async (showConfirmDialog?: boolean): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        management().uninstallSelf({showConfirmDialog}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => management().uninstallSelf({showConfirmDialog}, cb));
 
 // Events
 export const onExtensionDisabled = (
