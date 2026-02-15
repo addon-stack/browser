@@ -50,9 +50,9 @@
     "dev": "tsup --watch",
     "lint": "biome check .",
     "fix": "biome check --write --unsafe .",
-    "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest",
-    "test:ci": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --ci --passWithNoTests --coverage",
-    "test:related": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --bail --passWithNoTests",
+    "test": "jest",
+    "test:ci": "jest --ci --passWithNoTests --coverage",
+    "test:related": "jest --bail --passWithNoTests",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "release": "release-it",
     "release:preview": "release-it --no-github.release --no-npm.publish --no-git.tag --ci"
