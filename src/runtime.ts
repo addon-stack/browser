@@ -17,8 +17,6 @@ interface RequestUpdateCheck {
 
 const runtime = () => browser().runtime as typeof chrome.runtime;
 
-export {throwRuntimeError} from "./utils";
-
 // Methods
 export const connect = (extensionId: string, connectInfo?: object): Port => runtime().connect(extensionId, connectInfo);
 

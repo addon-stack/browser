@@ -1,6 +1,5 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
-import {handleListener, safeListener} from "./utils";
+import {callWithPromise, handleListener, safeListener} from "./utils";
 
 type Window = chrome.windows.Window;
 type WindowType = chrome.windows.WindowType;
@@ -16,95 +15,25 @@ const windows = () => browser().windows;
 
 // Methods
 export const createWindow = (createData?: CreateData): Promise<Window | undefined> =>
-    new Promise<Window | undefined>((resolve, reject) => {
-        windows().create(createData || {}, window => {
-            try {
-                throwRuntimeError();
-
-                resolve(window);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => windows().create(createData || {}, cb));
 
 export const getWindow = (windowId: number, queryOptions?: QueryOptions): Promise<Window> =>
-    new Promise<Window>((resolve, reject) => {
-        windows().get(windowId, queryOptions || {}, window => {
-            try {
-                throwRuntimeError();
-
-                resolve(window);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => windows().get(windowId, queryOptions || {}, cb));
 
 export const getAllWindows = (queryOptions?: QueryOptions): Promise<Window[]> =>
-    new Promise<Window[]>((resolve, reject) => {
-        windows().getAll(queryOptions || {}, windows => {
-            try {
-                throwRuntimeError();
-
-                resolve(windows);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => windows().getAll(queryOptions || {}, cb));
 
 export const getCurrentWindow = (queryOptions?: QueryOptions): Promise<Window> =>
-    new Promise<Window>((resolve, reject) => {
-        windows().getCurrent(queryOptions || {}, window => {
-            try {
-                throwRuntimeError();
-
-                resolve(window);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => windows().getCurrent(queryOptions || {}, cb));
 
 export const getLastFocusedWindow = (queryOptions?: QueryOptions): Promise<Window> =>
-    new Promise<Window>((resolve, reject) => {
-        windows().getLastFocused(queryOptions || {}, window => {
-            try {
-                throwRuntimeError();
-
-                resolve(window);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => windows().getLastFocused(queryOptions || {}, cb));
 
 export const removeWindow = (windowId: number): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        windows().remove(windowId, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => windows().remove(windowId, () => cb()));
 
 export const updateWindow = (windowId: number, updateInfo: UpdateInfo): Promise<Window> =>
-    new Promise<Window>((resolve, reject) => {
-        windows().update(windowId, updateInfo, window => {
-            try {
-                throwRuntimeError();
-
-                resolve(window);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => windows().update(windowId, updateInfo, cb));
 
 // Events
 export const onWindowBoundsChanged = (

@@ -1,6 +1,5 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
-import {safeListener} from "./utils";
+import {callWithPromise, safeListener} from "./utils";
 
 type GetFrameDetails = chrome.webNavigation.GetFrameDetails;
 type GetFrameResultDetails = chrome.webNavigation.GetFrameResultDetails;
@@ -11,33 +10,10 @@ const webNavigation = () => browser().webNavigation;
 
 // Methods
 export const getAllFrames = (tabId: number): Promise<GetAllFrameResultDetails[]> =>
-    new Promise<GetAllFrameResultDetails[]>((resolve, reject) => {
-        webNavigation().getAllFrames({tabId}, frames => {
-            try {
-                throwRuntimeError();
-
-                resolve(frames || []);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => webNavigation().getAllFrames({tabId}, frames => cb(frames || [])));
 
 export const getFrame = (details: GetFrameDetails): Promise<GetFrameResultDetails | null> =>
-    new Promise<GetFrameResultDetails | null>((resolve, reject) => {
-        webNavigation().getFrame(details, frame => {
-            try {
-                throwRuntimeError();
-
-                if (!frame) {
-                    throw new Error("No frame found for the specified tabId");
-                }
-                resolve(frame);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => webNavigation().getFrame(details, cb));
 
 // Events
 export const onWebNavigationBeforeNavigate = (
