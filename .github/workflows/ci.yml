@@ -39,6 +39,8 @@ jobs:
     name: Build, Lint, Test ${{ needs.compute-matrix.outputs.name_suffix }}
     needs: compute-matrix
     runs-on: ${{ matrix.os }}
+    env:
+      NODE_OPTIONS: --experimental-vm-modules
     permissions:
       contents: read
     strategy:

@@ -10,6 +10,7 @@ A promise-based wrapper for the Chrome `contextMenus` API.
 - [removeContextMenus(menuItemId)](#removeContextMenus)
 - [removeAllContextMenus()](#removeAllContextMenus)
 - [updateContextMenus(id, updateProperties?)](#updateContextMenus)
+- [createOrUpdateContextMenu(id, properties)](#createOrUpdateContextMenu)
 
 ## Events
 
@@ -59,6 +60,19 @@ updateContextMenus(
 ```
 
 Updates the specified context menu item with new properties.
+
+<a name="createOrUpdateContextMenu"></a>
+
+### createOrUpdateContextMenu
+
+```
+createOrUpdateContextMenu(
+  id: string | number,
+  properties: Omit<chrome.contextMenus.CreateProperties, "id">
+): Promise<void>
+```
+
+Tries to create a context menu item. If it already exists (e.g., after service worker wake up), it updates the existing item instead.
 
 <a name="onContextMenusClicked"></a>
 

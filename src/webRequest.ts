@@ -1,6 +1,5 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
-import {safeListener} from "./utils";
+import {callWithPromise, safeListener} from "./utils";
 
 type RequestFilter = chrome.webRequest.RequestFilter;
 
@@ -8,17 +7,7 @@ const webRequest = () => browser().webRequest;
 
 // Methods
 export const handlerWebRequestBehaviorChanged = (): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        webRequest().handlerBehaviorChanged(() => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => webRequest().handlerBehaviorChanged(() => cb()));
 
 // Events
 export const onWebRequestAuthRequired = (

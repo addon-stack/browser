@@ -1,6 +1,5 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
-import {handleListener} from "./utils";
+import {callWithPromise, handleListener} from "./utils";
 
 type DownloadItem = chrome.downloads.DownloadItem;
 type DownloadQuery = chrome.downloads.DownloadQuery;
@@ -14,160 +13,64 @@ export class BlockDownloadError extends Error {}
 
 // Methods
 export const acceptDownloadDanger = (downloadId: number): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        downloads().acceptDanger(downloadId, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => downloads().acceptDanger(downloadId, cb));
 
 export const cancelDownload = (downloadId: number): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        downloads().cancel(downloadId, () => {
-            try {
-                throwRuntimeError();
+    callWithPromise(cb => downloads().cancel(downloadId, cb));
 
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+export const download = async (options: DownloadOptions): Promise<number> => {
+    const downloadId = await callWithPromise<number>(cb =>
+        downloads().download({conflictAction: "uniquify", ...options}, cb)
+    );
 
-export const download = (options: DownloadOptions): Promise<number> =>
-    new Promise<number>((resolve, reject) => {
-        downloads().download({conflictAction: "uniquify", ...options}, (downloadId: number | undefined) => {
-            try {
-                throwRuntimeError();
+    if (typeof downloadId !== "number") {
+        throw new Error("Download id not created");
+    }
 
-                if (typeof downloadId !== "number") {
-                    throw new Error("Download id not created");
-                }
+    await new Promise(resolve => setTimeout(resolve, 100));
 
-                setTimeout(() => {
-                    findDownload(downloadId)
-                        .then(item => {
-                            if (!item) {
-                                throw new BlockDownloadError("Download item not found after created");
-                            }
+    const item = await findDownload(downloadId);
 
-                            const {error, state} = item;
+    if (!item) {
+        throw new BlockDownloadError("Download item not found after created");
+    }
 
-                            if (state === "interrupted") {
-                                if (error === "USER_CANCELED") {
-                                    throw new BlockDownloadError("Requires user permission to upload");
-                                }
+    const {error, state} = item;
 
-                                throw new Error(`Download error: ${error}`);
-                            }
+    if (state === "interrupted") {
+        if (error === "USER_CANCELED") {
+            throw new BlockDownloadError("Requires user permission to upload");
+        }
 
-                            resolve(downloadId);
-                        })
-                        .catch(reject);
-                }, 100);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+        throw new Error(`Download error: ${error}`);
+    }
+
+    return downloadId;
+};
 
 export const eraseDownload = (query: DownloadQuery): Promise<number[]> =>
-    new Promise<number[]>((resolve, reject) => {
-        downloads().erase(query, erasedIds => {
-            try {
-                throwRuntimeError();
-
-                resolve(erasedIds);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => downloads().erase(query, cb));
 
 export const getDownloadFileIcon = (downloadId: number, options: GetFileIconOptions): Promise<string | undefined> =>
-    new Promise<string | undefined>((resolve, reject) => {
-        downloads().getFileIcon(downloadId, options, iconURL => {
-            try {
-                throwRuntimeError();
+    callWithPromise(cb => downloads().getFileIcon(downloadId, options, cb));
 
-                resolve(iconURL);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
-
-export const openDownload = (downloadId: number): Promise<void> => downloads().open(downloadId);
+export const openDownload = (downloadId: number): Promise<void> =>
+    callWithPromise(cb => downloads().open(downloadId, cb));
 
 export const pauseDownload = (downloadId: number): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        downloads().pause(downloadId, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => downloads().pause(downloadId, cb));
 
 export const removeDownloadFile = (downloadId: number): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        downloads().removeFile(downloadId, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => downloads().removeFile(downloadId, cb));
 
 export const resumeDownload = (downloadId: number): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        downloads().resume(downloadId, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => downloads().resume(downloadId, cb));
 
 export const searchDownloads = (query: DownloadQuery): Promise<DownloadItem[]> =>
-    new Promise<DownloadItem[]>((resolve, reject) => {
-        downloads().search(query, downloadItems => {
-            try {
-                throwRuntimeError();
-
-                resolve(downloadItems);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => downloads().search(query, cb));
 
 export const setDownloadsUiOptions = (enabled: boolean): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        downloads().setUiOptions({enabled}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => downloads().setUiOptions({enabled}, cb));
 
 export const showDownloadFolder = (): void => downloads().showDefaultFolder();
 

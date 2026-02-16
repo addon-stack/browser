@@ -1,5 +1,6 @@
 import {browser} from "./browser";
-import {getManifest, throwRuntimeError} from "./runtime";
+import {getManifest} from "./runtime";
+import {callWithPromise} from "./utils";
 
 type LanguageDetectionResult = chrome.i18n.LanguageDetectionResult;
 
@@ -7,38 +8,13 @@ const i18n = () => browser().i18n;
 
 // Methods
 export const detectI18Language = (text: string): Promise<LanguageDetectionResult> =>
-    new Promise<LanguageDetectionResult>((resolve, reject) => {
-        i18n().detectLanguage(text, result => {
-            try {
-                throwRuntimeError();
+    callWithPromise(cb => i18n().detectLanguage(text, cb));
 
-                resolve(result);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+export const getI18nAcceptLanguages = (): Promise<string[]> => callWithPromise(cb => i18n().getAcceptLanguages(cb));
 
-export const getI18nAcceptLanguages = (): Promise<string[]> =>
-    new Promise<string[]>((resolve, reject) => {
-        i18n().getAcceptLanguages(locales => {
-            try {
-                throwRuntimeError();
+export const getI18nUILanguage = (): string | undefined => i18n().getUILanguage();
 
-                resolve(locales);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
-
-export const getI18nUILanguage = (): string | undefined => {
-    return i18n().getUILanguage();
-};
-
-export const getI18nMessage = (key: string): string | undefined => {
-    return i18n().getMessage(key);
-};
+export const getI18nMessage = (key: string): string | undefined => i18n().getMessage(key);
 
 // Custom Methods
 export const getDefaultLanguage = (): string | undefined => getManifest().default_locale;

@@ -1,6 +1,5 @@
 import {browser} from "./browser";
-import {throwRuntimeError} from "./runtime";
-import {handleListener} from "./utils";
+import {callWithPromise, handleListener} from "./utils";
 
 type CreateProperties = chrome.contextMenus.CreateProperties;
 
@@ -8,59 +7,29 @@ const contextMenus = () => browser().contextMenus;
 
 // Methods
 export const createContextMenus = (createProperties?: CreateProperties): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        contextMenus().create(createProperties || {}, () => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+    callWithPromise(cb => contextMenus().create(createProperties || {}, cb));
 
 export const removeContextMenus = (menuItemId: string | number): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        contextMenus().remove(menuItemId, () => {
-            try {
-                throwRuntimeError();
+    callWithPromise(cb => contextMenus().remove(menuItemId, cb));
 
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
-
-export const removeAllContextMenus = (): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        contextMenus().removeAll(() => {
-            try {
-                throwRuntimeError();
-
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+export const removeAllContextMenus = (): Promise<void> => callWithPromise(cb => contextMenus().removeAll(cb));
 
 export const updateContextMenus = (
     id: string | number,
     updateProperties?: Omit<CreateProperties, "id">
-): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        contextMenus().update(id, updateProperties || {}, () => {
-            try {
-                throwRuntimeError();
+): Promise<void> => callWithPromise(cb => contextMenus().update(id, updateProperties || {}, cb));
 
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
+// Custom Methods
+export const createOrUpdateContextMenu = async (
+    id: string | number,
+    properties: Omit<CreateProperties, "id">
+): Promise<void> => {
+    try {
+        await createContextMenus({...properties, id: id.toString()});
+    } catch {
+        await updateContextMenus(id, properties);
+    }
+};
 
 // Events
 export const onContextMenusClicked = (
