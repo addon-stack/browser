@@ -1,5 +1,39 @@
 # Changelog
 
+## 🚀 Release `@addon-core/browser` v0.4.1 (2026-02-19)
+
+
+### ✨ Features
+
+* **sidebar:** enhance API support and add error handling for unsupported features ([f2b1658](https://github.com/addon-stack/browser/commit/f2b16586e68a746ed64e008d5deb9be327338864))
+
+
+* **sidebar:** improve `isOpenSidebar` for available in Chrome ([2cfbe44](https://github.com/addon-stack/browser/commit/2cfbe447d2ac1be0cc946443642d653b4ba5ecab))
+
+
+
+
+### 📝 Documentation
+
+* **sidebar:** update API details and improve documentation structure ([654275d](https://github.com/addon-stack/browser/commit/654275da8b31989213218305be3b8c4c8402e93d))
+
+
+
+
+### 🧹 Chores
+
+* **biome:** exclude `addon` folder from linting ([645b47c](https://github.com/addon-stack/browser/commit/645b47c2655967aad331f7f42fbb7178ce6ae1b2))
+
+
+
+
+
+### 🙌 Contributors
+
+- [Rostyslav Nihrutsa](https://github.com/RostyslavNihrutsa) (@RostyslavNihrutsa) — commits: 5
+- [Addon Stack](https://github.com/addon-stack) (@addon-stack) — commits: 3
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 3
+
 ## 🚀 Release `@addon-core/browser` v0.3.0 (2026-02-15)
 
 
