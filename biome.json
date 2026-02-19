@@ -25,7 +25,8 @@
     "includes": [
       "src/**/*.{ts,tsx,js,jsx}",
       "**/*.{json,jsonc,md,mdx,cjs,mjs}",
-      "!dist/**/*"
+      "!dist/**/*",
+      "!addon/**/*"
     ]
   },
   "formatter": {
