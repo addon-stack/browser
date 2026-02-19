@@ -1,4 +1,5 @@
 import {browser} from "./browser";
+import {getContexts} from "./runtime";
 import {callWithPromise} from "./utils";
 import type {FirefoxSidebarAction, OperaSidebarAction, SidebarAction} from "./types";
 
@@ -9,6 +10,7 @@ type OpenOptions = chrome.sidePanel.OpenOptions;
 type CloseOptions = chrome.sidePanel.CloseOptions;
 type PanelOptions = chrome.sidePanel.PanelOptions;
 type PanelBehavior = chrome.sidePanel.PanelBehavior;
+type ContextFilter = chrome.runtime.ContextFilter;
 type IconDetails = opr.sidebarAction.IconDetails;
 
 // Available in Firefox and Opera
@@ -141,8 +143,16 @@ export const setSidebarBehavior = (behavior?: PanelBehavior): Promise<void> =>
         sp.setPanelBehavior(behavior || {}, cb);
     });
 
-export const isOpenSidebar = (windowId?: number): Promise<boolean> =>
-    callWithPromise(async cb => {
+export const isOpenSidebar = async (windowId?: number): Promise<boolean> => {
+    if (sidePanel()) {
+        const filter: ContextFilter = {contextTypes: ["SIDE_PANEL"]};
+
+        if (windowId) filter.windowIds = [windowId];
+
+        return (await getContexts(filter)).length !== 0;
+    }
+
+    return callWithPromise(async cb => {
         const sb = sidebarAction() as FirefoxSidebarAction | undefined;
 
         if (sb?.isOpen) {
@@ -157,6 +167,7 @@ export const isOpenSidebar = (windowId?: number): Promise<boolean> =>
 
         throw new SidebarError("The sidebarAction.isOpen API is not supported in this browser");
     });
+};
 
 export const toggleSidebar = (): Promise<void> =>
     callWithPromise(async cb => {
