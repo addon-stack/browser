@@ -2,18 +2,28 @@
 
 A TypeScript promise-based wrapper for Chrome Extension APIs, supporting both Manifest V2 and V3 across Chrome, Opera, Edge, and other Chromium-based browsers.
 
-[![npm version](https://img.shields.io/npm/v/%40addon-core%2Fbrowser.svg?logo=npm)](https://www.npmjs.com/package/@addon-core/browser)
-[![npm downloads](https://img.shields.io/npm/dm/%40addon-core%2Fbrowser.svg)](https://www.npmjs.com/package/@addon-core/browser)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
+[![npm version](https://img.shields.io/npm/v/%40addon-core%2Fbrowser.svg?logo=npm&style=for-the-badge)](https://www.npmjs.com/package/@addon-core/browser)
+[![npm downloads](https://img.shields.io/npm/dm/%40addon-core%2Fbrowser.svg?style=for-the-badge&color=blue)](https://www.npmjs.com/package/@addon-core/browser)
+[![CI](https://img.shields.io/github/actions/workflow/status/addon-stack/browser/ci.yml?style=for-the-badge)](https://github.com/addon-stack/browser/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE.md)
 
 ## Installation
 
+### npm
+
 ```bash
-# with your preferred package manager
 npm i @addon-core/browser
-# or
+```
+
+### yarn
+
+```bash
 yarn add @addon-core/browser
-# or
+```
+
+### pnpm
+
+```bash
 pnpm add @addon-core/browser
 ```
 
@@ -102,6 +112,13 @@ const off = onTabUpdated((tabId, changeInfo, tab) => {
 // Later, to stop listening:
 off();
 ```
+
+## Utilities
+
+In addition to Chrome API wrappers, this package provides a set of low-level utilities for error handling, promise management, and listener safety. While these are primarily used internally, they are also exported via the `@addon-core/browser/utils` subpath for advanced usage.
+
+For a complete list of utility functions and examples, see the [Utilities Documentation](docs/utils.md).
+
 
 ## Not yet covered
 
