@@ -1,5 +1,5 @@
 import {afterEach, beforeEach, describe, expect, jest, test} from "@jest/globals";
-import {callWithPromise, handleListener, safeListener, throwRuntimeError} from "./utils";
+import {callWithPromise, checkLastError, handleListener, safeListener} from "./utils";
 
 describe("utils", () => {
     let originalChrome: any;
@@ -23,20 +23,20 @@ describe("utils", () => {
         jest.resetAllMocks();
     });
 
-    describe("throwRuntimeError", () => {
+    describe("checkLastError", () => {
         test("should not throw if lastError is undefined", () => {
             globalThis.chrome = {runtime: {lastError: undefined}} as any;
-            expect(() => throwRuntimeError()).not.toThrow();
+            expect(() => checkLastError()).not.toThrow();
         });
 
         test("should throw Error if lastError exists", () => {
             const errorMessage = "Some error";
             globalThis.chrome = {runtime: {lastError: {message: errorMessage}}} as any;
-            expect(() => throwRuntimeError()).toThrow(errorMessage);
+            expect(() => checkLastError()).toThrow(errorMessage);
         });
 
         test("should throw Error if WebExtension API is not available", () => {
-            expect(() => throwRuntimeError()).toThrow("WebExtension API not available in this context");
+            expect(() => checkLastError()).toThrow("WebExtension API not available in this context");
         });
     });
 

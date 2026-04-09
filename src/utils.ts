@@ -2,7 +2,7 @@ import {browser} from "./browser";
 
 type Event<T extends (...args: any) => void> = chrome.events.Event<T>;
 
-export const throwRuntimeError = (): void => {
+export const checkLastError = (): void => {
     const error = browser().runtime.lastError;
 
     if (error) {
@@ -22,7 +22,7 @@ export function callWithPromise<T>(executor: (callback: (result: T) => void) => 
             isResolved = true;
 
             try {
-                throwRuntimeError();
+                checkLastError();
 
                 resolve(result);
             } catch (e) {

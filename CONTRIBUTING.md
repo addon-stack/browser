@@ -95,7 +95,7 @@ The goal is to cover as much of the WebExtensions/Chrome API surface as possible
 How to add a new API wrapper:
 1) Implementation
 - Create `src/<api>.ts`.
-- Wrap callback‑style APIs into `Promise` and call `throwRuntimeError()` inside callbacks.
+- Wrap callback‑style APIs into `Promise` and call `checkLastError()` inside callbacks.
 - Events must return an unsubscribe function `() => void` (see `handleListener`/`safeListener`).
 - Use precise types from `@types/chrome` (avoid `Parameters<>` in the final documentation — show real argument types).
 - Keep function names concise and consistent (see existing modules).

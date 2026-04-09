@@ -1,7 +1,7 @@
 import {defineConfig, type Options} from "tsup";
 
 const common: Options = {
-    entry: ["src/index.ts"],
+    entry: ["src/index.ts", "src/utils.ts"],
     bundle: true,
     outDir: "dist",
     sourcemap: true,
