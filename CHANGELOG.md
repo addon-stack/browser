@@ -1,5 +1,31 @@
 # Changelog
 
+## 🚀 Release `@addon-core/browser` v0.5.0 (2026-04-09)
+
+
+### ✨ Features
+
+* **utils:** export utilities module and rename helper to checkLastError ([574dfb7](https://github.com/addon-stack/browser/commit/574dfb762b2e46b241b183e03abdc1b0155f61ae))
+
+  - Add @addon-core/browser/utils export in package.json and tsup.config.ts.
+  - Rename throwRuntimeError to checkLastError for better clarity and API consistency.
+  - Create docs/utils.md with detailed descriptions and usage examples.
+  - Refactor tests and internal references to match the new naming.
+
+
+
+### 🤖 CI
+
+* **workflows:** pin npm version to 11.7.0 for consistency and debug output ([24d9d6e](https://github.com/addon-stack/browser/commit/24d9d6e67f32f804b3de0ba83d3956d53fa6ebe9))
+
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 4
+
 ## 🚀 Release `@addon-core/browser` v0.4.1 (2026-02-19)
 
 
