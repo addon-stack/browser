@@ -1,5 +1,25 @@
 # Changelog
 
+## 🚀 Release `@addon-core/browser` v0.6.0 (2026-05-03)
+
+
+### ✨ Features
+
+* **offscreen:** enhance API with new utility methods and tests ([30c6fdf](https://github.com/addon-stack/browser/commit/30c6fdff7c8c798a3a6c3c00cc4a0d487e5a2716))
+
+  - Add `getOffscreenContext` to retrieve the current document context.
+  - Add `getOffscreenUrl` and `getOffscreenPath` to fetch document URL and path.
+  - Add `hasOffscreenUrl` and `hasOffscreenPath` to validate document URL/path.
+  - Update `docs/offscreen.md` with new API methods and usage examples.
+  - Add comprehensive test suite (`offscreen.test.ts`) for new functionalities.
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 3
+
 ## 🚀 Release `@addon-core/browser` v0.5.0 (2026-04-09)
 
 
