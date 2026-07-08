@@ -50,6 +50,7 @@ pnpm add @addon-core/browser
 - [extension](docs/extension.md)
 - [history](docs/history.md)
 - [i18n](docs/i18n.md)
+- [identity](docs/identity.md) — Chrome full support; Firefox, Edge, and Opera support the portable web auth flow; Safari is not supported.
 - [idle](docs/idle.md)
 - [management](docs/management.md)
 - [notifications](docs/notifications.md)
@@ -132,8 +133,6 @@ These commonly used WebExtensions/Chrome Extension APIs are not wrapped here yet
 - devtools.* (inspectedWindow, network, panels)
 - dns
 - fontSettings
-- identity
-- identityProvider
 - omnibox
 - pageCapture
 - platformKeys

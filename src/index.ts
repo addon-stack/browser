@@ -12,6 +12,7 @@ export * from "./env";
 export * from "./extension";
 export * from "./history";
 export * from "./i18n";
+export * from "./identity";
 export * from "./idle";
 export * from "./management";
 export * from "./notifications";
