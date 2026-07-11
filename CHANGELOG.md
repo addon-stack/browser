@@ -1,5 +1,37 @@
 # Changelog
 
+## 🚀 Release `@addon-core/browser` v0.7.0 (2026-07-11)
+
+
+### ✨ Features
+
+* **browser-detection:** add browser guessing helper ([2cc0290](https://github.com/addon-stack/browser/commit/2cc0290663241d9ea0d5c762ae6f754650f48cc0))
+
+
+* **identity:** add identity API wrappers ([9663cf3](https://github.com/addon-stack/browser/commit/9663cf31cc22e6870ab343ee16a01f4f63959433))
+
+
+
+
+### 🐛 Bug Fixed
+
+* **identity:** use runtime-backed Firefox auth flow detection ([ac3a10e](https://github.com/addon-stack/browser/commit/ac3a10e861431dc22cdc64c8cb044bd822ccdd9b))
+
+
+
+
+### 📝 Documentation
+
+* **readme:** refresh usage examples ([ccae71e](https://github.com/addon-stack/browser/commit/ccae71e4e0422bc4885003f74adf43341584e61e))
+
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 6
+
 ## 🚀 Release `@addon-core/browser` v0.6.0 (2026-05-03)
 
 
