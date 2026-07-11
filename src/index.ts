@@ -2,6 +2,7 @@ export * from "./action";
 export * from "./alarms";
 export * from "./audio";
 export * from "./browser";
+export * from "./browserDetection";
 export * from "./browsingData";
 export * from "./commands";
 export * from "./contextMenus";
