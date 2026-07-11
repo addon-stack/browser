@@ -78,48 +78,66 @@ pnpm add @addon-core/browser
 
 ## Usage examples
 
-- setActionPopup (works in MV2 & MV3):
+### Action API across MV2 and MV3
 
 ```ts
-import { setActionPopup } from "@addon-core/browser";
+import {setActionPopup, setBadgeText} from "@addon-core/browser";
 
 await setActionPopup("popup.html");
-// Optional per-tab usage (when you have a tab id):
-// await setActionPopup("popup.html", someTabId);
+await setBadgeText("ON");
 ```
 
-- getCurrentTab:
+`setActionPopup()` works with `chrome.action` in Manifest V3 and `chrome.browserAction` in Manifest V2.
+
+### Tabs and events
 
 ```ts
-import { getCurrentTab } from "@addon-core/browser";
+import {getActiveTab, onTabUpdated} from "@addon-core/browser";
 
-const tab = await getCurrentTab();
-if (tab?.id) {
-  console.log("Current tab id:", tab.id);
-}
-```
+const tab = await getActiveTab();
 
-- onTabUpdated (with unsubscribe):
-
-```ts
-import { onTabUpdated } from "@addon-core/browser";
-
-const off = onTabUpdated((tabId, changeInfo, tab) => {
-  if (changeInfo.status === "complete") {
-    console.log("Tab finished loading:", tabId, tab.url);
+const off = onTabUpdated((tabId, changeInfo) => {
+  if (tabId === tab.id && changeInfo.status === "complete") {
+    off();
   }
 });
-
-// Later, to stop listening:
-off();
 ```
+
+Event helpers return an unsubscribe function, making listener lifecycles easy to control.
+
+### Context menus and tab messaging
+
+```ts
+import {createOrUpdateContextMenu, onContextMenusClicked, sendTabMessage} from "@addon-core/browser";
+
+await createOrUpdateContextMenu("save-selection", {
+  title: "Save selection",
+  contexts: ["selection"],
+});
+
+const off = onContextMenusClicked(async (info, tab) => {
+  if (info.menuItemId !== "save-selection" || !tab?.id) {
+    return;
+  }
+
+  await sendTabMessage(tab.id, {
+    type: "save-selection",
+    text: info.selectionText,
+  });
+});
+```
+
+`createOrUpdateContextMenu()` avoids duplicate-menu errors during extension reloads, and `sendTabMessage()` keeps the background-to-content-script path promise-based.
+
+## Helpers
+
+- [browserDetection](docs/browserDetection.md) — Best-effort browser detection with `BrowserName`, `BrowserFamily`, `guessBrowser()`, `isBrowser()`, and `isBrowserFamily()`.
 
 ## Utilities
 
 In addition to Chrome API wrappers, this package provides a set of low-level utilities for error handling, promise management, and listener safety. While these are primarily used internally, they are also exported via the `@addon-core/browser/utils` subpath for advanced usage.
 
 For a complete list of utility functions and examples, see the [Utilities Documentation](docs/utils.md).
-
 
 ## Not yet covered
 
