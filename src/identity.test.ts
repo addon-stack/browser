@@ -13,28 +13,34 @@ import {
 describe("identity", () => {
     let originalBrowser: any;
     let originalChrome: any;
+    let originalNavigatorDescriptor: PropertyDescriptor | undefined;
 
     beforeEach(() => {
         originalBrowser = globalThis.browser;
         originalChrome = globalThis.chrome;
+        originalNavigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, "navigator");
 
         delete (globalThis as any).browser;
         delete (globalThis as any).chrome;
+        delete (globalThis as any).navigator;
     });
 
     afterEach(() => {
         (globalThis as any).browser = originalBrowser;
         globalThis.chrome = originalChrome;
+        restoreGlobalProperty("navigator", originalNavigatorDescriptor);
         jest.resetAllMocks();
     });
 
     const setChromeIdentity = (
         identity: Partial<typeof chrome.identity>,
-        lastError?: chrome.runtime.LastError
+        lastError?: chrome.runtime.LastError,
+        manifestVersion: 2 | 3 = 3
     ): void => {
         globalThis.chrome = {
             identity,
             runtime: {
+                getManifest: jest.fn(() => ({manifest_version: manifestVersion})),
                 id: "chrome-extension-id",
                 lastError,
             },
@@ -48,6 +54,24 @@ describe("identity", () => {
         return {addListener, removeListener};
     };
 
+    const setNavigator = (navigator: Partial<Navigator>): void => {
+        Object.defineProperty(globalThis, "navigator", {
+            configurable: true,
+            value: navigator,
+            writable: true,
+        });
+    };
+
+    const restoreGlobalProperty = (name: string, descriptor: PropertyDescriptor | undefined): void => {
+        if (descriptor) {
+            Object.defineProperty(globalThis, name, descriptor);
+
+            return;
+        }
+
+        delete (globalThis as any)[name];
+    };
+
     test("should generate a redirect url", () => {
         const getRedirectURL = jest.fn((path?: string) => `https://chrome-extension-id.chromiumapp.org/${path}`);
         setChromeIdentity({getRedirectURL});
@@ -56,19 +80,61 @@ describe("identity", () => {
         expect(getRedirectURL).toHaveBeenCalledWith("oauth");
     });
 
-    test("should launch a Chrome promise web auth flow", async () => {
-        const launchWebAuthFlowMock = jest.fn((_details: chrome.identity.WebAuthFlowDetails) =>
-            Promise.resolve("https://chrome-extension-id.chromiumapp.org/oauth?code=123")
+    test("should launch a Chrome MV2 callback web auth flow", async () => {
+        const launchWebAuthFlowMock = jest.fn(
+            (_details: chrome.identity.WebAuthFlowDetails, cb: (url: string) => void) =>
+                cb("https://chrome-extension-id.chromiumapp.org/oauth?code=123")
         );
-        setChromeIdentity({launchWebAuthFlow: launchWebAuthFlowMock as any});
+        setChromeIdentity({launchWebAuthFlow: launchWebAuthFlowMock as any}, undefined, 2);
 
         await expect(launchWebAuthFlow({url: "https://accounts.example/oauth", interactive: true})).resolves.toBe(
             "https://chrome-extension-id.chromiumapp.org/oauth?code=123"
         );
-        expect(launchWebAuthFlowMock).toHaveBeenCalledWith({url: "https://accounts.example/oauth", interactive: true});
+        expect(launchWebAuthFlowMock).toHaveBeenCalledWith(
+            {url: "https://accounts.example/oauth", interactive: true},
+            expect.any(Function)
+        );
+    });
+
+    test("should launch a Chrome MV3 callback web auth flow", async () => {
+        const launchWebAuthFlowMock = jest.fn(
+            (_details: chrome.identity.WebAuthFlowDetails, cb: (url: string) => void) =>
+                cb("https://chrome-extension-id.chromiumapp.org/oauth?code=123")
+        );
+        setChromeIdentity({launchWebAuthFlow: launchWebAuthFlowMock as any}, undefined, 3);
+
+        await expect(launchWebAuthFlow({url: "https://accounts.example/oauth", interactive: true})).resolves.toBe(
+            "https://chrome-extension-id.chromiumapp.org/oauth?code=123"
+        );
+        expect(launchWebAuthFlowMock).toHaveBeenCalledWith(
+            {url: "https://accounts.example/oauth", interactive: true},
+            expect.any(Function)
+        );
+    });
+
+    test("should not use Firefox promise-only flow from a user agent fallback", async () => {
+        const launchWebAuthFlowMock = jest.fn(
+            (_details: chrome.identity.WebAuthFlowDetails, cb: (url: string) => void) =>
+                cb("https://chrome-extension-id.chromiumapp.org/oauth?code=123")
+        );
+        setChromeIdentity({launchWebAuthFlow: launchWebAuthFlowMock as any}, undefined, 3);
+        setNavigator({
+            userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:126.0) Gecko/20100101 Firefox/126.0",
+        });
+
+        await expect(launchWebAuthFlow({url: "https://accounts.example/oauth", interactive: true})).resolves.toBe(
+            "https://chrome-extension-id.chromiumapp.org/oauth?code=123"
+        );
+        expect(launchWebAuthFlowMock).toHaveBeenCalledWith(
+            {url: "https://accounts.example/oauth", interactive: true},
+            expect.any(Function)
+        );
     });
 
     test("should launch a Firefox promise-only web auth flow without callback", async () => {
+        const getBrowserInfo = jest.fn(() =>
+            Promise.resolve({buildID: "1", name: "Firefox", vendor: "Mozilla", version: "86"})
+        );
         const launchWebAuthFlowMock = jest.fn((_details: any) =>
             Promise.resolve("https://extension-id.extensions.allizom.org/oauth?code=123")
         );
@@ -77,6 +143,8 @@ describe("identity", () => {
                 launchWebAuthFlow: launchWebAuthFlowMock,
             },
             runtime: {
+                getBrowserInfo,
+                getManifest: jest.fn(() => ({manifest_version: 2})),
                 id: "firefox-extension-id",
                 lastError: undefined,
             },
@@ -92,6 +160,7 @@ describe("identity", () => {
             redirect_uri: "https://extension-id.extensions.allizom.org/oauth",
             url: "https://accounts.example/oauth",
         });
+        expect(getBrowserInfo).toHaveBeenCalledTimes(1);
     });
 
     test("should reject launchWebAuthFlow when the browser promise rejects", async () => {
@@ -125,6 +194,16 @@ describe("identity", () => {
 
         await expect(getAuthToken()).resolves.toBe(result);
         expect(getAuthTokenMock).toHaveBeenCalledWith({}, expect.any(Function));
+    });
+
+    test("should treat a null getAuthToken callback value as a token result", async () => {
+        const getAuthTokenMock = jest.fn((_details: chrome.identity.TokenDetails, cb: any) => cb(null));
+        setChromeIdentity({getAuthToken: getAuthTokenMock as any});
+
+        await expect(getAuthToken()).resolves.toEqual({
+            grantedScopes: undefined,
+            token: null,
+        });
     });
 
     test("should reject getAuthToken when runtime lastError is set", async () => {
@@ -183,7 +262,8 @@ describe("identity", () => {
         const unsubscribe = onIdentitySignInChanged(callback);
 
         expect(onSignInChangedEvent.addListener).toHaveBeenCalledWith(expect.any(Function));
+        const listener = onSignInChangedEvent.addListener.mock.calls[0][0];
         unsubscribe();
-        expect(onSignInChangedEvent.removeListener).toHaveBeenCalledWith(expect.any(Function));
+        expect(onSignInChangedEvent.removeListener).toHaveBeenCalledWith(listener);
     });
 });

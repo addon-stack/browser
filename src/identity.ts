@@ -1,4 +1,5 @@
 import {browser} from "./browser";
+import {BrowserGuessSource, BrowserName, guessBrowser, isBrowser} from "./browserDetection";
 import {callWithPromise, checkLastError, handleListener} from "./utils";
 
 type AccountInfo = chrome.identity.AccountInfo;
@@ -9,19 +10,33 @@ type ProfileUserInfo = chrome.identity.ProfileUserInfo;
 type TokenDetails = chrome.identity.TokenDetails;
 
 export interface LaunchWebAuthFlowDetails extends chrome.identity.WebAuthFlowDetails {
+    /**
+     * Firefox-only redirect URI override. Supported in Firefox 63+; loopback redirect URIs are supported in Firefox 86+.
+     */
     redirect_uri?: string;
 }
 
 type IdentityApi = typeof chrome.identity;
-type GetAuthTokenCallback = (token?: string | GetAuthTokenResult, grantedScopes?: string[]) => void;
+type GetAuthTokenCallback = (token?: string | GetAuthTokenResult | null, grantedScopes?: string[]) => void;
 
 const identity = (): IdentityApi => browser().identity;
 
 // Methods
 export const getIdentityRedirectUrl = (path?: string): string => identity().getRedirectURL(path);
 
-export const launchWebAuthFlow = (details: LaunchWebAuthFlowDetails): Promise<string | undefined> =>
-    callWithPromise(() => identity().launchWebAuthFlow(details));
+export const launchWebAuthFlow = async (details: LaunchWebAuthFlowDetails): Promise<string | undefined> => {
+    const browserGuess = await guessBrowser();
+    const isFirefoxRuntime =
+        isBrowser(browserGuess, BrowserName.Firefox) && browserGuess.source === BrowserGuessSource.RuntimeBrowserInfo;
+
+    return callWithPromise(cb => {
+        if (isFirefoxRuntime) {
+            return identity().launchWebAuthFlow(details);
+        }
+
+        return identity().launchWebAuthFlow(details, cb);
+    });
+};
 
 export const getAuthToken = (details?: TokenDetails): Promise<GetAuthTokenResult> => {
     return new Promise<GetAuthTokenResult>((resolve, reject) => {
@@ -34,13 +49,13 @@ export const getAuthToken = (details?: TokenDetails): Promise<GetAuthTokenResult
             try {
                 checkLastError();
 
-                if (typeof token === "object") {
+                if (token !== null && typeof token === "object") {
                     resolve(token);
 
                     return;
                 }
 
-                resolve({token, grantedScopes});
+                resolve({token, grantedScopes} as GetAuthTokenResult);
             } catch (e) {
                 reject(e);
             }

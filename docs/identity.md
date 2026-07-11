@@ -10,7 +10,7 @@ A promise-based wrapper for the WebExtension `identity` API. Chrome exposes the 
 
 ## Browser support notes
 
-- Chrome: supports the full `chrome.identity` API, except the underlying `getAccounts()` API is Chrome Dev channel only. `launchWebAuthFlow()` uses the Promise form supported by Chrome 106+.
+- Chrome: supports the full `chrome.identity` API, except the underlying `getAccounts()` API is Chrome Dev channel only. This wrapper uses the callback form for Chrome-style runtimes because it works across Manifest V2 and Manifest V3.
 - Firefox: supports the portable `browser.identity.launchWebAuthFlow()` promise API and `getRedirectURL()`.
 - Edge: use `launchWebAuthFlow()` for portable OAuth. `getAuthToken()` and the underlying `getAccounts()` API are officially unsupported even if feature detection sees the methods.
 - Opera: supports the portable web auth flow in Chromium-based builds.
@@ -97,7 +97,9 @@ const responseUrl = await launchWebAuthFlow({
 });
 ```
 
-This wrapper uses the Promise form in all browsers. Firefox does not accept a callback for this API, and Chrome supports the Promise form for `identity.launchWebAuthFlow()` in current extension runtimes.
+This wrapper uses the callback form in Chrome-style runtimes to avoid callbackless Manifest V2 flows hanging, and the Promise form in Firefox where callbacks are not accepted.
+
+`LaunchWebAuthFlowDetails` also accepts `redirect_uri` for Firefox. This option is Firefox-only, supported since Firefox 63; loopback redirect URIs are supported since Firefox 86.
 
 <a name="getAuthToken"></a>
 
