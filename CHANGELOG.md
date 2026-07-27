@@ -1,5 +1,24 @@
 # Changelog
 
+## 🚀 Release `@addon-core/browser` v0.7.1 (2026-07-27)
+
+
+### 🐛 Bug Fixed
+
+* **env:** enhance `isBackground` check and add tests ([e98552d](https://github.com/addon-stack/browser/commit/e98552db01124cbe136cf6d72995bbc4dbdb5312))
+
+  - Updated `isBackground` to use safer runtime checks and browser API
+    fallback.
+  - Added a comprehensive test suite (`env.test.ts`) to ensure reliability
+    of background context detection.
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 2
+
 ## 🚀 Release `@addon-core/browser` v0.7.0 (2026-07-11)
 
 
