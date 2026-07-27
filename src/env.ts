@@ -1,11 +1,23 @@
-import {getId, getManifest} from "./runtime";
+import {browser} from "./browser";
 
 export const isBackground = (): boolean => {
-    if (!getId()) {
+    let runtime: typeof chrome.runtime | undefined;
+
+    try {
+        runtime = browser()?.runtime;
+    } catch {
         return false;
     }
 
-    const manifest = getManifest();
+    if (!runtime?.id) {
+        return false;
+    }
+
+    if (typeof runtime.getManifest !== "function") {
+        return false;
+    }
+
+    const manifest = runtime.getManifest();
 
     if (!manifest.background) {
         return false;
