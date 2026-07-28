@@ -11,7 +11,9 @@ export default defineConfig([
     {
         ...common,
         format: ["esm"],
-        dts: true,
+        dts: {
+            banner: '/// <reference types="chrome" />\n/// <reference path="./api.d.ts" />',
+        },
         outExtension() {
             return {js: ".js"};
         },

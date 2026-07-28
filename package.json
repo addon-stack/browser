@@ -48,15 +48,19 @@
     "dist"
   ],
   "sideEffects": false,
+  "dependencies": {
+    "@types/chrome": "^0.2.2"
+  },
   "scripts": {
     "prepare": "husky",
-    "build": "tsup",
+    "build": "tsup && node ./scripts/copy-api-types.mjs",
     "prepublishOnly": "npm run build",
     "dev": "tsup --watch",
     "lint": "biome check .",
     "fix": "biome check --write --unsafe .",
     "test": "jest",
     "test:ci": "jest --ci --passWithNoTests --coverage",
+    "test:consumer-types": "npm run build && node ./tests/consumer-types/check.mjs",
     "test:related": "jest --bail --passWithNoTests",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "release": "release-it",
@@ -67,7 +71,6 @@
     "@commitlint/cli": "^20.0.0",
     "@commitlint/config-conventional": "^20.0.0",
     "@release-it/conventional-changelog": "^10.0.1",
-    "@types/chrome": "^0.1.36",
     "@types/jest": "^30.0.0",
     "husky": "^9.1.7",
     "jest": "^30.1.3",
@@ -75,9 +78,6 @@
     "ts-jest": "^29.4.6",
     "tsup": "^8.5.0",
     "typescript": "^5.9.2"
-  },
-  "peerDependencies": {
-    "@types/chrome": "*"
   },
   "overrides": {
     "test-exclude": {
