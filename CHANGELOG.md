@@ -1,5 +1,37 @@
 # Changelog
 
+## 🚀 Release `@addon-core/browser` v0.7.2 (2026-07-28)
+
+
+### 🐛 Bug Fixed
+
+* add consumer typecheck workflow and improve type declarations ([f9eab46](https://github.com/addon-stack/browser/commit/f9eab46958f28f593f2a24c4f431a85b5853cdb2))
+
+  - Introduced a new `test:consumer-types` script to validate type usage in consumer projects.
+  - Enhanced the TypeScript build process to include `chrome` type references in declaration files.
+  - Updated dependencies: bumped `@types/chrome` to `^0.2.2` and removed it as a peer dependency.
+  - Added a `copy-api-types` script to bundle `api.d.ts` into the `dist` directory.
+  - Included a sample consumer test setup for validating type correctness in real-world scenarios.
+
+
+
+### 🧪 Tests
+
+* add platform-specific shell option for npm commands ([a2aea7c](https://github.com/addon-stack/browser/commit/a2aea7cdba14595a71482c9f70baf2f0ffc13f92))
+
+
+* simplify consumer setup by writing package.json dynamically ([e4908f6](https://github.com/addon-stack/browser/commit/e4908f62cb282b1dc3056cf9544d72795555d90d))
+
+  - Removed the static `package.json` in `tests/consumer-types` and created it programmatically.
+  - Updated the consumer typecheck logic to include dynamic package.json creation during tests.
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 5
+
 ## 🚀 Release `@addon-core/browser` v0.7.1 (2026-07-27)
 
 
