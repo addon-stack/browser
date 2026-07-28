@@ -9,10 +9,12 @@ const fixtureDirectory = dirname(fileURLToPath(import.meta.url));
 const packageDirectory = join(fixtureDirectory, "../..");
 const temporaryDirectory = mkdtempSync(join(tmpdir(), "addon-core-browser-consumer-"));
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+const npmOptions = {shell: process.platform === "win32"};
 
 try {
     const [{filename}] = JSON.parse(
         execFileSync(npm, ["pack", "--ignore-scripts", "--json", "--pack-destination", temporaryDirectory], {
+            ...npmOptions,
             cwd: packageDirectory,
             encoding: "utf8",
         })
@@ -23,6 +25,7 @@ try {
     cpSync(fixtureDirectory, consumerDirectory, {recursive: true});
     writeFileSync(join(consumerDirectory, "package.json"), '{"private":true,"type":"module"}\n');
     execFileSync(npm, ["install", "--ignore-scripts", "--no-package-lock", "--no-save", archive], {
+        ...npmOptions,
         cwd: consumerDirectory,
         stdio: "inherit",
     });
