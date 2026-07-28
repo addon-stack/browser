@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {execFileSync} from "node:child_process";
-import {cpSync, existsSync, mkdtempSync, readFileSync, rmSync} from "node:fs";
+import {cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {dirname, join} from "node:path";
 import {fileURLToPath} from "node:url";
@@ -21,7 +21,8 @@ try {
     const consumerDirectory = join(temporaryDirectory, "consumer");
 
     cpSync(fixtureDirectory, consumerDirectory, {recursive: true});
-    execFileSync(npm, ["install", "--ignore-scripts", "--no-package-lock", "--no-save", "--offline", archive], {
+    writeFileSync(join(consumerDirectory, "package.json"), '{"private":true,"type":"module"}\n');
+    execFileSync(npm, ["install", "--ignore-scripts", "--no-package-lock", "--no-save", archive], {
         cwd: consumerDirectory,
         stdio: "inherit",
     });
