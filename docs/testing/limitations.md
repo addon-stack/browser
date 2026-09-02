@@ -30,9 +30,6 @@ Chrome, Firefox, Safari, Opera, or any other real browser.
 - The production `download()` helper currently includes a real 100 ms delay. The kit does not install fake timers or
   claim full timing determinism. A scheduler seam is tracked in
   [GitHub issue #24](https://github.com/addon-stack/browser/issues/24).
-- `findTabById()` currently propagates the missing-tab rejection, and `getTabUrl()` consequently preserves the lower
-  level message. That existing behavior is tracked in
-  [GitHub issue #23](https://github.com/addon-stack/browser/issues/23) and is not changed by the kit.
 
 ## Listener behavior
 
