@@ -42,6 +42,11 @@
       "types": "./dist/utils.d.ts",
       "import": "./dist/utils.js",
       "require": "./dist/utils.cjs"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "import": "./dist/testing/index.js",
+      "require": "./dist/testing/index.cjs"
     }
   },
   "files": [
@@ -53,7 +58,7 @@
   },
   "scripts": {
     "prepare": "husky",
-    "build": "tsup && node ./scripts/copy-api-types.mjs",
+    "build": "tsup && node ./scripts/copy-api-types.mjs && node ./scripts/verify-build.mjs",
     "prepublishOnly": "npm run build",
     "dev": "tsup --watch",
     "lint": "biome check .",
