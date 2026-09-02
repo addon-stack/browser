@@ -133,7 +133,9 @@ Framework: **Jest** (`npm test`). Recommendations:
 - For events, verify that the returned function actually removes the listener.
 - Structure: co-locate tests with the module or use a `__tests__` folder.
 
-In CI use `npm run test:ci`.
+In CI use `npm run test:ci`. All test scripts (`npm test`, `npm run test:ci`, and `npm run test:related`) share the same Jest ESM launcher, including Node's `--experimental-vm-modules` flag. No manual `NODE_OPTIONS` setup is needed locally or in CI.
+
+Import Jest helpers explicitly in test files, for example `import {describe, expect, jest, test} from "@jest/globals"`. In ESM, the `jest` object is not a global. These imports belong only in test suites; the published `@addon-core/browser/testing` runtime remains runner-independent.
 
 ---
 
