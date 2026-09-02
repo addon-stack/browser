@@ -59,7 +59,9 @@ Cancels the specified download.
 download(options: chrome.downloads.DownloadOptions): Promise<number>
 ```
 
-Initiates a download with the given options, resolving to the download ID. The wrapper sets `conflictAction: "uniquify"` by default and validates early errors. May throw `BlockDownloadError` if the download is interrupted (e.g., `USER_CANCELED`).
+Initiates a download with the given options, resolving to the download ID. The wrapper sets `conflictAction: "uniquify"` by default and waits 100 ms before validating the newly created download item. It may throw `BlockDownloadError` when the item cannot be found or the download is interrupted with `USER_CANCELED`.
+
+The fixed validation delay is part of the current runtime behavior. Tests that call this wrapper use real wall-clock time until [issue #24](https://github.com/addon-stack/browser/issues/24) introduces a dedicated scheduling seam.
 
 <a name="eraseDownload"></a>
 
