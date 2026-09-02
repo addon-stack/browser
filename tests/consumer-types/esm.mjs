@@ -10,11 +10,32 @@ assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "browser"), beforeB
 const harness = testing.createBrowserHarness({
     manifest: testing.createManifestFixture({name: "ESM consumer"}),
 });
+harness.delays.downloadValidation.setResult(undefined);
+harness.configurable.chrome.downloads.download.setResult(41);
+harness.configurable.chrome.downloads.search.setResult([{exists: true, id: 41, state: "in_progress"}]);
 const restore = testing.installBrowserGlobals(harness, {profile: "chrome"});
 const unsubscribe = harness.runtime.events.onMessage.on(() => true);
 
 try {
     assert.equal(production.getManifest().name, "ESM consumer");
+    assert.equal(await production.download({url: "https://example.test/esm.zip"}), 41);
+    assert.deepEqual(
+        harness.delays.downloadValidation.calls.map(call => call.args),
+        [[100]]
+    );
+    harness.configurable.chrome.downloads.search.setResult([
+        {error: "USER_CANCELED", exists: true, id: 41, state: "interrupted"},
+    ]);
+    await assert.rejects(production.download({url: "https://example.test/blocked-esm.zip"}), error => {
+        assert.ok(error instanceof production.BlockDownloadError);
+        assert.equal(error.message, "Requires user permission to upload");
+        return true;
+    });
+    assert.deepEqual(
+        harness.delays.downloadValidation.calls.map(call => call.args),
+        [[100], [100]]
+    );
+
     const pendingResponse = production.sendMessage({kind: "unanswered"});
     harness.runtime.closeMessageChannels();
     await assert.rejects(pendingResponse, {

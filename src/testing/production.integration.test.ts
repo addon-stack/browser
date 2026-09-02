@@ -1,7 +1,7 @@
 import {BlockDownloadError, download} from "../downloads";
 import {findTabById, getTab, getTabUrl} from "../tabs";
 import {getUserScripts} from "../userScripts";
-import {createBrowserHarness, createTabFixture, installGlobals} from "./index";
+import {createBrowserHarness, createTabFixture, installBrowserGlobals, installGlobals} from "./index";
 
 const restorers: Array<() => void> = [];
 
@@ -71,41 +71,121 @@ describe("current production behavior through the browser harness", () => {
         });
     });
 
-    test("download succeeds after the production 100 ms delay", async () => {
-        const harness = createBrowserHarness();
-        restorers.push(installGlobals({browser: undefined, chrome: harness.chrome}));
-        harness.configurable.chrome.downloads.download.setResult(41);
-        harness.configurable.chrome.downloads.search.setResult([
-            {error: undefined, exists: true, id: 41, state: "in_progress"} as chrome.downloads.DownloadItem,
-        ]);
-        const startedAt = performance.now();
+    describe.each(["chrome", "firefox"] as const)("download with a controlled delay in %s", profile => {
+        let harness: ReturnType<typeof createBrowserHarness>;
+        const url = "https://download.example/file.zip";
+        const createDownloadItemFixture = (
+            overrides: Partial<chrome.downloads.DownloadItem> = {}
+        ): chrome.downloads.DownloadItem => ({
+            id: 41,
+            url,
+            finalUrl: url,
+            referrer: "",
+            filename: "/downloads/file.zip",
+            mime: "application/zip",
+            startTime: "2026-01-01T00:00:00.000Z",
+            state: "in_progress",
+            paused: false,
+            canResume: false,
+            danger: "safe",
+            incognito: false,
+            exists: true,
+            bytesReceived: 0,
+            totalBytes: 100,
+            fileSize: 100,
+            ...overrides,
+        });
 
-        await expect(download({url: "https://download.example/file.zip"})).resolves.toBe(41);
+        beforeEach(() => {
+            harness = createBrowserHarness();
+            restorers.push(installBrowserGlobals(harness, {profile}));
+            harness.configurable.active.downloads.download.setResult(41);
+            harness.configurable.active.downloads.search.setResult([createDownloadItemFixture()]);
+            harness.delays.downloadValidation.setResult(undefined);
+        });
 
-        expect(performance.now() - startedAt).toBeGreaterThanOrEqual(90);
-        expect(harness.configurable.chrome.downloads.download.calls[0]?.args).toEqual([
-            {conflictAction: "uniquify", url: "https://download.example/file.zip"},
-        ]);
-    });
+        test("succeeds with an immediate wait while requesting the unchanged 100 ms delay", async () => {
+            await expect(download({url})).resolves.toBe(41);
 
-    test("download preserves the exact BlockDownloadError class after the production delay", async () => {
-        const harness = createBrowserHarness();
-        restorers.push(installGlobals({browser: undefined, chrome: harness.chrome}));
-        harness.configurable.chrome.downloads.download.setResult(42);
-        harness.configurable.chrome.downloads.search.setResult([
-            {error: "USER_CANCELED", exists: true, id: 42, state: "interrupted"} as chrome.downloads.DownloadItem,
-        ]);
-        const startedAt = performance.now();
+            expect(harness.delays.downloadValidation.calls).toMatchObject([
+                {args: [100], callback: undefined, invocation: "promise"},
+            ]);
+            expect(harness.configurable.active.downloads.download.calls[0]?.args).toEqual([
+                {conflictAction: "uniquify", url},
+            ]);
+            expect(harness.calls.map(call => call.api)).toEqual([
+                "downloads.download",
+                "delays.downloadValidation",
+                "downloads.search",
+            ]);
+        });
 
-        let failure: unknown;
-        try {
-            await download({url: "https://download.example/requires-permission.zip"});
-        } catch (error) {
-            failure = error;
-        }
+        test("does not search until the test releases the delay", async () => {
+            let release: () => void = () => undefined;
+            let signalStarted: () => void = () => undefined;
+            const gate = new Promise<void>(resolve => {
+                release = resolve;
+            });
+            const started = new Promise<void>(resolve => {
+                signalStarted = resolve;
+            });
+            harness.delays.downloadValidation.setImplementation(() => {
+                signalStarted();
+                return gate;
+            });
 
-        expect(performance.now() - startedAt).toBeGreaterThanOrEqual(90);
-        expect(failure).toBeInstanceOf(BlockDownloadError);
-        expect(failure).toMatchObject({message: "Requires user permission to upload"});
+            const pending = download({url});
+            try {
+                await started;
+                expect(harness.configurable.active.downloads.search.calls).toHaveLength(0);
+            } finally {
+                release();
+            }
+
+            await expect(pending).resolves.toBe(41);
+            expect(harness.configurable.active.downloads.search.calls[0]?.args).toEqual([{id: 41}]);
+        });
+
+        test("preserves a delay failure and does not query the item", async () => {
+            const error = new Error("Validation wait failed");
+            harness.delays.downloadValidation.failNext(error);
+
+            await expect(download({url})).rejects.toBe(error);
+            expect(harness.configurable.active.downloads.search.calls).toHaveLength(0);
+            expect(harness.runtime.lastError).toBeUndefined();
+        });
+
+        test("does not schedule validation if download creation fails", async () => {
+            harness.configurable.active.downloads.download.failNext(new Error("Download unavailable"));
+
+            await expect(download({url})).rejects.toThrow("Download unavailable");
+            expect(harness.delays.downloadValidation.calls).toHaveLength(0);
+            expect(harness.configurable.active.downloads.search.calls).toHaveLength(0);
+        });
+
+        test.each([
+            [[], "Download item not found after created"],
+            [
+                [createDownloadItemFixture({error: "USER_CANCELED", state: "interrupted"})],
+                "Requires user permission to upload",
+            ],
+        ] as const)("preserves the exact BlockDownloadError for %j", async (items, message) => {
+            harness.configurable.active.downloads.search.setResult([...items]);
+            const pending = download({url});
+
+            await expect(pending).rejects.toBeInstanceOf(BlockDownloadError);
+            await expect(pending).rejects.toHaveProperty("message", message);
+            expect(harness.delays.downloadValidation.calls[0]?.args).toEqual([100]);
+        });
+
+        test("preserves the ordinary error for other interruptions", async () => {
+            harness.configurable.active.downloads.search.setResult([
+                createDownloadItemFixture({error: "NETWORK_FAILED", state: "interrupted"}),
+            ]);
+            const pending = download({url});
+
+            await expect(pending).rejects.toHaveProperty("message", "Download error: NETWORK_FAILED");
+            await expect(pending).rejects.not.toBeInstanceOf(BlockDownloadError);
+        });
     });
 });

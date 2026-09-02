@@ -27,9 +27,10 @@ Chrome, Firefox, Safari, Opera, or any other real browser.
   that routing.
 - Browser-event dispatch uses a listener snapshot. A listener removed by another listener during the same `emit()` is
   still called for that dispatch; Chrome and DOM events skip a listener removed before its turn.
-- The production `download()` helper currently includes a real 100 ms delay. The kit does not install fake timers or
-  claim full timing determinism. A scheduler seam is tracked in
-  [GitHub issue #24](https://github.com/addon-stack/browser/issues/24).
+- The production `download()` helper retains its real 100 ms validation delay by default, including after
+  `harness.reset()`. Tests can skip or defer only that wait through
+  [`harness.delays.downloadValidation`](harness.md#download-validation-delay). The kit does not patch global timers or
+  simulate browser download lifecycle timing, so this control does not establish real-browser parity.
 
 ## Listener behavior
 

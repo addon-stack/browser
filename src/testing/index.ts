@@ -31,6 +31,7 @@ export type {
     RawFailureChannel,
     RawMethodInvocation,
 } from "./coverage";
+export type {BrowserDelaysHarness} from "./delays";
 export type {
     BrowserEventApi,
     BrowserEventHarness,

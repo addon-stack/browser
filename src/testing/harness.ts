@@ -4,6 +4,7 @@ import {
     type ConfigurableNamespaces,
     createConfigurableNamespaces,
 } from "./configurable";
+import {type BrowserDelaysHarness, createBrowserDelaysHarness} from "./delays";
 import {createLastErrorController} from "./internal";
 import {createListenerErrorCapture, type ListenerErrorBuffer} from "./listener-errors";
 import {createPermissionsHarness, type PermissionsHarness} from "./permissions";
@@ -59,6 +60,7 @@ export interface BrowserHarness {
     readonly tabs: TabsHarness;
     readonly windows: WindowsHarness;
     readonly scripting: ScriptingHarness;
+    readonly delays: BrowserDelaysHarness;
     readonly configurable: ConfigurableHarness;
     readonly capabilities: BrowserCapabilitiesHarness;
     readonly sidebar: SidebarHarness;
@@ -131,6 +133,7 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
 
     const chrome = configChrome.api as unknown as BrowserTestApi;
     const browser = configBrowser.api as unknown as BrowserTestApi;
+    const delays = createBrowserDelaysHarness([chrome.downloads, browser.downloads], nextSequence);
     const sidePanelChromeApi = configChrome.api.sidePanel;
     const sidePanelBrowserApi = configBrowser.api.sidePanel;
     let activeProfile: BrowserProfile = "chrome";
@@ -272,6 +275,7 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         {namespace: "tabs", source: tabs as unknown as Record<string, unknown>},
         {namespace: "windows", source: windows as unknown as Record<string, unknown>},
         {namespace: "scripting", source: scripting as unknown as Record<string, unknown>},
+        {namespace: "delays", source: delays as unknown as Record<string, unknown>},
     ];
 
     return {
@@ -282,6 +286,7 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         tabs,
         windows,
         scripting,
+        delays,
         configurable,
         capabilities,
         sidebar,
@@ -317,6 +322,7 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
             scripting.reset();
             configChrome.reset();
             configBrowser.reset();
+            delays.reset();
             lastError.reset();
             listenerCapture.reset();
             explicitCapabilities.clear();

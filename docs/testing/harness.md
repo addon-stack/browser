@@ -57,6 +57,37 @@ harness.calls;
 Use `.browser` instead of `.chrome` when configuring a Firefox or Safari profile. `harness.configurable.active` follows
 the last profile selected by `installBrowserGlobals()`.
 
+## Download validation delay
+
+The production `download(options)` helper waits 100 ms before checking the created download. A fresh harness preserves
+that default. To skip only this validation wait deterministically, opt in through the test-only delay control:
+
+```ts
+harness.delays.downloadValidation.setResult(undefined);
+```
+
+The real `download(options)` function still runs, and its raw `downloads.download` and `downloads.search` results must
+be configured as usual. After it reaches validation, `harness.delays.downloadValidation.calls` records the requested
+delay with `args: [100]`.
+
+Use `setImplementation()` to hold validation until the test releases it:
+
+```ts
+let releaseValidation = () => {};
+const validationGate = new Promise<void>(resolve => {
+    releaseValidation = resolve;
+});
+
+harness.delays.downloadValidation.setImplementation(() => validationGate);
+// Start download(options) with configured raw results.
+// After it reaches the delay hook, release validation when ready:
+releaseValidation();
+```
+
+The hook belongs to this harness's fake facades. It does not replace global timers, affect unrelated harnesses, or add
+a scheduler argument to the production API. `harness.reset()` clears its calls and configuration and restores the real
+100 ms default. This control does not model browser download completion, permissions, or lifecycle timing.
+
 ## Installing exact globals
 
 Use `installGlobals()` for low-level scenarios:
