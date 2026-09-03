@@ -36,6 +36,7 @@ describe("browser smoke launcher diagnostics", () => {
             {path: "/test/browser", version: "Chromium 148.0.0.0"},
             `${"updater noise".repeat(1000)}last diagnostic`
         );
+
         expect(error.message).toContain("Chrome for Testing or Chromium");
         expect(error.message).toContain("--load-extension");
         expect(error.message).toContain("Chromium 148.0.0.0 (/test/browser)");

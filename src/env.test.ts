@@ -71,6 +71,7 @@ describe("isBackground", () => {
             ...harness.chrome,
             runtime: {...harness.chrome.runtime, getManifest: "manifest"},
         } as unknown as BrowserTestApi;
+
         restoreGlobals = installGlobals({
             browser: undefined,
             chrome: chromeApi,
@@ -85,6 +86,7 @@ describe("isBackground", () => {
         harness.runtime.setManifest(
             createManifestFixture({background: {service_worker: "service-worker.js"}, manifest_version: 3})
         );
+
         installProfile("serviceWorker");
 
         expect(isBackground()).toBe(true);
@@ -94,6 +96,7 @@ describe("isBackground", () => {
         harness.runtime.setManifest(
             createManifestFixture({background: {service_worker: "service-worker.js"}, manifest_version: 3})
         );
+
         installProfile("extensionPage");
 
         expect(isBackground()).toBe(false);
@@ -103,6 +106,7 @@ describe("isBackground", () => {
         harness.runtime.setManifest(
             createManifestFixture({background: {scripts: ["background.js"]}, manifest_version: 2})
         );
+
         installProfile("backgroundPage");
 
         expect(isBackground()).toBe(true);
@@ -112,6 +116,7 @@ describe("isBackground", () => {
         harness.runtime.setManifest(
             createManifestFixture({background: {scripts: ["background.js"]}, manifest_version: 2})
         );
+
         installProfile("extensionPage");
 
         expect(isBackground()).toBe(false);
@@ -121,6 +126,7 @@ describe("isBackground", () => {
         harness.runtime.setManifest(
             createManifestFixture({background: {scripts: ["background.js"]}, manifest_version: 2})
         );
+
         restoreGlobals = installBrowserGlobals(harness, {
             context: "extensionPage",
             globals: {location: {}},

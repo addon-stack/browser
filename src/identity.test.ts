@@ -30,6 +30,7 @@ describe("identity", () => {
             extensionId: "chrome-extension-id",
             manifest: createManifestFixture({manifest_version: 3}),
         });
+
         restoreGlobals = installGlobals({
             browser: undefined,
             chrome: harness.chrome,
@@ -46,6 +47,7 @@ describe("identity", () => {
 
     const installChromeWithNavigator = (navigator: NavigatorTestValue): void => {
         restoreGlobals();
+
         restoreGlobals = installGlobals({
             browser: undefined,
             chrome: harness.chrome,
@@ -57,6 +59,7 @@ describe("identity", () => {
 
     const installFirefox = (): void => {
         restoreGlobals();
+
         restoreGlobals = installGlobals({
             browser: harness.browser,
             chrome: harness.chrome,
@@ -72,6 +75,7 @@ describe("identity", () => {
         );
 
         expect(getIdentityRedirectUrl("oauth")).toBe("https://chrome-extension-id.chromiumapp.org/oauth");
+
         expect(harness.configurable.chrome.identity.getRedirectURL.calls).toMatchObject([
             {args: ["oauth"], callback: undefined, invocation: "sync"},
         ]);
@@ -83,6 +87,7 @@ describe("identity", () => {
         const details = {interactive: true, url: "https://accounts.example/oauth"};
 
         await expect(launchWebAuthFlow(details)).resolves.toBe(redirectUrl);
+
         expect(harness.configurable.chrome.identity.launchWebAuthFlow.calls).toMatchObject([
             {
                 args: [details],
@@ -97,9 +102,11 @@ describe("identity", () => {
         installChromeWithNavigator({
             userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:126.0) Gecko/20100101 Firefox/126.0",
         });
+
         harness.configurable.chrome.identity.launchWebAuthFlow.setResult(redirectUrl);
 
         await expect(launchWebAuthFlow({url: "https://accounts.example/oauth"})).resolves.toBe(redirectUrl);
+
         expect(harness.configurable.chrome.identity.launchWebAuthFlow.calls[0]).toMatchObject({
             callback: expect.any(Function),
             invocation: "callback",
@@ -110,15 +117,18 @@ describe("identity", () => {
         installFirefox();
         const firefoxRedirect = "https://extension-id.extensions.allizom.org/oauth?code=123";
         harness.configurable.browser.identity.launchWebAuthFlow.setResult(firefoxRedirect);
+
         const details = {
             redirect_uri: "https://extension-id.extensions.allizom.org/oauth",
             url: "https://accounts.example/oauth",
         };
 
         await expect(launchWebAuthFlow(details)).resolves.toBe(firefoxRedirect);
+
         expect(harness.configurable.browser.identity.launchWebAuthFlow.calls).toMatchObject([
             {args: [details], callback: undefined, callbackCalls: [], invocation: "promise"},
         ]);
+
         expect(harness.runtime.getBrowserInfo.calls).toHaveLength(1);
         expect(harness.configurable.chrome.identity.launchWebAuthFlow.calls).toHaveLength(0);
     });
@@ -129,15 +139,19 @@ describe("identity", () => {
             invocation: "promise-tolerant",
             name: "identity.launchWebAuthFlow",
         });
+
         method.setResult(redirectUrl);
+
         const chromeApi = {
             ...harness.chrome,
             identity: {...harness.chrome.identity, launchWebAuthFlow: method.api},
         } as BrowserTestApi;
+
         restoreGlobals();
         restoreGlobals = installGlobals({browser: undefined, chrome: chromeApi});
 
         await expect(launchWebAuthFlow({url: "https://accounts.example/oauth"})).resolves.toBe(redirectUrl);
+
         expect(method.calls).toMatchObject([
             {
                 callback: expect.any(Function),
@@ -153,6 +167,7 @@ describe("identity", () => {
         await expect(launchWebAuthFlow({url: "https://accounts.example/oauth"})).rejects.toThrow(
             "Authorization flow failed"
         );
+
         expect(harness.runtime.lastError).toBeUndefined();
     });
 
@@ -168,6 +183,7 @@ describe("identity", () => {
             grantedScopes: ["email", "profile"],
             token: "access-token",
         });
+
         expect(harness.configurable.chrome.identity.getAuthToken.calls).toMatchObject([
             {
                 args: [{interactive: true}],
@@ -206,15 +222,18 @@ describe("identity", () => {
     test("should model the hybrid callback and thenable race", async () => {
         const callbackResult = {grantedScopes: ["email"], token: "callback-token"};
         const promiseResult = {grantedScopes: ["profile"], token: "promise-token"};
+
         harness.configurable.chrome.identity.getAuthToken.setImplementation(((
             _details: chrome.identity.TokenDetails,
             callback: (result: chrome.identity.GetAuthTokenResult) => void
         ) => {
             callback(callbackResult);
+
             return Promise.resolve(promiseResult);
         }) as unknown as typeof chrome.identity.getAuthToken);
 
         await expect(getAuthToken()).resolves.toBe(callbackResult);
+
         expect(harness.configurable.chrome.identity.getAuthToken.calls).toMatchObject([
             {callbackCalls: [[callbackResult]], invocation: "hybrid"},
         ]);
@@ -240,6 +259,7 @@ describe("identity", () => {
         harness.configurable.chrome.identity.getProfileUserInfo.setResult(profile);
 
         await expect(getProfileUserInfo({accountStatus: "ANY"})).resolves.toBe(profile);
+
         expect(harness.configurable.chrome.identity.getProfileUserInfo.calls[0]?.args).toEqual([
             {accountStatus: "ANY"},
         ]);

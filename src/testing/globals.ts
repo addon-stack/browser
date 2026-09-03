@@ -39,6 +39,7 @@ const applyDescriptor = (target: object, key: PropertyKey, value: unknown): void
         if (!Reflect.deleteProperty(target, key)) {
             throw new Error(`Unable to remove global ${String(key)}`);
         }
+
         return;
     }
 
@@ -82,6 +83,7 @@ export const installGlobals = (values: TestGlobalValues): (() => void) => {
                 key: "error",
                 target: console,
             });
+
             applyDescriptor(console, "error", values.consoleError);
         }
     } catch (error) {
@@ -93,6 +95,7 @@ export const installGlobals = (values: TestGlobalValues): (() => void) => {
 
     return (): void => {
         if (restored) return;
+
         restored = true;
         restoreChanges(changes);
     };
@@ -111,19 +114,19 @@ export const createContextGlobals = (kind: ExtensionContextKind): ContextGlobals
     const location =
         kind === "contentScript"
             ? ({
-                  hash: "",
-                  host: "example.test",
-                  hostname: "example.test",
-                  href: "https://example.test/content/page.html",
-                  origin: "https://example.test",
-                  pathname: "/content/page.html",
-                  port: "",
-                  protocol: "https:",
-                  search: "",
-              } satisfies LocationTestValue)
+                hash: "",
+                host: "example.test",
+                hostname: "example.test",
+                href: "https://example.test/content/page.html",
+                origin: "https://example.test",
+                pathname: "/content/page.html",
+                port: "",
+                protocol: "https:",
+                search: "",
+            } satisfies LocationTestValue)
             : ({
-                  pathname: kind === "backgroundPage" ? "/_generated_background_page.html" : "/index.html",
-              } satisfies LocationTestValue);
+                pathname: kind === "backgroundPage" ? "/_generated_background_page.html" : "/index.html",
+            } satisfies LocationTestValue);
 
     return {
         location,
@@ -221,6 +224,7 @@ export const installBrowserGlobals = (
 
     harness.setActiveProfile(profile);
     harness.setProfileSidebarFlavor(sidebarDefaultForProfile(profile));
+
     if (profile !== "custom") {
         harness.setProfileCapability("runtime.getBrowserInfo", profile === "firefox");
     }

@@ -110,10 +110,13 @@ export function createBrowserMethod<TApi extends BrowserMethodFunction, TResult>
 
     const invoke = (...rawArgs: unknown[]): unknown => {
         const possibleCallback = recognizesCallback ? rawArgs.at(-1) : undefined;
+
         const callback =
             typeof possibleCallback === "function" ? (possibleCallback as BrowserMethodCallback) : undefined;
+
         const args = callback ? rawArgs.slice(0, -1) : [...rawArgs];
         const invocation = observedInvocation(options.invocation, callback !== undefined);
+
         const call: MutableBrowserMethodCall = {
             sequence: options.nextSequence?.() ?? ++sequence,
             args,
@@ -121,13 +124,15 @@ export function createBrowserMethod<TApi extends BrowserMethodFunction, TResult>
             invocation,
             callbackCalls: [],
         };
+
         calls.push(call);
 
         const trackedCallback: BrowserMethodCallback | undefined = callback
             ? (...callbackArgs) => {
-                  call.callbackCalls.push([...callbackArgs]);
-                  return callback(...callbackArgs);
-              }
+                call.callbackCalls.push([...callbackArgs]);
+
+                return callback(...callbackArgs);
+            }
             : undefined;
 
         if (options.invocation === "callback" && !callback) {
@@ -144,6 +149,7 @@ export function createBrowserMethod<TApi extends BrowserMethodFunction, TResult>
             options.invocation === "callback" ||
             (options.invocation === "dual" && callback !== undefined) ||
             (options.invocation === "hybrid" && callback !== undefined);
+
         const isPromiseInvocation =
             options.invocation === "promise" ||
             options.invocation === "promise-tolerant" ||
@@ -175,9 +181,11 @@ export function createBrowserMethod<TApi extends BrowserMethodFunction, TResult>
         }
 
         const hasQueuedResult = queuedResults.length > 0;
+
         const configuredResult = hasQueuedResult
             ? ({configured: true, value: queuedResults.shift() as TResult} satisfies ConfiguredResult<TResult>)
             : result;
+
         const activeImplementation = implementation ?? defaultImplementation;
 
         if (configuredResult.configured && (hasQueuedResult || !implementation)) {
@@ -185,7 +193,9 @@ export function createBrowserMethod<TApi extends BrowserMethodFunction, TResult>
                 const callbackArgs =
                     options.callbackArgs?.(configuredResult.value) ??
                     (typeof configuredResult.value === "undefined" ? [] : [configuredResult.value]);
+
                 trackedCallback(...callbackArgs);
+
                 return undefined;
             }
 

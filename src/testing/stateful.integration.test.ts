@@ -54,12 +54,15 @@ describe("stateful browser test harness", () => {
         let startupCount = 0;
         const messages: Array<{message: unknown; sender: chrome.runtime.MessageSender}> = [];
         const unsubscribeInstalled = onInstalled(details => installed.push(details));
+
         const unsubscribeStartup = onStartup(() => {
             startupCount += 1;
         });
+
         const unsubscribeMessage = onMessage((message, sender) => {
             messages.push({message, sender});
         });
+
         const sender = createMessageSenderFixture({id: "sender-extension-id", tab: createTabFixture({id: 31})});
         harness.runtime.setMessageSender(sender);
 
@@ -92,6 +95,7 @@ describe("stateful browser test harness", () => {
             manifest: createManifestFixture({name: "Runtime Test"}),
             permissions: createPermissionsFixture({permissions: ["storage"]}),
         });
+
         installChromeHarness(harness);
 
         expect(getId()).toBe("runtime-test-id");
@@ -106,15 +110,18 @@ describe("stateful browser test harness", () => {
         await expect(requestPermissions({origins: ["https://example.test/*"], permissions: ["tabs"]})).resolves.toBe(
             true
         );
+
         await expect(
             containsPermissions({origins: ["https://example.test/*"], permissions: ["storage", "tabs"]})
         ).resolves.toBe(true);
+
         await expect(removePermissions({permissions: ["tabs"]})).resolves.toBe(true);
 
         expect(await getAllPermissions()).toEqual({
             origins: ["https://example.test/*"],
             permissions: ["storage"],
         });
+
         expect(added).toEqual([{origins: ["https://example.test/*"], permissions: ["tabs"]}]);
         expect(removed).toEqual([{origins: [], permissions: ["tabs"]}]);
 
@@ -137,12 +144,14 @@ describe("stateful browser test harness", () => {
             ],
             windows: [createWindowFixture({focused: true, id: 7})],
         });
+
         installChromeHarness(harness);
 
         const createdWindow = await createWindow({
             focused: true,
             url: ["https://one.example/page", "https://two.example/page"],
         });
+
         expect(createdWindow?.tabs).toHaveLength(2);
 
         const windows = await getAllWindows({populate: true});
@@ -154,11 +163,14 @@ describe("stateful browser test harness", () => {
             url: "https://literal.example/path",
             windowId: createdWindow?.id,
         });
+
         await expect(queryTabs({active: true, currentWindow: true})).resolves.toEqual([
             expect.objectContaining({id: createdTab.id, url: "https://literal.example/path"}),
         ]);
+
         await expect(queryTabs({url: "https://literal.example/path"})).resolves.toHaveLength(1);
         await expect(queryTabs({url: "https://literal.example/*"})).resolves.toHaveLength(1);
+
         await expect(queryTabs({id: createdTab.id} as chrome.tabs.QueryInfo)).rejects.toThrow(
             'tabs.query filter "id" is not supported'
         );
@@ -175,20 +187,24 @@ describe("stateful browser test harness", () => {
         const harness = createBrowserHarness({
             registeredContentScripts: [{id: "initial", js: ["initial.js"], matches: ["https://initial.example/*"]}],
         });
+
         installChromeHarness(harness);
 
         harness.scripting.executeScript.setResult([createInjectionResultFixture({frameId: 3, result: "executed"})]);
+
         await expect(executeScript({func: () => "production function", target: {tabId: 1}})).resolves.toEqual([
             expect.objectContaining({frameId: 3, result: "executed"}),
         ]);
 
         await registerContentScripts([{id: "added", js: ["added.js"], matches: ["https://added.example/*"]}]);
         await updateContentScripts([{id: "added", js: ["updated.js"]}]);
+
         await expect(getRegisteredContentScripts({ids: ["added"]})).resolves.toEqual([
             expect.objectContaining({id: "added", js: ["updated.js"], matches: ["https://added.example/*"]}),
         ]);
 
         await unregisterContentScripts({ids: ["added"]});
+
         await expect(getRegisteredContentScripts()).resolves.toEqual([
             expect.objectContaining({id: "initial", js: ["initial.js"]}),
         ]);
@@ -208,11 +224,13 @@ describe("stateful browser test harness", () => {
             tabs: [createTabFixture({id: 1, url: "https://callback.example/", windowId: 1})],
             windows: [createWindowFixture({id: 1})],
         });
+
         let callbackLastError: chrome.runtime.LastError | undefined;
 
         const callbackResult = await new Promise<chrome.tabs.Tab[]>(resolve => {
             harness.chrome.tabs.query({active: true}, resolve);
         });
+
         expect(callbackResult).toEqual([expect.objectContaining({id: 1})]);
         await expect(harness.browser.tabs.query({active: true})).resolves.toEqual([expect.objectContaining({id: 1})]);
 
@@ -236,6 +254,7 @@ describe("stateful browser test harness", () => {
             tabs: [createTabFixture({id: 1, windowId: 1})],
             windows: [createWindowFixture({id: 1})],
         });
+
         const second = createBrowserHarness({extensionId: "second-id"});
 
         await first.permissions.grant({permissions: ["tabs"]});
@@ -272,6 +291,7 @@ describe("stateful browser test harness", () => {
         harness.windows.set([createWindowFixture({id: 8, tabs: [createTabFixture({id: 81, windowId: 5})]})]);
 
         expect(harness.tabs.values).toEqual([expect.objectContaining({id: 81, windowId: 8})]);
+
         expect(harness.windows.values).toEqual([
             expect.objectContaining({id: 8, tabs: [expect.objectContaining({id: 81, windowId: 8})]}),
         ]);

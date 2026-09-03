@@ -34,6 +34,7 @@ export const createScriptingHarness = (
         typeof chrome.scripting.executeScript,
         chrome.scripting.InjectionResult<unknown>[]
     >({callback: "last", invocation: "dual", lastError, name: "scripting.executeScript", nextSequence});
+
     const insertCSS = createBrowserMethod<typeof chrome.scripting.insertCSS, void>({
         callback: "last",
         callbackArgs: () => [],
@@ -42,6 +43,7 @@ export const createScriptingHarness = (
         name: "scripting.insertCSS",
         nextSequence,
     });
+
     const removeCSS = createBrowserMethod<typeof chrome.scripting.removeCSS, void>({
         callback: "last",
         callbackArgs: () => [],
@@ -50,6 +52,7 @@ export const createScriptingHarness = (
         name: "scripting.removeCSS",
         nextSequence,
     });
+
     const getRegisteredContentScripts = createBrowserMethod<
         typeof chrome.scripting.getRegisteredContentScripts,
         chrome.scripting.RegisteredContentScript[]
@@ -63,10 +66,13 @@ export const createScriptingHarness = (
         ) => {
             const filter = typeof filterOrCallback === "function" ? {} : (filterOrCallback ?? {});
             const callback = typeof filterOrCallback === "function" ? filterOrCallback : possibleCallback;
+
             const result = [...scripts.values()]
                 .filter(script => !filter.ids || filter.ids.includes(script.id))
                 .map(script => cloneRecord(script));
+
             callback?.(result);
+
             return result;
         }) as unknown as typeof chrome.scripting.getRegisteredContentScripts,
         invocation: "dual",
@@ -74,19 +80,25 @@ export const createScriptingHarness = (
         name: "scripting.getRegisteredContentScripts",
         nextSequence,
     });
+
     const registerContentScripts = createBrowserMethod<typeof chrome.scripting.registerContentScripts, void>({
         callback: "last",
         callbackArgs: () => [],
         implementation: ((values: chrome.scripting.RegisteredContentScript[], callback?: () => void) => {
             const duplicate = values.find(script => scripts.has(script.id));
+
             if (duplicate) {
                 const error = new Error(`Content script "${duplicate.id}" is already registered`);
+
                 if (callback) return lastError.runWithLastError(error, callback);
+
                 throw error;
             }
+
             values.forEach(script => {
                 scripts.set(script.id, cloneRecord(script));
             });
+
             callback?.();
         }) as unknown as typeof chrome.scripting.registerContentScripts,
         invocation: "dual",
@@ -94,19 +106,25 @@ export const createScriptingHarness = (
         name: "scripting.registerContentScripts",
         nextSequence,
     });
+
     const updateContentScripts = createBrowserMethod<typeof chrome.scripting.updateContentScripts, void>({
         callback: "last",
         callbackArgs: () => [],
         implementation: ((values: chrome.scripting.RegisteredContentScript[], callback?: () => void) => {
             const missing = values.find(script => !scripts.has(script.id));
+
             if (missing) {
                 const error = new Error(`Content script "${missing.id}" is not registered`);
+
                 if (callback) return lastError.runWithLastError(error, callback);
+
                 throw error;
             }
+
             values.forEach(script => {
                 scripts.set(script.id, {...scripts.get(script.id), ...cloneRecord(script)});
             });
+
             callback?.();
         }) as unknown as typeof chrome.scripting.updateContentScripts,
         invocation: "dual",
@@ -114,6 +132,7 @@ export const createScriptingHarness = (
         name: "scripting.updateContentScripts",
         nextSequence,
     });
+
     const unregisterContentScripts = createBrowserMethod<typeof chrome.scripting.unregisterContentScripts, void>({
         callback: "last",
         callbackArgs: () => [],
@@ -123,11 +142,13 @@ export const createScriptingHarness = (
         ) => {
             const filter = typeof filterOrCallback === "function" ? {} : filterOrCallback;
             const callback = typeof filterOrCallback === "function" ? filterOrCallback : possibleCallback;
+
             if (filter?.ids) {
                 filter.ids.forEach(id => {
                     scripts.delete(id);
                 });
             } else scripts.clear();
+
             callback?.();
         }) as unknown as typeof chrome.scripting.unregisterContentScripts,
         invocation: "dual",
@@ -145,6 +166,7 @@ export const createScriptingHarness = (
         unregisterContentScripts: unregisterContentScripts.api,
         updateContentScripts: updateContentScripts.api,
     } as ScriptingTestApi;
+
     const methods = [
         executeScript,
         getRegisteredContentScripts,
@@ -169,6 +191,7 @@ export const createScriptingHarness = (
         },
         reset(): void {
             scripts = new Map(initial.map(script => [script.id, cloneRecord(script)]));
+
             methods.forEach(method => {
                 method.reset();
             });

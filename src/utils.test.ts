@@ -102,6 +102,7 @@ describe("utils", () => {
             setGlobals({consoleError: capture.handler});
             const error = new Error("Sync fail");
             const event = createBrowserEvent<[]>();
+
             event.api.addListener(
                 safeListener(() => {
                     throw error;
@@ -127,12 +128,14 @@ describe("utils", () => {
             const capture = createListenerErrorCapture();
             setGlobals({consoleError: capture.handler});
             const error = new Error("Thenable fail");
+
             const thenable = {
-                // biome-ignore lint/suspicious/noThenProperty: This test intentionally models a non-Promise thenable.
+                // This test intentionally models a non-Promise thenable.
                 then(_resolve: (value: never) => void, reject: (reason: unknown) => void): void {
                     reject(error);
                 },
             };
+
             const event = createBrowserEvent<[]>();
             event.api.addListener(safeListener(() => thenable));
 

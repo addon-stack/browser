@@ -26,12 +26,14 @@ export const createListenerErrorCapture = (forward?: (...args: unknown[]) => voi
     let original = forward ?? console.error.bind(console);
     const entries: ListenerErrorRecord[] = [];
     const raw: Array<readonly unknown[]> = [];
+
     const handler = (...args: unknown[]): void => {
         const [prefix, error, ...details] = args;
         const kind = typeof prefix === "string" ? prefixes[prefix] : undefined;
 
         if (kind && args.length >= 2) {
             entries.push({args: details, error, kind});
+
             return;
         }
 

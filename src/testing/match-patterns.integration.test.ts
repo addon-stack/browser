@@ -12,6 +12,7 @@ import {
 } from "./index";
 
 const restorers: Array<() => void> = [];
+
 afterEach(() => {
     while (restorers.length) restorers.pop()?.();
 });
@@ -20,6 +21,7 @@ describe.each(["chrome", "firefox"] as const)("match patterns through real wrapp
     const install = (options: Parameters<typeof createBrowserHarness>[0] = {}) => {
         const harness = createBrowserHarness(options);
         restorers.push(installBrowserGlobals(harness, {profile}));
+
         return harness;
     };
 
@@ -33,6 +35,7 @@ describe.each(["chrome", "firefox"] as const)("match patterns through real wrapp
                 createTabFixture({id: 5, url: "https://example.com.evil.test/page"}),
             ],
         });
+
         const query: chrome.tabs.QueryInfo = {
             url: ["http://127.0.0.1/*", "https://*.example.com/*"],
             status: "complete",
@@ -75,17 +78,22 @@ describe.each(["chrome", "firefox"] as const)("match patterns through real wrapp
 
     test("requires every named permission and every requested origin", async () => {
         install({permissions: {permissions: ["tabs", "scripting"], origins: ["https://*.example.com/*"]}});
+
         await expect(
             containsPermissions({
                 permissions: ["tabs", "scripting"],
                 origins: ["https://example.com/*", "https://shop.example.com/*"],
             })
         ).resolves.toBe(true);
+
         await expect(containsPermissions({permissions: ["tabs", "storage"]})).resolves.toBe(false);
+
         await expect(containsPermissions({origins: ["https://example.com/*", "http://example.com/*"]})).resolves.toBe(
             false
         );
+
         await expect(containsPermissions({})).resolves.toBe(true);
+
         // Validation must not be masked by an absent named permission or an earlier matching pattern.
         await expect(containsPermissions({permissions: ["storage"], origins: ["invalid"]})).rejects.toThrow(
             "permissions.contains"
@@ -99,6 +107,7 @@ describe.each(["chrome", "firefox"] as const)("match patterns through real wrapp
                 optional_host_permissions: ["https://*.example.com/*"],
             }),
         });
+
         await expect(containsPermissions({origins: ["https://example.com/*"]})).resolves.toBe(false);
         await harness.permissions.grant({origins: ["https://*.example.com/*"]});
         await expect(containsPermissions({origins: ["https://example.com/*"]})).resolves.toBe(true);
@@ -118,10 +127,12 @@ describe.each(["chrome", "firefox"] as const)("match patterns through real wrapp
         harness.permissions.set({origins: ["<all_urls>"]});
         await expect(containsPermissions({origins: ["http://other.example/*"]})).resolves.toBe(true);
         harness.reset();
+
         await expect(getAllPermissions()).resolves.toEqual({
             origins: ["https://example.com/original"],
             permissions: [],
         });
+
         await expect(containsPermissions({origins: ["http://other.example/*"]})).resolves.toBe(false);
         await expect(containsPermissions({origins: ["https://example.com/new"]})).resolves.toBe(true);
     });
@@ -139,9 +150,11 @@ describe.each(["chrome", "firefox"] as const)("match patterns through real wrapp
         await expect(containsPermissions({origins: ["https://example.com/*"]})).resolves.toBe(false);
         harness.permissions.contains.failNext(new Error("Permission lookup failed"));
         let observed: string | undefined;
+
         harness.chrome.permissions.contains({}, () => {
             observed = harness.runtime.lastError?.message;
         });
+
         expect(observed).toBe("Permission lookup failed");
         expect(harness.runtime.lastError).toBeUndefined();
         harness.reset();
@@ -153,27 +166,34 @@ describe.each(["chrome", "firefox"] as const)("match patterns through real wrapp
             tabs: [createTabFixture({url: "https://example.com/path"})],
             permissions: {origins: ["https://*.example.com/*"]},
         });
+
         const api = profile === "chrome" ? harness.chrome : harness.browser;
         let callbackTabs: chrome.tabs.Tab[] = [];
+
         expect(
             api.tabs.query({url: "https://*.example.com/*"}, tabs => {
                 callbackTabs = tabs;
             })
         ).toBeUndefined();
+
         expect(callbackTabs).toHaveLength(1);
         await expect(api.tabs.query({url: "https://*.example.com/*"})).resolves.toHaveLength(1);
         let callbackPermission: boolean | undefined;
+
         expect(
             api.permissions.contains({origins: ["https://example.com/*"]}, result => {
                 callbackPermission = result;
             })
         ).toBeUndefined();
+
         expect(callbackPermission).toBe(true);
         await expect(api.permissions.contains({origins: ["https://example.com/*"]})).resolves.toBe(true);
+
         for (const method of [api.permissions.contains, api.permissions.request, api.permissions.remove]) {
             expect(() => method({origins: ["bad"]}, () => undefined)).toThrow("Invalid match pattern");
             await expect(method({origins: ["bad"]})).rejects.toThrow("Invalid match pattern");
         }
+
         expect(() => api.tabs.query({url: "bad"}, () => undefined)).toThrow("tabs.query");
         expect(harness.runtime.lastError).toBeUndefined();
         expect(harness.permissions.value.origins).toEqual(["https://*.example.com/*"]);
@@ -184,41 +204,53 @@ describe.each(["chrome", "firefox"] as const)("match patterns through real wrapp
             tabs: [createTabFixture({id: 1, active: false, url: "https://shop.example.com/page"})],
             permissions: {origins: ["https://*.example.com/*"]},
         });
+
         let releaseCss: () => void = () => undefined;
         let cssStarted: () => void = () => undefined;
+
         const started = new Promise<void>(resolve => {
             cssStarted = resolve;
         });
+
         const cssCompletion = new Promise<void>(resolve => {
             releaseCss = resolve;
         });
+
         harness.scripting.insertCSS.setImplementation(
             (_injection: chrome.scripting.CSSInjection, callback?: () => void) => {
                 cssStarted();
+
                 return cssCompletion.then(() => {
                     callback?.();
                 });
             }
         );
+
         harness.scripting.executeScript.setResult([]);
 
         // Representative application code; these are real package wrappers, not module mocks.
         const unsubscribe = onInstalled(async () => {
             if (!(await containsPermissions({origins: ["https://shop.example.com/*"]}))) return;
+
             const tabs = await queryTabs({url: "https://*.example.com/*", status: "complete", discarded: false});
+
             for (const tab of tabs) {
                 if (tab.id === undefined) continue;
+
                 const target = {tabId: tab.id};
                 await insertCss({target, files: ["content.css"]});
                 await executeScript({target, files: ["content.js"]});
             }
         });
+
         const dispatch = harness.runtime.events.onInstalled.emit(createInstalledDetailsFixture());
+
         try {
             await started;
             expect(harness.scripting.executeScript.calls).toHaveLength(0);
             releaseCss();
             await dispatch;
+
             expect(harness.scripting.executeScript.calls.map(call => call.args)).toEqual([
                 [{target: {tabId: 1}, files: ["content.js"]}],
             ]);
@@ -233,9 +265,11 @@ describe.each(["chrome", "firefox"] as const)("match patterns through real wrapp
 test("invalid grant batches and set are rejected without partial mutation", async () => {
     const harness = createBrowserHarness({permissions: {permissions: ["tabs"]}});
     expect(() => harness.permissions.set({origins: ["https://ok.test/*", "bad"]})).toThrow("match pattern");
+
     await expect(harness.permissions.grant({permissions: ["scripting"], origins: ["bad"]})).rejects.toThrow(
         "match pattern"
     );
+
     expect(harness.permissions.value).toEqual({origins: [], permissions: ["tabs"]});
     expect(() => createBrowserHarness({permissions: {origins: ["bad"]}})).toThrow("match pattern");
 });
@@ -245,6 +279,7 @@ test("URL overrides/reset and origin state stay isolated between harnesses", asy
         tabs: [createTabFixture({id: 1, url: "https://example.com/page"})],
         permissions: {origins: ["<all_urls>"]},
     });
+
     const second = createBrowserHarness();
     first.tabs.query.setResult([]);
     await expect(first.chrome.tabs.query({url: "https://example.com/*"})).resolves.toEqual([]);

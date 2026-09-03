@@ -11,6 +11,7 @@ describe("configurable browser namespaces", () => {
             if (entry.coverage === "configurable" && entry.kind === "method") {
                 expect(configurable.method(entry.path)).toBeDefined();
             }
+
             if (entry.kind === "event") {
                 expect(configurable.event(entry.path)).toBeDefined();
             }
@@ -28,6 +29,7 @@ describe("configurable browser namespaces", () => {
         });
 
         expect(result).toEqual([item]);
+
         expect(configurable.controls.downloads.search.calls).toMatchObject([
             {
                 args: [{id: 7}],
@@ -35,11 +37,13 @@ describe("configurable browser namespaces", () => {
                 invocation: "callback",
             },
         ]);
+
         expect(configurable.calls.map(call => call.api)).toEqual(["downloads.search"]);
     });
 
     test("uses dual Promise behavior for browser facades", async () => {
         const configurable = createConfigurableNamespaces({facade: "browser"});
+
         const alarm: chrome.alarms.Alarm = {
             name: "deterministic-alarm",
             persistAcrossSessions: false,
@@ -49,6 +53,7 @@ describe("configurable browser namespaces", () => {
         configurable.controls.alarms.getAll.setResult([alarm]);
 
         await expect(configurable.api.alarms.getAll()).resolves.toEqual([alarm]);
+
         expect(configurable.controls.alarms.getAll.calls[0]).toMatchObject({
             args: [],
             callback: undefined,
@@ -62,6 +67,7 @@ describe("configurable browser namespaces", () => {
         let observed: chrome.runtime.LastError | undefined;
 
         configurable.controls.alarms.getAll.failNext(new Error("alarms unavailable"));
+
         configurable.api.alarms.getAll(() => {
             observed = lastError.current;
         });

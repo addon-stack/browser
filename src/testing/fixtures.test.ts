@@ -37,6 +37,7 @@ describe("testing fixtures", () => {
             discarded: false,
             groupId: -1,
         });
+
         expect(first).not.toBe(second);
         expect(first.mutedInfo).not.toBe(mutedInfo);
         expect(first.mutedInfo).not.toBe(second.mutedInfo);
@@ -68,6 +69,7 @@ describe("testing fixtures", () => {
 
     test("creates installed details with an install reason", () => {
         expect(createInstalledDetailsFixture()).toEqual({reason: "install"});
+
         expect(createInstalledDetailsFixture({reason: "update", previousVersion: "0.9.0"})).toEqual({
             reason: "update",
             previousVersion: "0.9.0",
@@ -83,6 +85,7 @@ describe("testing fixtures", () => {
             origin: "chrome-extension://test-extension-id",
             url: "chrome-extension://test-extension-id/background.html",
         });
+
         expect(sender.tab).not.toBe(tab);
     });
 

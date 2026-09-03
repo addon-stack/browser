@@ -41,11 +41,11 @@ pnpm add @addon-core/browser
 - [action](docs/action.md) — MV2/MV3 compatible; under the hood uses `chrome.action` (MV3) or `chrome.browserAction` (MV2) automatically.
 - [alarms](docs/alarms.md)
 - [audio](docs/audio.md)
-- [browsingData](docs/browsingData.md)
+- [browsingData](docs/browsing-data.md)
 - [commands](docs/commands.md)
-- [contextMenus](docs/contextMenus.md)
+- [contextMenus](docs/context-menus.md)
 - [cookies](docs/cookies.md)
-- [documentScan](docs/documentScan.md)
+- [documentScan](docs/document-scan.md)
 - [downloads](docs/downloads.md)
 - [extension](docs/extension.md)
 - [history](docs/history.md)
@@ -60,11 +60,11 @@ pnpm add @addon-core/browser
 - [scripting](docs/scripting.md)
 - [sidebar](docs/sidebar.md) — Unified helpers for Chrome Side Panel (MV3) and Firefox/Opera `sidebarAction`.
 - [storage](https://github.com/addon-stack/storage) — via separate package: [@addon-core/storage](https://www.npmjs.com/package/@addon-core/storage)
-- [tabCapture](docs/tabCapture.md)
+- [tabCapture](docs/tab-capture.md)
 - [tabs](docs/tabs.md)
-- [userScripts](docs/userScripts.md)
-- [webNavigation](docs/webNavigation.md)
-- [webRequest](docs/webRequest.md)
+- [userScripts](docs/user-scripts.md)
+- [webNavigation](docs/web-navigation.md)
+- [webRequest](docs/web-request.md)
 - [windows](docs/windows.md)
 
 ## Why this package
@@ -131,7 +131,7 @@ const off = onContextMenusClicked(async (info, tab) => {
 
 ## Helpers
 
-- [browserDetection](docs/browserDetection.md) — Best-effort browser detection with `BrowserName`, `BrowserFamily`, `guessBrowser()`, `isBrowser()`, and `isBrowserFamily()`.
+- [browserDetection](docs/browser-detection.md) — Best-effort browser detection with `BrowserName`, `BrowserFamily`, `guessBrowser()`, `isBrowser()`, and `isBrowserFamily()`.
 
 ## Utilities
 

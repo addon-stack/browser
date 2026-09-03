@@ -453,6 +453,7 @@ export const getPublicExportCoverage = (name: string): PublicExportCoverageEntry
 export type RawCapabilityKind = "method" | "event" | "property";
 export type RawCapabilityCoverage = "stateful" | "configurable" | "event";
 export type RawMethodInvocation = "sync" | "callback" | "promise" | "dual" | "promise-tolerant" | "hybrid";
+
 export type RawFailureChannel =
     | "none"
     | "sync-throw"

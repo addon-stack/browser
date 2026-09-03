@@ -127,6 +127,7 @@ export const createRuntimeHarness = (
     }
 
     const messageChannels = new Set<MessageChannel>();
+
     const messageChannelClosedError = (): Error =>
         new Error('Browser method "runtime.sendMessage" message channel closed before a response was received.');
 
@@ -150,6 +151,7 @@ export const createRuntimeHarness = (
 
             const settle = (callback: () => void): void => {
                 if (settled) return;
+
                 settled = true;
                 messageChannels.delete(channel);
                 callback();
@@ -178,6 +180,7 @@ export const createRuntimeHarness = (
             const sendResponse = (response?: unknown): void => {
                 resolveFirst(response);
             };
+
             const sender = cloneRecord(messageSender);
             const registrations = events.onMessage.registrations();
             messageChannels.add(channel);
@@ -212,6 +215,7 @@ export const createRuntimeHarness = (
 
                 if (typeof then === "function") {
                     pendingResponses += 1;
+
                     Promise.resolve(listenerResult).then(
                         response => {
                             resolveFirst(response);
@@ -237,6 +241,7 @@ export const createRuntimeHarness = (
 
     const isMessageOptions = (value: unknown): boolean => {
         if (value === undefined) return true;
+
         if (!value || typeof value !== "object" || Array.isArray(value)) return false;
 
         return Object.keys(value).every(key => key === "includeTlsChannelId");
@@ -244,6 +249,7 @@ export const createRuntimeHarness = (
 
     const messageFromSendArguments = (args: readonly unknown[]): unknown => {
         if (args.length < 2) return args[0];
+
         if (args.length === 2 && isMessageOptions(args[1])) return args[0];
 
         return args[1];
@@ -274,11 +280,13 @@ export const createRuntimeHarness = (
         name: "runtime.connect",
         nextSequence,
     });
+
     const connectNative = createBrowserMethod<typeof chrome.runtime.connectNative, chrome.runtime.Port>({
         invocation: "sync",
         name: "runtime.connectNative",
         nextSequence,
     });
+
     const getContexts = createBrowserMethod<typeof chrome.runtime.getContexts, chrome.runtime.ExtensionContext[]>({
         callback: "last",
         implementation: ((
@@ -288,7 +296,9 @@ export const createRuntimeHarness = (
             const result = contexts
                 .filter(context => matchesContextFilter(context, filter))
                 .map(context => cloneRecord(context));
+
             callback?.(result);
+
             return result;
         }) as unknown as typeof chrome.runtime.getContexts,
         invocation: "dual",
@@ -296,12 +306,14 @@ export const createRuntimeHarness = (
         name: "runtime.getContexts",
         nextSequence,
     });
+
     const getManifest = createBrowserMethod<typeof chrome.runtime.getManifest, chrome.runtime.Manifest>({
         implementation: (() => cloneRecord(manifest)) as typeof chrome.runtime.getManifest,
         invocation: "sync",
         name: "runtime.getManifest",
         nextSequence,
     });
+
     const getPackageDirectoryEntry = createBrowserMethod<
         typeof chrome.runtime.getPackageDirectoryEntry,
         FileSystemDirectoryEntry
@@ -312,6 +324,7 @@ export const createRuntimeHarness = (
         name: "runtime.getPackageDirectoryEntry",
         nextSequence,
     });
+
     const getPlatformInfo = createBrowserMethod<typeof chrome.runtime.getPlatformInfo, chrome.runtime.PlatformInfo>({
         callback: "last",
         invocation: "dual",
@@ -319,6 +332,7 @@ export const createRuntimeHarness = (
         name: "runtime.getPlatformInfo",
         nextSequence,
     });
+
     const getBrowserInfo = createBrowserMethod<typeof browser.runtime.getBrowserInfo, browser.runtime.BrowserInfo>({
         implementation: (() =>
             Promise.resolve({
@@ -331,15 +345,18 @@ export const createRuntimeHarness = (
         name: "runtime.getBrowserInfo",
         nextSequence,
     });
+
     const getURL = createBrowserMethod<typeof chrome.runtime.getURL, string>({
         implementation: ((path: string) => {
             const normalized = path.replace(/^\/+/, "");
+
             return `${urlScheme}://${extensionId}/${normalized}`;
         }) as typeof chrome.runtime.getURL,
         invocation: "sync",
         name: "runtime.getURL",
         nextSequence,
     });
+
     const openOptionsPage = createBrowserMethod<typeof chrome.runtime.openOptionsPage, void>({
         callback: "last",
         invocation: "dual",
@@ -347,11 +364,13 @@ export const createRuntimeHarness = (
         name: "runtime.openOptionsPage",
         nextSequence,
     });
+
     const reload = createBrowserMethod<typeof chrome.runtime.reload, void>({
         invocation: "sync",
         name: "runtime.reload",
         nextSequence,
     });
+
     const requestUpdateCheck = createBrowserMethod<typeof chrome.runtime.requestUpdateCheck, RequestUpdateCheckResult>({
         callback: "last",
         callbackArgs: result => [result.status, result.details],
@@ -360,11 +379,13 @@ export const createRuntimeHarness = (
         name: "runtime.requestUpdateCheck",
         nextSequence,
     });
+
     const restart = createBrowserMethod<typeof chrome.runtime.restart, void>({
         invocation: "sync",
         name: "runtime.restart",
         nextSequence,
     });
+
     const restartAfterDelay = createBrowserMethod<typeof chrome.runtime.restartAfterDelay, void>({
         callback: "last",
         callbackArgs: () => [],
@@ -373,6 +394,7 @@ export const createRuntimeHarness = (
         name: "runtime.restartAfterDelay",
         nextSequence,
     });
+
     const sendMessage = createBrowserMethod<typeof chrome.runtime.sendMessage, unknown>({
         callback: "last",
         implementation: sendRuntimeMessage,
@@ -381,6 +403,7 @@ export const createRuntimeHarness = (
         name: "runtime.sendMessage",
         nextSequence,
     });
+
     const setUninstallURL = createBrowserMethod<typeof chrome.runtime.setUninstallURL, void>({
         callback: "last",
         callbackArgs: () => [],
@@ -496,9 +519,11 @@ export const createRuntimeHarness = (
             manifest = cloneRecord(initialManifest);
             contexts = initialContexts.map(context => cloneRecord(context));
             messageSender = cloneRecord(initialSender);
+
             methods.forEach(method => {
                 method.reset();
             });
+
             Object.values(events).forEach(event => {
                 event.reset();
             });

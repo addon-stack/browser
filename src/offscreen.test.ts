@@ -39,6 +39,7 @@ describe("offscreen", () => {
 
     test("should close the current offscreen document", async () => {
         await expect(closeOffscreen()).resolves.toBeUndefined();
+
         expect(harness.configurable.chrome.offscreen.closeDocument.calls).toMatchObject([
             {args: [], callbackCalls: [[]], invocation: "callback"},
         ]);
@@ -52,6 +53,7 @@ describe("offscreen", () => {
         };
 
         await expect(createOffscreen(parameters)).resolves.toBeUndefined();
+
         expect(harness.configurable.chrome.offscreen.createDocument.calls).toMatchObject([
             {args: [parameters], callbackCalls: [[]], invocation: "callback"},
         ]);
@@ -72,12 +74,14 @@ describe("offscreen", () => {
             contextType: "OFFSCREEN_DOCUMENT",
             documentUrl: "chrome-extension://extension-id/offscreen.html",
         });
+
         harness.runtime.setContexts([
             createExtensionContextFixture({contextId: "popup-id", contextType: "POPUP"}),
             offscreenContext,
         ]);
 
         await expect(getOffscreenContext()).resolves.toEqual(offscreenContext);
+
         expect(harness.runtime.getContexts.calls).toMatchObject([
             {
                 args: [{contextTypes: ["OFFSCREEN_DOCUMENT"]}],

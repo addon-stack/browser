@@ -7,6 +7,7 @@ import {type BrowserTestApi, createBrowserHarness, installBrowserGlobals} from "
 
 const expectNativeTask = async (pending: Promise<void>): Promise<void> => {
     let settled = false;
+
     const observed = pending.then(() => {
         settled = true;
     });
@@ -36,6 +37,7 @@ describe("download validation delay control", () => {
                 enumerable: false,
                 value: harness.delays.downloadValidation.api,
             });
+
             await waitForDownloadValidation(api, 100);
         }
 
@@ -66,10 +68,12 @@ describe("download validation delay control", () => {
         harness.delays.downloadValidation.setResult(undefined);
 
         expect(facade.downloads).not.toBe(harness[name].downloads);
+
         expect(Object.getOwnPropertyDescriptor(facade.downloads, getDownloadValidationDelayKey())).toMatchObject({
             enumerable: false,
             value: harness.delays.downloadValidation.api,
         });
+
         await waitForDownloadValidation(facade.downloads, 100);
         expect(harness.delays.downloadValidation.calls[0]?.args).toEqual([100]);
 
@@ -84,9 +88,11 @@ describe("download validation delay control", () => {
         const delay = harness.delays.downloadValidation;
         delay.setResult(undefined);
         await delay.api(100);
+
         delay.setImplementation(async () => {
             throw new Error("Custom delay must be cleared");
         });
+
         delay.queueResult(undefined);
         delay.failNext(new Error("Queued error must be cleared"));
 
@@ -114,6 +120,7 @@ describe("download validation delay control", () => {
             const facade = (
                 profile === "firefox" || profile === "safari" ? globalThis.browser : globalThis.chrome
             ) as BrowserTestApi;
+
             await waitForDownloadValidation(facade.downloads, 100);
             expect(harness.delays.downloadValidation.calls[0]?.args).toEqual([100]);
             expect(Object.getOwnPropertyDescriptor(globalThis, "setTimeout")).toEqual(timerDescriptor);
@@ -131,9 +138,10 @@ describe("download validation delay control", () => {
 
     test("assimilates custom thenables from a valid hook", async () => {
         const calls: number[] = [];
+
         const namespace = {
             [getDownloadValidationDelayKey()]: (milliseconds: number) => ({
-                // biome-ignore lint/suspicious/noThenProperty: Exercises assimilation of a custom thenable.
+                // Exercises assimilation of a custom thenable.
                 then(resolve: () => void) {
                     calls.push(milliseconds);
                     resolve();
@@ -163,6 +171,7 @@ describe("download validation delay control", () => {
 
     test("preserves a hook throw without scheduling a fallback wait", async () => {
         const error = new Error("Scheduler threw");
+
         const namespace = {
             [getDownloadValidationDelayKey()]: () => {
                 throw error;

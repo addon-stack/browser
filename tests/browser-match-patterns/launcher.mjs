@@ -3,6 +3,7 @@ import {resolve} from "node:path";
 import {promisify} from "node:util";
 
 const run = promisify(execFile);
+
 const browserHint =
     "Use the full Chrome for Testing or Chromium executable, not regular Google Chrome or chrome-headless-shell. " +
     "Regular Google Chrome 137+ disables --load-extension, which this smoke requires. " +
@@ -18,8 +19,10 @@ export const inspectBrowser = async binary => {
     if (!binary) {
         throw new Error(`Usage: npm run test:browser-match-patterns -- /absolute/path/to/browser. ${browserHint}`);
     }
+
     const path = resolve(binary);
     let version;
+
     try {
         const {stdout} = await run(path, ["--version"], {
             encoding: "utf8",
@@ -27,12 +30,15 @@ export const inspectBrowser = async binary => {
             killSignal: "SIGKILL",
             maxBuffer: 4096,
         });
+
         version = stdout.trim();
     } catch (error) {
         const reason = error.killed ? "--version did not finish within 5 seconds" : error.code || error.message;
         throw new Error(`Cannot inspect browser at ${JSON.stringify(path)} (${reason}). ${browserHint}`);
     }
+
     assertSupportedBrowser(version, path);
+
     return {path, version};
 };
 

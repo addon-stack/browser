@@ -4,10 +4,12 @@ import {createBrowserMethod} from "./method";
 type SyncApi = (value: string) => number;
 type CallbackApi = (value: string, callback: (result: number) => void) => void;
 type PromiseApi = (value: string) => Promise<number>;
+
 type DualApi = {
     (value: string): Promise<number>;
     (value: string, callback: (result: number) => void): void;
 };
+
 type PromiseTolerantApi = (value: string, callback?: (result: number) => void) => Promise<number>;
 type HybridApi = (value: string, callback: (result: number) => void) => Promise<number> | undefined;
 
@@ -18,6 +20,7 @@ describe("createBrowserMethod", () => {
         method.setResult(3);
 
         expect(method.api("input")).toBe(3);
+
         expect(method.calls).toEqual([
             {
                 sequence: 1,
@@ -27,6 +30,7 @@ describe("createBrowserMethod", () => {
                 callbackCalls: [],
             },
         ]);
+
         expect(Object.isFrozen(method.calls)).toBe(true);
         expect(Object.isFrozen(method.calls[0].args)).toBe(true);
     });
@@ -38,6 +42,7 @@ describe("createBrowserMethod", () => {
         expect(() => syncMethod.api("input")).toThrow(
             'Browser method "runtime.sync" was called without a configured result or implementation.'
         );
+
         await expect(promiseMethod.api("input")).rejects.toThrow(
             'Browser method "tabs.query" was called without a configured result or implementation.'
         );
@@ -59,6 +64,7 @@ describe("createBrowserMethod", () => {
 
     test("turns synchronous implementation errors into Promise rejections", async () => {
         const failure = new Error("implementation failed");
+
         const method = createBrowserMethod<PromiseApi, number>({
             name: "tabs.get",
             invocation: "promise",
@@ -75,12 +81,14 @@ describe("createBrowserMethod", () => {
             name: "tabs.callback",
             invocation: "callback",
         });
+
         const callback = jest.fn();
 
         method.setResult(5);
 
         expect(method.api("input", callback)).toBeUndefined();
         expect(callback).toHaveBeenCalledWith(5);
+
         expect(method.calls[0]).toMatchObject({
             args: ["input"],
             callback,
@@ -91,11 +99,13 @@ describe("createBrowserMethod", () => {
 
     test("supports callback argument mapping for void and multiple result callbacks", () => {
         type MultiCallbackApi = (callback: (left: string, right: number) => void) => void;
+
         const method = createBrowserMethod<MultiCallbackApi, readonly [string, number]>({
             name: "runtime.multi",
             invocation: "callback",
             callbackArgs: value => value,
         });
+
         const callback = jest.fn();
 
         method.setResult(["value", 7]);
@@ -121,6 +131,7 @@ describe("createBrowserMethod", () => {
             name: "runtime.promiseTolerant",
             invocation: "promise-tolerant",
         });
+
         const callback = jest.fn();
 
         method.setResult(9);
@@ -139,6 +150,7 @@ describe("createBrowserMethod", () => {
         await expect(unsafeApi("invalid", jest.fn())).rejects.toThrow(
             'Browser method "tabs.promise" is promise-only and does not accept a callback argument.'
         );
+
         await expect(method.api("valid")).resolves.toBe(10);
     });
 
@@ -152,6 +164,7 @@ describe("createBrowserMethod", () => {
         expect(() => unsafeApi("invalid")).toThrow(
             'Browser method "tabs.callback" requires a callback as its final argument.'
         );
+
         method.api("valid", callback);
         expect(callback).toHaveBeenCalledWith(11);
     });
@@ -163,6 +176,7 @@ describe("createBrowserMethod", () => {
 
         method.setImplementation((_value, implementationCallback) => {
             implementationCallback(12);
+
             return returned;
         });
 
@@ -174,9 +188,11 @@ describe("createBrowserMethod", () => {
 
     test("exposes lastError only while a failed callback runs", () => {
         let lastError: unknown;
+
         const controller = {
             runWithLastError<T>(error: unknown, callback: () => T): T {
                 lastError = error;
+
                 try {
                     return callback();
                 } finally {
@@ -184,11 +200,13 @@ describe("createBrowserMethod", () => {
                 }
             },
         };
+
         const method = createBrowserMethod<CallbackApi, number>({
             name: "tabs.get",
             invocation: "callback",
             lastError: controller,
         });
+
         const failure = new Error("missing tab");
         const observed: unknown[] = [];
 
@@ -211,6 +229,7 @@ describe("createBrowserMethod", () => {
 
     test("keeps a default implementation across reset while clearing user configuration", () => {
         const defaultImplementation: SyncApi = value => value.length;
+
         const method = createBrowserMethod<SyncApi, number>({
             name: "runtime.default",
             invocation: "sync",
@@ -244,6 +263,7 @@ describe("createBrowserMethod", () => {
 
     test("supports a shared sequence source", () => {
         let sequence = 40;
+
         const method = createBrowserMethod<SyncApi, number>({
             name: "runtime.sharedSequence",
             invocation: "sync",

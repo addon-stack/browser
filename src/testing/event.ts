@@ -77,7 +77,9 @@ export function createBrowserEvent<
                     return Promise.reject(error);
                 }
             });
+
             const outcomes = await Promise.allSettled(pending);
+
             const errors = outcomes
                 .filter((outcome): outcome is PromiseRejectedResult => outcome.status === "rejected")
                 .map(outcome => outcome.reason);

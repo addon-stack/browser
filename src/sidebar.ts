@@ -1,7 +1,7 @@
 import {browser} from "./browser";
 import {getContexts} from "./runtime";
-import {callWithPromise} from "./utils";
 import type {FirefoxSidebarAction, OperaSidebarAction, SidebarAction} from "./types";
+import {callWithPromise} from "./utils";
 
 type Color = string | ColorArray;
 type ColorArray = chrome.extensionTypes.ColorArray;
@@ -244,6 +244,7 @@ export const setSidebarTitle = (title: string | number, tabId?: number): Promise
             if (result instanceof Promise) {
                 await result;
             }
+
             return cb();
         }
 

@@ -1,9 +1,9 @@
+import type {BrowserMemoryState} from "./browser-state";
 import {type BrowserEventHarness, createBrowserEvent} from "./event";
 import {createTabFixture} from "./fixtures";
 import {missingEntityError} from "./internal";
 import {createUrlMatcher} from "./match-patterns";
 import {type BrowserMethod, createBrowserMethod} from "./method";
-import type {BrowserMemoryState} from "./browser-state";
 import type {RuntimeLastErrorController, TabsTestApi} from "./types";
 
 type ListenerArgs<TEvent extends {addListener(listener: (...args: never[]) => unknown, ...args: never[]): unknown}> =
@@ -112,11 +112,13 @@ export const createTabsHarness = (
         name: "tabs.captureVisibleTab",
         nextSequence,
     });
+
     const connect = createBrowserMethod<typeof chrome.tabs.connect, chrome.runtime.Port>({
         invocation: "sync",
         name: "tabs.connect",
         nextSequence,
     });
+
     const create = createBrowserMethod<typeof chrome.tabs.create, chrome.tabs.Tab>({
         callback: "last",
         implementation: ((properties: chrome.tabs.CreateProperties, callback?: (tab: chrome.tabs.Tab) => void) => {
@@ -128,6 +130,7 @@ export const createTabsHarness = (
 
             for (const tab of existing) {
                 if (tab.index >= index) tab.index += 1;
+
                 if (properties.active !== false) tab.active = false;
             }
 
@@ -142,14 +145,17 @@ export const createTabsHarness = (
                 url: properties.url,
                 windowId,
             });
+
             state.tabs.set(id, tab);
             state.reindexTabs(windowId);
             const result = state.cloneTab(tab);
             callback?.(result);
             ignoreAutoEventError(events.onCreated.emit(state.cloneTab(tab)));
+
             if (tab.active) {
                 ignoreAutoEventError(events.onActivated.emit({tabId: id, windowId}));
             }
+
             return result;
         }) as unknown as typeof chrome.tabs.create,
         invocation: "dual",
@@ -157,6 +163,7 @@ export const createTabsHarness = (
         name: "tabs.create",
         nextSequence,
     });
+
     const detectLanguage = createBrowserMethod<typeof chrome.tabs.detectLanguage, string>({
         callback: "last",
         invocation: "dual",
@@ -164,6 +171,7 @@ export const createTabsHarness = (
         name: "tabs.detectLanguage",
         nextSequence,
     });
+
     const discard = createBrowserMethod<typeof chrome.tabs.discard, chrome.tabs.Tab | undefined>({
         callback: "last",
         invocation: "dual",
@@ -171,6 +179,7 @@ export const createTabsHarness = (
         name: "tabs.discard",
         nextSequence,
     });
+
     const duplicate = createBrowserMethod<typeof chrome.tabs.duplicate, chrome.tabs.Tab | undefined>({
         callback: "last",
         invocation: "dual",
@@ -178,6 +187,7 @@ export const createTabsHarness = (
         name: "tabs.duplicate",
         nextSequence,
     });
+
     const executeScript = createBrowserMethod<typeof chrome.tabs.executeScript, unknown[] | undefined>({
         callback: "last",
         invocation: "dual",
@@ -185,20 +195,27 @@ export const createTabsHarness = (
         name: "tabs.executeScript",
         nextSequence,
     });
+
     const get = createBrowserMethod<typeof chrome.tabs.get, chrome.tabs.Tab>({
         callback: "last",
         implementation: ((tabId: number, callback?: (tab: chrome.tabs.Tab) => void) => {
             const tab = state.tabs.get(tabId);
+
             if (!tab) {
                 const error = missingEntityError("tab", tabId);
+
                 if (callback) {
                     lastError.runWithLastError(error, () => callback(undefined as unknown as chrome.tabs.Tab));
+
                     return undefined;
                 }
+
                 throw error;
             }
+
             const result = state.cloneTab(tab);
             callback?.(result);
+
             return result;
         }) as unknown as typeof chrome.tabs.get,
         invocation: "dual",
@@ -206,6 +223,7 @@ export const createTabsHarness = (
         name: "tabs.get",
         nextSequence,
     });
+
     const getCurrent = createBrowserMethod<typeof chrome.tabs.getCurrent, chrome.tabs.Tab | undefined>({
         callback: "last",
         implementation: ((callback?: (tab?: chrome.tabs.Tab) => void) => {
@@ -213,6 +231,7 @@ export const createTabsHarness = (
             const tab = [...state.tabs.values()].find(item => item.windowId === windowId && item.active);
             const result = tab ? state.cloneTab(tab) : undefined;
             callback?.(result);
+
             return result;
         }) as unknown as typeof chrome.tabs.getCurrent,
         invocation: "dual",
@@ -220,6 +239,7 @@ export const createTabsHarness = (
         name: "tabs.getCurrent",
         nextSequence,
     });
+
     const getZoom = createBrowserMethod<typeof chrome.tabs.getZoom, number>({
         callback: "last",
         invocation: "dual",
@@ -227,6 +247,7 @@ export const createTabsHarness = (
         name: "tabs.getZoom",
         nextSequence,
     });
+
     const getZoomSettings = createBrowserMethod<typeof chrome.tabs.getZoomSettings, chrome.tabs.ZoomSettings>({
         callback: "last",
         invocation: "dual",
@@ -234,6 +255,7 @@ export const createTabsHarness = (
         name: "tabs.getZoomSettings",
         nextSequence,
     });
+
     const goBack = createBrowserMethod<typeof chrome.tabs.goBack, void>({
         callback: "last",
         callbackArgs: () => [],
@@ -242,6 +264,7 @@ export const createTabsHarness = (
         name: "tabs.goBack",
         nextSequence,
     });
+
     const goForward = createBrowserMethod<typeof chrome.tabs.goForward, void>({
         callback: "last",
         callbackArgs: () => [],
@@ -250,6 +273,7 @@ export const createTabsHarness = (
         name: "tabs.goForward",
         nextSequence,
     });
+
     const group = createBrowserMethod<typeof chrome.tabs.group, number>({
         callback: "last",
         invocation: "dual",
@@ -257,6 +281,7 @@ export const createTabsHarness = (
         name: "tabs.group",
         nextSequence,
     });
+
     const highlight = createBrowserMethod<typeof chrome.tabs.highlight, chrome.windows.Window>({
         callback: "last",
         invocation: "dual",
@@ -264,6 +289,7 @@ export const createTabsHarness = (
         name: "tabs.highlight",
         nextSequence,
     });
+
     const insertCSS = createBrowserMethod<typeof chrome.tabs.insertCSS, void>({
         callback: "last",
         callbackArgs: () => [],
@@ -272,6 +298,7 @@ export const createTabsHarness = (
         name: "tabs.insertCSS",
         nextSequence,
     });
+
     const move = createBrowserMethod<typeof chrome.tabs.move, chrome.tabs.Tab | chrome.tabs.Tab[]>({
         callback: "last",
         invocation: "dual",
@@ -279,6 +306,7 @@ export const createTabsHarness = (
         name: "tabs.move",
         nextSequence,
     });
+
     const query = createBrowserMethod<typeof chrome.tabs.query, chrome.tabs.Tab[]>({
         callback: "last",
         implementation: ((queryInfo: chrome.tabs.QueryInfo, callback?: (tabs: chrome.tabs.Tab[]) => void) => {
@@ -288,47 +316,69 @@ export const createTabsHarness = (
 
             const urls = typeof queryInfo.url === "string" ? [queryInfo.url] : queryInfo.url;
             const matchesUrl = urls === undefined ? undefined : createUrlMatcher(urls, "tabs.query");
+
             if (queryInfo.title) assertExactPattern("title", queryInfo.title);
 
             const currentWindowId = state.currentWindowId();
             const requestedWindowId = queryInfo.windowId === -2 ? currentWindowId : queryInfo.windowId;
+
             const result = [...state.tabs.values()]
                 .filter(tab => {
                     const window = state.windows.get(tab.windowId);
+
                     if (queryInfo.status !== undefined && tab.status !== queryInfo.status) return false;
+
                     if (
                         queryInfo.lastFocusedWindow !== undefined &&
                         (tab.windowId === state.lastFocusedWindowId) !== queryInfo.lastFocusedWindow
                     )
                         return false;
+
                     if (requestedWindowId !== undefined && tab.windowId !== requestedWindowId) return false;
+
                     if (queryInfo.windowType !== undefined && window?.type !== queryInfo.windowType) return false;
+
                     if (queryInfo.active !== undefined && tab.active !== queryInfo.active) return false;
+
                     if (queryInfo.index !== undefined && tab.index !== queryInfo.index) return false;
+
                     if (
                         queryInfo.currentWindow !== undefined &&
                         (tab.windowId === currentWindowId) !== queryInfo.currentWindow
                     )
                         return false;
+
                     if (queryInfo.highlighted !== undefined && tab.highlighted !== queryInfo.highlighted) return false;
+
                     if (queryInfo.discarded !== undefined && tab.discarded !== queryInfo.discarded) return false;
+
                     if (queryInfo.frozen !== undefined && tab.frozen !== queryInfo.frozen) return false;
+
                     if (queryInfo.autoDiscardable !== undefined && tab.autoDiscardable !== queryInfo.autoDiscardable)
                         return false;
+
                     if (queryInfo.pinned !== undefined && tab.pinned !== queryInfo.pinned) return false;
+
                     if (queryInfo.splitViewId !== undefined && tab.splitViewId !== queryInfo.splitViewId) return false;
+
                     if (queryInfo.audible !== undefined && Boolean(tab.audible) !== queryInfo.audible) return false;
+
                     if (queryInfo.muted !== undefined && Boolean(tab.mutedInfo?.muted) !== queryInfo.muted)
                         return false;
+
                     if (queryInfo.groupId !== undefined && tab.groupId !== queryInfo.groupId) return false;
+
                     if (queryInfo.title !== undefined && tab.title !== queryInfo.title) return false;
+
                     if (matchesUrl && (!tab.url || !matchesUrl(tab.url))) return false;
+
                     return true;
                 })
                 .sort((left, right) => left.windowId - right.windowId || left.index - right.index)
                 .map(tab => state.cloneTab(tab));
 
             callback?.(result);
+
             return result;
         }) as unknown as typeof chrome.tabs.query,
         invocation: "dual",
@@ -336,6 +386,7 @@ export const createTabsHarness = (
         name: "tabs.query",
         nextSequence,
     });
+
     const reload = createBrowserMethod<typeof chrome.tabs.reload, void>({
         callback: "last",
         callbackArgs: () => [],
@@ -344,28 +395,36 @@ export const createTabsHarness = (
         name: "tabs.reload",
         nextSequence,
     });
+
     const remove = createBrowserMethod<typeof chrome.tabs.remove, void>({
         callback: "last",
         callbackArgs: () => [],
         implementation: ((ids: number | number[], callback?: () => void) => {
             const tabIds = Array.isArray(ids) ? ids : [ids];
             const missingId = tabIds.find(id => !state.tabs.has(id));
+
             if (typeof missingId === "number") {
                 const error = missingEntityError("tab", missingId);
+
                 if (callback) {
                     lastError.runWithLastError(error, callback);
+
                     return;
                 }
+
                 throw error;
             }
 
             for (const id of tabIds) {
                 const tab = state.tabs.get(id);
+
                 if (!tab) continue;
+
                 state.tabs.delete(id);
                 state.reindexTabs(tab.windowId);
                 ignoreAutoEventError(events.onRemoved.emit(id, {isWindowClosing: false, windowId: tab.windowId}));
             }
+
             callback?.();
         }) as typeof chrome.tabs.remove,
         invocation: "dual",
@@ -373,6 +432,7 @@ export const createTabsHarness = (
         name: "tabs.remove",
         nextSequence,
     });
+
     const removeCSS = createBrowserMethod<typeof chrome.tabs.removeCSS, void>({
         callback: "last",
         callbackArgs: () => [],
@@ -381,6 +441,7 @@ export const createTabsHarness = (
         name: "tabs.removeCSS",
         nextSequence,
     });
+
     const sendMessage = createBrowserMethod<typeof chrome.tabs.sendMessage, unknown>({
         callback: "last",
         invocation: "dual",
@@ -388,6 +449,7 @@ export const createTabsHarness = (
         name: "tabs.sendMessage",
         nextSequence,
     });
+
     const setZoom = createBrowserMethod<typeof chrome.tabs.setZoom, void>({
         callback: "last",
         callbackArgs: () => [],
@@ -396,6 +458,7 @@ export const createTabsHarness = (
         name: "tabs.setZoom",
         nextSequence,
     });
+
     const setZoomSettings = createBrowserMethod<typeof chrome.tabs.setZoomSettings, void>({
         callback: "last",
         callbackArgs: () => [],
@@ -404,6 +467,7 @@ export const createTabsHarness = (
         name: "tabs.setZoomSettings",
         nextSequence,
     });
+
     const ungroup = createBrowserMethod<typeof chrome.tabs.ungroup, void>({
         callback: "last",
         callbackArgs: () => [],
@@ -412,6 +476,7 @@ export const createTabsHarness = (
         name: "tabs.ungroup",
         nextSequence,
     });
+
     const update = createBrowserMethod<typeof chrome.tabs.update, chrome.tabs.Tab | undefined>({
         callback: "last",
         implementation: ((
@@ -420,27 +485,37 @@ export const createTabsHarness = (
             callback?: (tab?: chrome.tabs.Tab) => void
         ) => {
             const tab = state.tabs.get(tabId);
+
             if (!tab) {
                 const error = missingEntityError("tab", tabId);
+
                 if (callback) {
                     lastError.runWithLastError(error, () => callback(undefined));
+
                     return undefined;
                 }
+
                 throw error;
             }
+
             if (properties.active) {
                 for (const other of state.tabs.values()) {
                     if (other.windowId === tab.windowId) other.active = other.id === tab.id;
                 }
             }
+
             Object.assign(tab, properties);
+
             if (typeof properties.highlighted === "boolean") tab.selected = properties.highlighted;
+
             const result = state.cloneTab(tab);
             callback?.(result);
             ignoreAutoEventError(events.onUpdated.emit(tabId, {...properties}, state.cloneTab(tab)));
+
             if (properties.active) {
                 ignoreAutoEventError(events.onActivated.emit({tabId, windowId: tab.windowId}));
             }
+
             return result;
         }) as unknown as typeof chrome.tabs.update,
         invocation: "dual",
@@ -555,17 +630,21 @@ export const createTabsHarness = (
             methods.forEach(method => {
                 method.reset();
             });
+
             Object.values(events).forEach(event => {
                 event.reset();
             });
         },
         set(tabs): void {
             state.tabs.clear();
+
             for (const tab of tabs) {
                 if (typeof tab.id !== "number") throw new Error("A test tab must have a numeric id");
+
                 state.ensureWindow(tab.windowId);
                 state.tabs.set(tab.id, state.cloneTab(tab));
             }
+
             for (const windowId of new Set(tabs.map(tab => tab.windowId))) state.reindexTabs(windowId);
         },
     };

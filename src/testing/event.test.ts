@@ -28,10 +28,12 @@ describe("createBrowserEvent", () => {
 
         event.api.addListener(value => {
             calls.push(`first:${value}`);
+
             return new Promise<void>(resolve => {
                 release = resolve;
             });
         });
+
         event.api.addListener(value => {
             calls.push(`second:${value}`);
         });
@@ -64,7 +66,7 @@ describe("createBrowserEvent", () => {
         const failure = new Error("thenable failed");
 
         event.api.addListener(() => ({
-            // biome-ignore lint/suspicious/noThenProperty: this intentionally models a non-Promise thenable.
+            // This intentionally models a non-Promise thenable.
             then(_resolve: (value: unknown) => void, reject: (reason: unknown) => void) {
                 reject(failure);
             },
@@ -81,6 +83,7 @@ describe("createBrowserEvent", () => {
         event.api.addListener(() => {
             throw failure;
         });
+
         event.api.addListener(remaining);
 
         await expect(event.emit()).rejects.toBe(failure);
@@ -95,6 +98,7 @@ describe("createBrowserEvent", () => {
         event.api.addListener(() => {
             throw first;
         });
+
         event.api.addListener(() => Promise.reject(second));
 
         try {

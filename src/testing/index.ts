@@ -1,3 +1,13 @@
+export type {
+    PublicExportCoverage,
+    PublicExportCoverageEntry,
+    PublicExportKind,
+    RawCapabilityCoverage,
+    RawCapabilityEntry,
+    RawCapabilityKind,
+    RawFailureChannel,
+    RawMethodInvocation,
+} from "./coverage";
 export {
     EXPECTED_ROOT_RUNTIME_EXPORT_COUNT,
     EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT,
@@ -7,6 +17,13 @@ export {
     RAW_CAPABILITY_COVERAGE,
     TYPE_ONLY_ROOT_EXPORTS,
 } from "./coverage";
+export type {BrowserDelaysHarness} from "./delays";
+export type {
+    BrowserEventApi,
+    BrowserEventHarness,
+    BrowserEventListener,
+    BrowserEventRegistration,
+} from "./event";
 export {createBrowserEvent} from "./event";
 export {
     createExtensionContextFixture,
@@ -18,26 +35,6 @@ export {
     createTabFixture,
     createWindowFixture,
 } from "./fixtures";
-export {installBrowserGlobals, installGlobals} from "./globals";
-export {createBrowserHarness} from "./harness";
-export {createBrowserMethod} from "./method";
-export type {
-    PublicExportCoverage,
-    PublicExportCoverageEntry,
-    PublicExportKind,
-    RawCapabilityCoverage,
-    RawCapabilityEntry,
-    RawCapabilityKind,
-    RawFailureChannel,
-    RawMethodInvocation,
-} from "./coverage";
-export type {BrowserDelaysHarness} from "./delays";
-export type {
-    BrowserEventApi,
-    BrowserEventHarness,
-    BrowserEventListener,
-    BrowserEventRegistration,
-} from "./event";
 export type {
     InstallBrowserGlobalsOptions,
     LocationTestValue,
@@ -45,6 +42,7 @@ export type {
     TestGlobalValues,
     WindowTestValue,
 } from "./globals";
+export {installBrowserGlobals, installGlobals} from "./globals";
 export type {
     BrowserCapabilitiesHarness,
     BrowserHarness,
@@ -52,6 +50,7 @@ export type {
     ConfigurableHarness,
     SidebarHarness,
 } from "./harness";
+export {createBrowserHarness} from "./harness";
 export type {ListenerErrorBuffer, ListenerErrorKind, ListenerErrorRecord} from "./listener-errors";
 export type {
     BrowserMethod,
@@ -62,6 +61,7 @@ export type {
     BrowserMethodObservedInvocation,
     BrowserMethodOptions,
 } from "./method";
+export {createBrowserMethod} from "./method";
 export type {
     BrowserHarnessCall,
     BrowserProfile,

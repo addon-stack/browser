@@ -23,7 +23,7 @@ export const isBackground = (): boolean => {
         return false;
     }
 
-    //@ts-expect-error
+    // @ts-expect-error Chrome's manifest union does not expose legacy background scripts on MV3.
     if (manifest.manifest_version === 3 && !manifest.background.scripts) {
         return typeof window === "undefined";
     }

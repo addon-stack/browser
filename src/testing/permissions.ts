@@ -47,6 +47,7 @@ export const createPermissionsHarness = (
         name: "permissions.addHostAccessRequest",
         nextSequence,
     });
+
     const removeHostAccessRequest = createBrowserMethod<typeof chrome.permissions.removeHostAccessRequest, void>({
         callback: "last",
         callbackArgs: () => [],
@@ -55,15 +56,19 @@ export const createPermissionsHarness = (
         name: "permissions.removeHostAccessRequest",
         nextSequence,
     });
+
     const contains = createBrowserMethod<typeof chrome.permissions.contains, boolean>({
         callback: "last",
         implementation: ((value: chrome.permissions.Permissions, callback?: (result: boolean) => void) => {
             const requested = parseOrigins(value.origins, "permissions.contains");
             const granted = parseOrigins([...origins], "permissions.contains");
+
             const result =
                 includesAll(permissions, value.permissions) &&
                 requested.every(origin => granted.some(grant => coversOrigin(grant, origin)));
+
             callback?.(result);
+
             return result;
         }) as unknown as typeof chrome.permissions.contains,
         invocation: "dual",
@@ -71,11 +76,13 @@ export const createPermissionsHarness = (
         name: "permissions.contains",
         nextSequence,
     });
+
     const getAll = createBrowserMethod<typeof chrome.permissions.getAll, chrome.permissions.Permissions>({
         callback: "last",
         implementation: ((callback?: (result: chrome.permissions.Permissions) => void) => {
             const result = {origins: [...origins], permissions: [...permissions]};
             callback?.(result);
+
             return result;
         }) as unknown as typeof chrome.permissions.getAll,
         invocation: "dual",
@@ -90,24 +97,31 @@ export const createPermissionsHarness = (
     ): Promise<chrome.permissions.Permissions> => {
         const changedPermissions: chrome.runtime.ManifestPermission[] = [];
         const changedOrigins: string[] = [];
+
         const mutate = <T>(set: Set<T>, item: T): boolean => {
             if (action === "revoke") return set.delete(item);
+
             if (set.has(item)) return false;
+
             set.add(item);
+
             return true;
         };
 
         for (const permission of value.permissions ?? []) {
             if (mutate(permissions, permission)) changedPermissions.push(permission);
         }
+
         for (const origin of value.origins ?? []) {
             if (mutate(origins, origin)) changedOrigins.push(origin);
         }
 
         const changed = {origins: changedOrigins, permissions: changedPermissions};
+
         if (changedPermissions.length || changedOrigins.length) {
             await (action === "grant" ? onAdded : onRemoved).emit(changed);
         }
+
         return changed;
     };
 
@@ -116,8 +130,10 @@ export const createPermissionsHarness = (
         implementation: ((value: chrome.permissions.Permissions, callback?: (result: boolean) => void) => {
             // Validate synchronously before mutation, including when the caller supplied a callback.
             parseOrigins(value.origins, "permissions.request");
+
             return apply(value, "grant").then(() => {
                 callback?.(true);
+
                 return true;
             });
         }) as unknown as typeof chrome.permissions.request,
@@ -126,13 +142,16 @@ export const createPermissionsHarness = (
         name: "permissions.request",
         nextSequence,
     });
+
     const remove = createBrowserMethod<typeof chrome.permissions.remove, boolean>({
         callback: "last",
         implementation: ((value: chrome.permissions.Permissions, callback?: (result: boolean) => void) => {
             parseOrigins(value.origins, "permissions.remove");
+
             return apply(value, "revoke").then(changed => {
                 const result = Boolean(changed.permissions?.length || changed.origins?.length);
                 callback?.(result);
+
                 return result;
             });
         }) as unknown as typeof chrome.permissions.remove,
@@ -179,9 +198,11 @@ export const createPermissionsHarness = (
         reset(): void {
             permissions = new Set(initial.permissions ?? []);
             origins = new Set(initial.origins ?? []);
+
             methods.forEach(method => {
                 method.reset();
             });
+
             onAdded.reset();
             onRemoved.reset();
         },

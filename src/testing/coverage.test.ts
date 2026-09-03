@@ -1,4 +1,5 @@
 import ts from "typescript";
+import type {RawCapabilityEntry} from "./coverage";
 import {
     EXPECTED_ROOT_RUNTIME_EXPORT_COUNT,
     EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT,
@@ -7,7 +8,6 @@ import {
     TYPE_ONLY_ROOT_EXPORTS,
 } from "./coverage";
 import {createBrowserHarness} from "./harness";
-import type {RawCapabilityEntry} from "./coverage";
 import type {BrowserMethod} from "./method";
 
 type Harness = ReturnType<typeof createBrowserHarness>;
@@ -53,7 +53,9 @@ const directEventNamespace = (harness: Harness, namespace: string): unknown => {
 
 const configurableNamespaces = (harness: Harness, namespace: string): readonly unknown[] => {
     if (namespace === "browser.sidebarAction") return [harness.sidebar.firefox];
+
     if (namespace === "opr.sidebarAction") return [harness.sidebar.opera];
+
     return [memberOf(harness.configurable.chrome, namespace), memberOf(harness.configurable.browser, namespace)];
 };
 
@@ -63,6 +65,7 @@ const resolveRawCapability = (harness: Harness, entry: RawCapabilityEntry): read
         return [harness.chrome, harness.browser].map(facade => {
             const namespace = memberOf(facade, entry.namespace);
             const record = asRecord(namespace);
+
             return record ? Object.getOwnPropertyDescriptor(record, entry.member) : undefined;
         });
     }
@@ -71,7 +74,9 @@ const resolveRawCapability = (harness: Harness, entry: RawCapabilityEntry): read
         entry.kind === "method"
             ? directMethodNamespace(harness, entry.namespace)
             : directEventNamespace(harness, entry.namespace);
+
     const directControl = memberOf(directNamespace, entry.member);
+
     if (directControl !== undefined) return [directControl];
 
     return configurableNamespaces(harness, entry.namespace).map(namespace => memberOf(namespace, entry.member));
@@ -79,6 +84,7 @@ const resolveRawCapability = (harness: Harness, entry: RawCapabilityEntry): read
 
 const isBrowserMethodControl = (value: unknown): value is AnyBrowserMethod => {
     const record = asRecord(value);
+
     return (
         record !== undefined &&
         typeof record.api === "function" &&
@@ -91,6 +97,7 @@ const isBrowserMethodControl = (value: unknown): value is AnyBrowserMethod => {
 const isBrowserEventControl = (value: unknown): boolean => {
     const record = asRecord(value);
     const api = asRecord(record?.api);
+
     return (
         record !== undefined &&
         api !== undefined &&
@@ -104,12 +111,15 @@ const isBrowserEventControl = (value: unknown): boolean => {
 
 const isPropertyDescriptor = (value: unknown): boolean => {
     const record = asRecord(value);
+
     return record !== undefined && ("value" in record || "get" in record);
 };
 
 const isValidResolution = (entry: RawCapabilityEntry, control: unknown): boolean => {
     if (entry.kind === "method") return isBrowserMethodControl(control);
+
     if (entry.kind === "event") return isBrowserEventControl(control);
+
     return isPropertyDescriptor(control);
 };
 
@@ -120,12 +130,14 @@ const rootExports = () => {
         target: ts.ScriptTarget.ESNext,
         types: ["chrome"],
     });
+
     const checker = program.getTypeChecker();
     const source = program.getSourceFile("src/index.ts");
 
     if (!source) throw new Error("Unable to load src/index.ts for the public export coverage test");
 
     const moduleSymbol = checker.getSymbolAtLocation(source);
+
     if (!moduleSymbol) throw new Error("Unable to resolve the src/index.ts module symbol");
 
     return {checker, exports: checker.getExportsOfModule(moduleSymbol)};
@@ -146,9 +158,11 @@ describe("testing coverage matrices", () => {
 
     test("keeps the three interfaces type-only and the other 328 exports runtime-visible", () => {
         const {checker, exports} = rootExports();
+
         const typeOnly = exports
             .filter(symbol => {
                 const target = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+
                 return !(target.flags & ts.SymbolFlags.Value);
             })
             .map(symbol => symbol.name)
@@ -163,6 +177,7 @@ describe("testing coverage matrices", () => {
 
         expect(paths).toHaveLength(305);
         expect(new Set(paths).size).toBe(paths.length);
+
         expect(
             RAW_CAPABILITY_COVERAGE.filter(
                 entry => entry.kind === "method" && (!entry.browserInvocation || !entry.chromeInvocation)
@@ -172,12 +187,14 @@ describe("testing coverage matrices", () => {
 
     test("resolves all raw capabilities to their actual harness controls", () => {
         const harness = createBrowserHarness();
+
         const resolutions = RAW_CAPABILITY_COVERAGE.map(entry => ({
             controls: resolveRawCapability(harness, entry),
             entry,
         }));
 
         expect(resolutions).toHaveLength(305);
+
         expect(
             resolutions
                 .filter(
@@ -190,10 +207,12 @@ describe("testing coverage matrices", () => {
 
     test("keeps stateful coverage equivalent to having a default implementation", () => {
         const harness = createBrowserHarness();
+
         const mismatches = RAW_CAPABILITY_COVERAGE.filter(entry => entry.kind === "method")
             .flatMap(entry => resolveRawCapability(harness, entry).map(control => ({control, entry})))
             .filter(({control, entry}) => {
                 if (!isBrowserMethodControl(control)) return true;
+
                 return (entry.coverage === "stateful") !== control.hasDefaultImplementation;
             })
             .map(({control, entry}) => ({

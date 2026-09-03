@@ -32,6 +32,7 @@ const getModuleExports = (file, compilerOptions) => {
 };
 
 const sortNames = values => values.map(value => value.name).sort();
+
 const sourceExports = getModuleExports(sourceEntry, {
     module: ts.ModuleKind.ESNext,
     moduleResolution: ts.ModuleResolutionKind.Node10,
@@ -39,6 +40,7 @@ const sourceExports = getModuleExports(sourceEntry, {
     target: ts.ScriptTarget.ESNext,
     types: ["chrome"],
 });
+
 const declarationExports = getModuleExports(declarationEntry, {
     module: ts.ModuleKind.ESNext,
     moduleResolution: ts.ModuleResolutionKind.Node10,
@@ -48,14 +50,17 @@ const declarationExports = getModuleExports(declarationEntry, {
 });
 
 assert.equal(sourceExports.length, 331, "The source public-export baseline changed; update the coverage matrix first");
+
 assert.equal(
     sourceExports.filter(value => value.hasValue).length,
     328,
     "The source runtime-export baseline changed; update the coverage matrix first"
 );
+
 assert.deepEqual(sortNames(declarationExports), sortNames(sourceExports), "Source and declaration exports differ");
 
 const expectedTypeOnly = ["BrowserGuess", "LaunchWebAuthFlowDetails", "WindowEventFilter"];
+
 assert.deepEqual(
     sourceExports
         .filter(value => !value.hasValue)
@@ -68,6 +73,7 @@ assert.deepEqual(
 const esm = await import(`${new URL("../dist/index.js", import.meta.url).href}?verify=${Date.now()}`);
 const require = createRequire(import.meta.url);
 const cjs = require(resolve(projectRoot, "dist/index.cjs"));
+
 const sourceValueNames = sourceExports
     .filter(value => value.hasValue)
     .map(value => value.name)
@@ -85,11 +91,13 @@ const cjsMap = JSON.parse(readFileSync(resolve(projectRoot, "dist/index.cjs.map"
 assert.doesNotMatch(sourceIndex, /(?:^|\/)testing(?:\/|")/m, "The production source entrypoint imports testing code");
 assert.doesNotMatch(esmIndex, /createBrowserHarness/, "The production ESM bundle contains testing code");
 assert.doesNotMatch(cjsIndex, /createBrowserHarness/, "The production CJS bundle contains testing code");
+
 assert.equal(
     esmMap.sources.some(source => source.includes("/testing/")),
     false,
     "The production ESM source map contains testing modules"
 );
+
 assert.equal(
     cjsMap.sources.some(source => source.includes("/testing/")),
     false,
@@ -108,6 +116,7 @@ const testingDeclarations = readFileSync(resolve(projectRoot, "dist/testing/inde
 
 assert.match(testingDeclarations, /^\/\/\/ <reference types="chrome" \/>/);
 assert.match(testingDeclarations, /^\/\/\/ <reference path="\.\.\/api\.d\.ts" \/>/m);
+
 assert.equal(
     existsSync(resolve(projectRoot, "dist/testing/index.d.ts.map")),
     false,
@@ -119,6 +128,7 @@ const listRuntimeSources = directory =>
         const file = resolve(directory, entry.name);
 
         if (entry.isDirectory()) return listRuntimeSources(file);
+
         if (!entry.name.endsWith(".ts") || entry.name.endsWith(".test.ts")) return [];
 
         return [{file, source: readFileSync(file, "utf8")}];

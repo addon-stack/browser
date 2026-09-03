@@ -6,7 +6,7 @@ import {
     guessBrowser,
     isBrowser,
     isBrowserFamily,
-} from "./browserDetection";
+} from "./browser-detection";
 import {type BrowserHarness, createBrowserHarness, installBrowserGlobals} from "./testing";
 
 describe("browser detection", () => {
@@ -30,6 +30,7 @@ describe("browser detection", () => {
             vendor: "Mozilla",
             version: "126.0",
         });
+
         restoreGlobals = installBrowserGlobals(harness, {context: "none", profile: "firefox"});
 
         await expect(guessBrowser()).resolves.toEqual({
@@ -40,6 +41,7 @@ describe("browser detection", () => {
             vendor: "Mozilla",
             version: "126.0",
         });
+
         expect(harness.runtime.getBrowserInfo.calls).toMatchObject([
             {args: [], callback: undefined, invocation: "promise"},
         ]);
@@ -54,6 +56,7 @@ describe("browser detection", () => {
                 ],
             })
         );
+
         restoreGlobals = installBrowserGlobals(harness, {
             context: "none",
             globals: {
@@ -77,11 +80,13 @@ describe("browser detection", () => {
             source: BrowserGuessSource.UserAgentData,
             version: "126.0.2592.87",
         });
+
         expect(getHighEntropyValues).toHaveBeenCalledWith(["fullVersionList"]);
     });
 
     test("guesses Brave before generic Chromium brands", async () => {
         const isBrave = jest.fn(() => Promise.resolve(true));
+
         restoreGlobals = installBrowserGlobals(harness, {
             context: "none",
             globals: {
@@ -98,6 +103,7 @@ describe("browser detection", () => {
             name: BrowserName.Brave,
             source: BrowserGuessSource.NavigatorBrave,
         });
+
         expect(isBrave).toHaveBeenCalledTimes(1);
     });
 
@@ -133,6 +139,7 @@ describe("browser detection", () => {
             name: BrowserName.Opera,
             source: BrowserGuessSource.BrowserGlobal,
         });
+
         expect(globalThis.opr).toBeDefined();
         expect(globalThis.safari).toBeUndefined();
     });
@@ -149,6 +156,7 @@ describe("browser detection", () => {
             name: BrowserName.Safari,
             source: BrowserGuessSource.BrowserGlobal,
         });
+
         expect(globalThis.safari).toBeDefined();
         expect(globalThis.opr).toBeUndefined();
     });
@@ -165,6 +173,7 @@ describe("browser detection", () => {
             name: BrowserName.Chromium,
             source: BrowserGuessSource.ExtensionUrl,
         });
+
         expect(harness.runtime.getURL.calls[0]?.args).toEqual([""]);
         expect("getBrowserInfo" in globalThis.chrome.runtime).toBe(false);
     });

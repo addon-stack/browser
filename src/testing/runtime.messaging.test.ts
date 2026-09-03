@@ -2,6 +2,7 @@ import {onMessage, sendMessage} from "../runtime";
 import {createBrowserHarness, createMessageSenderFixture, createTabFixture, installGlobals} from "./index";
 
 const restorers: Array<() => void> = [];
+
 const CHANNEL_CLOSED_MESSAGE =
     'Browser method "runtime.sendMessage" message channel closed before a response was received.';
 
@@ -21,6 +22,7 @@ describe("stateful runtime messaging", () => {
 
         harness.runtime.setMessageSender(sender);
         installChromeHarness(harness);
+
         const unsubscribe = onMessage((message, actualSender, sendResponse) => {
             received.push({message, sender: actualSender});
             sendResponse({kind: "pong"});
@@ -28,6 +30,7 @@ describe("stateful runtime messaging", () => {
 
         await expect(sendMessage({kind: "ping"})).resolves.toEqual({kind: "pong"});
         expect(received).toEqual([{message: {kind: "ping"}, sender}]);
+
         expect(harness.runtime.sendMessage.calls[0]).toMatchObject({
             args: [{kind: "ping"}],
             invocation: "callback",
@@ -45,6 +48,7 @@ describe("stateful runtime messaging", () => {
             calls.push("first");
             sendResponse("first response");
         });
+
         harness.runtime.events.onMessage.on((_message, _sender, sendResponse) => {
             calls.push("second");
             sendResponse("second response");
@@ -57,14 +61,18 @@ describe("stateful runtime messaging", () => {
 
         const asyncHarness = createBrowserHarness();
         let resolveSlow: (value: string) => void = () => undefined;
+
         asyncHarness.runtime.events.onMessage.on(() => {
             calls.push("slow started");
+
             return new Promise<string>(resolve => {
                 resolveSlow = resolve;
             });
         });
+
         asyncHarness.runtime.events.onMessage.on(() => {
             calls.push("fast started");
+
             return Promise.resolve("fast response");
         });
 
@@ -78,14 +86,17 @@ describe("stateful runtime messaging", () => {
 
     test("holds the response channel only when a listener returns true", async () => {
         const heldHarness = createBrowserHarness();
+
         heldHarness.runtime.events.onMessage.on((_message, _sender, sendResponse) => {
             queueMicrotask(() => sendResponse("async response"));
+
             return true;
         });
 
         await expect(heldHarness.browser.runtime.sendMessage("ping")).resolves.toBe("async response");
 
         const closedHarness = createBrowserHarness();
+
         closedHarness.runtime.events.onMessage.on((_message, _sender, sendResponse) => {
             queueMicrotask(() => sendResponse("too late"));
         });
@@ -100,8 +111,9 @@ describe("stateful runtime messaging", () => {
         await expect(promiseHarness.runtime.emitMessage("ping")).resolves.toEqual({source: "promise"});
 
         const thenableHarness = createBrowserHarness();
+
         thenableHarness.runtime.events.onMessage.on(() => ({
-            // biome-ignore lint/suspicious/noThenProperty: this intentionally models a non-Promise thenable.
+            // This intentionally models a non-Promise thenable.
             then(resolve: (value: unknown) => void) {
                 resolve({source: "thenable"});
             },
@@ -139,8 +151,10 @@ describe("stateful runtime messaging", () => {
     test("explicitly closes every pending message channel and ignores late responses", async () => {
         const harness = createBrowserHarness();
         const lateResponses: Array<(response?: unknown) => void> = [];
+
         harness.runtime.events.onMessage.on((_message, _sender, sendResponse) => {
             lateResponses.push(sendResponse);
+
             return true;
         });
 
@@ -154,6 +168,7 @@ describe("stateful runtime messaging", () => {
         lateResponses.forEach(sendResponse => {
             sendResponse("too late");
         });
+
         harness.runtime.closeMessageChannels();
         await expect(first).rejects.toThrow(CHANNEL_CLOSED_MESSAGE);
         await expect(second).rejects.toThrow(CHANNEL_CLOSED_MESSAGE);
@@ -181,8 +196,10 @@ describe("stateful runtime messaging", () => {
     test("reset rejects pending channels but leaves already settled dispatches unchanged", async () => {
         const harness = createBrowserHarness();
         let holdOpen = false;
+
         harness.runtime.events.onMessage.on((_message, _sender, sendResponse) => {
             if (holdOpen) return true;
+
             sendResponse("settled response");
         });
 

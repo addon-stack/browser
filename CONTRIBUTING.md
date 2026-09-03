@@ -35,8 +35,9 @@ npm ci
 3) Useful scripts
 - `npm run dev` — build in watch mode (tsup)
 - `npm run build` — production build (tsup)
-- `npm run lint` / `npm run lint:fix` — check/fix with Biome
-- `npm run format` — format with Biome
+- `npm run lint` — check code, formatting, and filenames with ESLint; does not edit files
+- `npm run fix` — apply available ESLint fixes and report remaining violations
+- `npm run lint:staged` — fix/check staged files and automatically stage successful fixes (also run by pre-commit)
 - `npm run typecheck` — type-check with tsc
 - `npm test` / `npm run test:ci` — tests (Jest)
 - `npm run test:browser-match-patterns -- /absolute/path/to/browser` — real-browser match-pattern smoke (build first)
@@ -95,7 +96,7 @@ The goal is to cover as much of the WebExtensions/Chrome API surface as possible
 
 How to add a new API wrapper:
 1) Implementation
-- Create `src/<api>.ts`.
+- Create `src/<api-in-kebab-case>.ts`.
 - Wrap callback‑style APIs into `Promise` and call `checkLastError()` inside callbacks.
 - Events must return an unsubscribe function `() => void` (see `handleListener`/`safeListener`).
 - Use precise types from `@types/chrome` (avoid `Parameters<>` in the final documentation — show real argument types).
@@ -106,7 +107,7 @@ How to add a new API wrapper:
 - Re-export from `src/index.ts`.
 
 3) Documentation
-- Create `docs/<api>.md` following the template: “Documentation → Methods/Events (links to sections) → sections with real TypeScript signatures”.
+- Create `docs/<api-in-kebab-case>.md` following the template: “Documentation → Methods/Events (links to sections) → sections with real TypeScript signatures”.
 - Update the list in `README.md` (link to the new file and add a brief description where it helps).
 
 4) Tests
@@ -118,9 +119,55 @@ See the list of not-yet-covered APIs in the "Not yet covered" section of `README
 
 ## Code quality: lint, format, types
 
-- Formatting/linting: [Biome](https://biomejs.dev/) — `npm run format`, `npm run lint`.
+- Formatting/linting: [ESLint](https://eslint.org/) with TypeScript support and
+  [ESLint Stylistic](https://eslint.style/). The single configuration is `eslint.config.js`.
+- `npm run fix` applies available fixes; `npm run lint` only checks and fails on errors or warnings.
 - Type checking: `npm run typecheck`.
-- Husky + lint-staged run pre-commit checks (Biome and `jest --findRelatedTests`).
+- Husky pre-commit runs `npm run lint:staged`, then `npm run test:related`.
+  `lint-staged` applies ESLint fixes to staged files and stages those fixes automatically. It temporarily hides
+  unstaged edits in partially staged files, then restores them without adding them to the commit.
+  Non-fixable lint errors (including filename errors) stop the commit; lint-staged restores the pre-lint state
+  on task failure. If tests fail after lint-staged succeeds, the formatting fixes remain staged for review.
+- Pre-commit checks formatting only for staged files, so unrelated unstaged formatting does not block a commit.
+  Tests still run against the working tree. Use `npm run lint` for a full-project check.
+- Husky pre-push runs lint, typecheck, full tests, and build without modifying source files.
+
+Formatting rules:
+
+- Four-space indentation, double quotes (except when escaping would be needed), semicolons, LF line endings,
+  no spaces inside object/import braces, and optional parentheses around a single untyped arrow parameter.
+- Trailing commas in multiline arrays, objects, imports, exports, enums, tuples, and type parameters, but not function arguments.
+- One blank line before `return` and before/after `if`, `for`, `while`, `do`, and `switch` statements.
+  No extra padding at block boundaries or between `if` and `else`. Consecutive single-line variable declarations stay together.
+- One blank line before and after any statement or declaration spanning two or more lines, including variable
+  declarations, calls, assignments, functions, classes, and TypeScript types (`project/padding-around-multiline`).
+  Only neighboring statements are separated: no padding at file/block boundaries, between arguments, or between
+  object/type/class members. Import and re-export groups retain their existing sorting/grouping rules.
+- At most one consecutive blank line; no trailing whitespace. Imports are sorted and separated from following code.
+- Recommended JavaScript/TypeScript correctness checks. Explicit `any` is allowed; unused parameters, catch bindings,
+  and variables prefixed with `_` are allowed. Other unused bindings are reported, not silently deleted.
+- JSON/JSONC: two-space indentation and expanded nonempty objects/arrays. JSON remains strict; JSONC permits comments.
+- The former 120-column width is a readability guideline, not a failing `max-len` rule: ESLint does not automatically
+  wrap arbitrary long expressions like a dedicated formatter.
+
+Filename rules (`project/file-naming`):
+
+- A module defining and exporting a regular class must use the exact class name in PascalCase: `BrowserClient.ts`.
+  A module defining multiple exported classes must split them into separate matching files. Re-export barrels may
+  keep names such as `index.ts` or `sidebar.ts`.
+- Exception classes extending `Error` (including native error subclasses and local inheritance chains) stay in their
+  owning module and do not determine its filename. For example, `SidebarError` stays in `sidebar.ts`.
+- Other files use kebab-case, including documentation: `browser-detection.ts`, `browser-detection.md`.
+- Tests use the subject's casing: `BrowserClient.test.ts` or `browser-detection.test.ts`.
+  Dot-separated suffixes such as `.integration.test`, `.spec`, `.config`, and `.d` stay lowercase.
+- Standard project metadata names (`README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`,
+  `LICENSE`, `LICENSE.md`, and `AGENTS.md`) are exempt. Names such as `package.json` and `tsconfig.json` already comply.
+- The local naming rule also checks non-code filenames; it does not format Markdown/YAML or rename files.
+  Renames require updating imports and links. Generated output, dependencies, coverage, the lockfile, and local
+  environment/editor files are excluded.
+
+The configuration regression tests in `tests/tooling/` run with the regular Jest suite. Hook tests use temporary
+Git clones to verify staging, partial staging, and rollback without modifying the current checkout's Git state.
 
 PRs with lint/type/build errors won’t be accepted.
 

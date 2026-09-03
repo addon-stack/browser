@@ -7,12 +7,11 @@ import {
 import {type BrowserDelaysHarness, createBrowserDelaysHarness} from "./delays";
 import {createLastErrorController} from "./internal";
 import {createListenerErrorCapture, type ListenerErrorBuffer} from "./listener-errors";
+import type {BrowserMethodCall} from "./method";
 import {createPermissionsHarness, type PermissionsHarness} from "./permissions";
 import {createRuntimeHarness, type RuntimeHarness} from "./runtime";
 import {createScriptingHarness, type ScriptingHarness} from "./scripting";
 import {createTabsHarness, type TabsHarness} from "./tabs";
-import {createWindowsHarness, type WindowsHarness} from "./windows";
-import type {BrowserMethodCall} from "./method";
 import type {
     BrowserHarnessCall,
     BrowserProfile,
@@ -20,6 +19,7 @@ import type {
     OperaSidebarActionTestApi,
     SidebarFlavor,
 } from "./types";
+import {createWindowsHarness, type WindowsHarness} from "./windows";
 
 export interface BrowserHarnessOptions {
     extensionId?: string;
@@ -89,6 +89,7 @@ interface NamedMethodCalls {
 const methodCalls = ({namespace, source}: NamedMethodCalls): BrowserHarnessCall[] =>
     Object.entries(source).flatMap(([member, control]) => {
         if (!control || typeof control !== "object" || !("calls" in control)) return [];
+
         return (control as {calls: readonly BrowserMethodCall[]}).calls.map(call => ({
             ...call,
             api: `${namespace}.${member}`,
@@ -97,19 +98,24 @@ const methodCalls = ({namespace, source}: NamedMethodCalls): BrowserHarnessCall[
 
 const cloneFacade = (api: BrowserTestApi): BrowserTestApi => {
     const copy = Object.defineProperties({}, Object.getOwnPropertyDescriptors(api)) as BrowserTestApi;
+
     for (const [namespace, value] of Object.entries(api)) {
         if (value && typeof value === "object") {
             const namespaceCopy = Object.defineProperties({}, Object.getOwnPropertyDescriptors(value));
             Reflect.set(copy as object, namespace, namespaceCopy);
         }
     }
+
     return copy;
 };
 
 const sidebarDefaultForProfile = (profile: BrowserProfile): SidebarFlavor => {
     if (profile === "firefox") return "firefoxSidebarAction";
+
     if (profile === "opera") return "operaSidebarAction";
+
     if (profile === "chrome") return "sidePanel";
+
     return "none";
 };
 
@@ -169,10 +175,12 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         for (const [member, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(chromeNamespace))) {
             ownedChrome[`${namespace}.${member}`] = descriptor;
         }
+
         for (const [member, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(browserNamespace))) {
             ownedBrowser[`${namespace}.${member}`] = descriptor;
         }
     }
+
     ownedBrowser["runtime.getBrowserInfo"] = Object.getOwnPropertyDescriptor(
         runtime.browserApi,
         "getBrowserInfo"
@@ -196,22 +204,28 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
 
     const setOwnedCapability = (path: string, enabled: boolean): boolean => {
         if (!(path in ownedChrome) && !(path in ownedBrowser)) return false;
+
         const [namespace, member] = path.split(".");
         const chromeNamespace = (chrome as unknown as Record<string, Record<string, unknown>>)[namespace];
         const browserNamespace = (browser as unknown as Record<string, Record<string, unknown>>)[namespace];
+
         if (enabled) {
             if (path in ownedChrome) Object.defineProperty(chromeNamespace, member, ownedChrome[path]);
+
             if (path in ownedBrowser) Object.defineProperty(browserNamespace, member, ownedBrowser[path]);
         } else {
             Reflect.deleteProperty(chromeNamespace, member);
             Reflect.deleteProperty(browserNamespace, member);
         }
+
         return true;
     };
 
     const applyCapability = (path: string, enabled: boolean): void => {
         if (setOwnedCapability(path, enabled)) return;
+
         let recognized = false;
+
         for (const config of [configChrome, configBrowser]) {
             try {
                 config.setCapability(path, enabled);
@@ -220,18 +234,22 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
                 // The other facade or a stateful namespace may own this path.
             }
         }
+
         if (!recognized) throw new Error(`Unknown browser capability "${path}"`);
     };
 
     const capabilities: BrowserCapabilitiesHarness = {
         has(path): boolean {
             const [namespace, member] = path.split(".");
+
             const chromeNamespace = (chrome as unknown as Record<string, Record<string, unknown> | undefined>)[
                 namespace
             ];
+
             const browserNamespace = (browser as unknown as Record<string, Record<string, unknown> | undefined>)[
                 namespace
             ];
+
             return (
                 Boolean(chromeNamespace && member in chromeNamespace) ||
                 Boolean(browserNamespace && member in browserNamespace)
@@ -298,11 +316,14 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         },
         createProfileFacade(facade, includeBrowserInfo) {
             const result = cloneFacade(facade === "chrome" ? chrome : browser);
+
             if (!includeBrowserInfo) Reflect.deleteProperty(result.runtime, "getBrowserInfo");
+
             return result;
         },
         getListenerErrorHandler(forward) {
             if (forward) listenerCapture.setForward(forward);
+
             return listenerCapture.handler;
         },
         getOperaSidebarAction() {
@@ -314,8 +335,10 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
             sequence = 0;
             state.reset();
             runtime.reset();
+
             if (activeProfile === "firefox") runtime.setUrlScheme("moz-extension");
             else if (activeProfile === "safari") runtime.setUrlScheme("safari-web-extension");
+
             permissions.reset();
             tabs.reset();
             windows.reset();
@@ -327,9 +350,11 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
             listenerCapture.reset();
             explicitCapabilities.clear();
             mergeStateful();
+
             for (const path of new Set([...Object.keys(ownedChrome), ...Object.keys(ownedBrowser)])) {
                 setOwnedCapability(path, true);
             }
+
             applyCapability("runtime.getBrowserInfo", activeProfile === "firefox");
             sidebarExplicit = false;
             sidebarFlavor = sidebarDefaultForProfile(activeProfile);
@@ -337,6 +362,7 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         },
         setActiveProfile(profile) {
             activeProfile = profile;
+
             if (profile === "firefox") runtime.setUrlScheme("moz-extension");
             else if (profile === "safari") runtime.setUrlScheme("safari-web-extension");
             else if (profile !== "custom") runtime.setUrlScheme("chrome-extension");

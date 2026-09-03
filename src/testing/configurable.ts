@@ -4,6 +4,7 @@ import {type BrowserMethod, type BrowserMethodLastErrorController, createBrowser
 import type {BrowserHarnessCall} from "./types";
 
 type AnyFunction = (...args: never[]) => unknown;
+
 type BrowserEventLike = {
     addListener: AnyFunction;
     removeListener: AnyFunction;
@@ -19,19 +20,20 @@ type EventKeys<TApi> = {
 }[keyof TApi];
 
 type Last<TValues extends readonly unknown[]> = TValues extends readonly [...infer _, infer TValue] ? TValue : never;
+
 type CallbackArguments<TApi extends AnyFunction> = [Last<Parameters<TApi>>] extends [never]
     ? never
     : Last<Parameters<TApi>> extends (...args: infer TArgs) => unknown
-      ? TArgs
-      : never;
+        ? TArgs
+        : never;
 
 type ResultFromCallback<TArgs extends readonly unknown[]> = TArgs extends readonly []
     ? undefined
     : TArgs extends readonly [infer TResult]
-      ? TResult
-      : TArgs extends readonly [(infer TResult)?]
-        ? TResult | undefined
-        : TArgs;
+        ? TResult
+        : TArgs extends readonly [(infer TResult)?]
+            ? TResult | undefined
+            : TArgs;
 
 export type BrowserMethodResult<TApi extends AnyFunction> =
     Awaited<ReturnType<TApi>> extends void
@@ -111,6 +113,7 @@ export type AlarmsConfigurableApi = Pick<
     typeof chrome.alarms,
     "clear" | "clearAll" | "create" | "get" | "getAll" | "onAlarm"
 >;
+
 export type AudioConfigurableApi = Pick<
     typeof chrome.audio,
     | "getDevices"
@@ -122,6 +125,7 @@ export type AudioConfigurableApi = Pick<
     | "setMute"
     | "setProperties"
 >;
+
 export type BrowsingDataConfigurableApi = Pick<
     typeof chrome.browsingData,
     | "remove"
@@ -140,15 +144,19 @@ export type BrowsingDataConfigurableApi = Pick<
     | "removeWebSQL"
     | "settings"
 >;
+
 export type CommandsConfigurableApi = Pick<typeof chrome.commands, "getAll" | "onCommand">;
+
 export type ContextMenusConfigurableApi = Pick<
     typeof chrome.contextMenus,
     "create" | "onClicked" | "remove" | "removeAll" | "update"
 >;
+
 export type CookiesConfigurableApi = Pick<
     typeof chrome.cookies,
     "get" | "getAll" | "getAllCookieStores" | "getPartitionKey" | "onChanged" | "remove" | "set"
 >;
+
 export type DocumentScanConfigurableApi = Pick<
     typeof chrome.documentScan,
     | "cancelScan"
@@ -161,6 +169,7 @@ export type DocumentScanConfigurableApi = Pick<
     | "setOptions"
     | "startScan"
 >;
+
 export type DownloadsConfigurableApi = Pick<
     typeof chrome.downloads,
     | "acceptDanger"
@@ -180,18 +189,22 @@ export type DownloadsConfigurableApi = Pick<
     | "show"
     | "showDefaultFolder"
 >;
+
 export type ExtensionConfigurableApi = Pick<
     typeof chrome.extension,
     "getBackgroundPage" | "getViews" | "isAllowedFileSchemeAccess" | "isAllowedIncognitoAccess" | "setUpdateUrlData"
 >;
+
 export type HistoryConfigurableApi = Pick<
     typeof chrome.history,
     "addUrl" | "deleteAll" | "deleteRange" | "deleteUrl" | "getVisits" | "onVisited" | "onVisitRemoved" | "search"
 >;
+
 export type I18nConfigurableApi = Pick<
     typeof chrome.i18n,
     "detectLanguage" | "getAcceptLanguages" | "getMessage" | "getUILanguage"
 >;
+
 export type IdentityConfigurableApi = Pick<
     typeof chrome.identity,
     | "clearAllCachedAuthTokens"
@@ -203,10 +216,12 @@ export type IdentityConfigurableApi = Pick<
     | "onSignInChanged"
     | "removeCachedAuthToken"
 >;
+
 export type IdleConfigurableApi = Pick<
     typeof chrome.idle,
     "getAutoLockDelay" | "onStateChanged" | "queryState" | "setDetectionInterval"
 >;
+
 export type ManagementConfigurableApi = Pick<
     typeof chrome.management,
     | "createAppShortcut"
@@ -226,6 +241,7 @@ export type ManagementConfigurableApi = Pick<
     | "uninstall"
     | "uninstallSelf"
 >;
+
 export type NotificationsConfigurableApi = Pick<
     typeof chrome.notifications,
     | "clear"
@@ -238,14 +254,17 @@ export type NotificationsConfigurableApi = Pick<
     | "onPermissionLevelChanged"
     | "update"
 >;
+
 export type OffscreenConfigurableApi = Pick<
     typeof chrome.offscreen,
     "closeDocument" | "createDocument" | "hasDocument"
 >;
+
 export type PermissionsConfigurableApi = Pick<
     typeof chrome.permissions,
     "addHostAccessRequest" | "onAdded" | "onRemoved" | "removeHostAccessRequest"
 >;
+
 export type RuntimeConfigurableApi = Pick<
     typeof chrome.runtime,
     | "connect"
@@ -271,15 +290,19 @@ export type RuntimeConfigurableApi = Pick<
     | "restartAfterDelay"
     | "setUninstallURL"
 >;
+
 export type ScriptingConfigurableApi = Pick<typeof chrome.scripting, "executeScript" | "insertCSS" | "removeCSS">;
+
 export type SidePanelConfigurableApi = Pick<
     typeof chrome.sidePanel,
     "close" | "getOptions" | "getPanelBehavior" | "open" | "setOptions" | "setPanelBehavior"
 >;
+
 export type TabCaptureConfigurableApi = Pick<
     typeof chrome.tabCapture,
     "capture" | "getCapturedTabs" | "getMediaStreamId" | "onStatusChanged"
 >;
+
 export type TabsConfigurableApi = Pick<
     typeof chrome.tabs,
     | "captureVisibleTab"
@@ -313,6 +336,7 @@ export type TabsConfigurableApi = Pick<
     | "setZoomSettings"
     | "ungroup"
 >;
+
 export type UserScriptsConfigurableApi = Pick<
     typeof chrome.userScripts,
     | "configureWorld"
@@ -324,6 +348,7 @@ export type UserScriptsConfigurableApi = Pick<
     | "unregister"
     | "update"
 >;
+
 export type WebNavigationConfigurableApi = Pick<
     typeof chrome.webNavigation,
     | "getAllFrames"
@@ -338,6 +363,7 @@ export type WebNavigationConfigurableApi = Pick<
     | "onReferenceFragmentUpdated"
     | "onTabReplaced"
 >;
+
 export type WebRequestConfigurableApi = Pick<
     typeof chrome.webRequest,
     | "handlerBehaviorChanged"
@@ -351,14 +377,17 @@ export type WebRequestConfigurableApi = Pick<
     | "onResponseStarted"
     | "onSendHeaders"
 >;
+
 export type WindowsEventsConfigurableApi = Pick<
     typeof chrome.windows,
     "onBoundsChanged" | "onCreated" | "onFocusChanged" | "onRemoved"
 >;
+
 export type FirefoxSidebarActionConfigurableApi = Pick<
     typeof browser.sidebarAction,
     "close" | "getPanel" | "getTitle" | "isOpen" | "open" | "setIcon" | "setPanel" | "setTitle" | "toggle"
 >;
+
 export type OperaSidebarActionConfigurableApi = Pick<
     typeof opr.sidebarAction,
     | "getBadgeBackgroundColor"
@@ -619,8 +648,9 @@ export const createConfigurableNamespaces = (options: ConfigurableNamespacesOpti
         const callbackArgs = NO_RESULT_METHODS.has(entry.path)
             ? () => []
             : MULTI_RESULT_METHODS.has(entry.path)
-              ? (result: unknown) => result as readonly unknown[]
-              : (result: unknown) => [result];
+                ? (result: unknown) => result as readonly unknown[]
+                : (result: unknown) => [result];
+
         const method = createBrowserMethod<(...args: never[]) => unknown, unknown>({
             callback: "last",
             callbackArgs,
@@ -642,6 +672,7 @@ export const createConfigurableNamespaces = (options: ConfigurableNamespacesOpti
             namespaceControl(members, apiNamespaces[namespace]),
         ])
     ) as unknown as ConfigurableBrowserControls;
+
     const api = Object.fromEntries(
         Object.entries(apiNamespaces).filter(
             ([namespace]) => namespace !== "sidebarAction" && namespace !== "operaSidebarAction"
@@ -659,8 +690,9 @@ export const createConfigurableNamespaces = (options: ConfigurableNamespacesOpti
             entry.namespace === "browser.sidebarAction"
                 ? "sidebarAction"
                 : entry.namespace === "opr.sidebarAction"
-                  ? "operaSidebarAction"
-                  : entry.namespace;
+                    ? "operaSidebarAction"
+                    : entry.namespace;
+
         const namespaceApi = apiNamespaces[namespace];
         const control = namespaceControls[namespace][entry.member] as {api: unknown};
 
@@ -685,7 +717,9 @@ export const createConfigurableNamespaces = (options: ConfigurableNamespacesOpti
             path: string
         ): BrowserEventHarness<TArgs, TRegistrationArgs> {
             const event = events.get(path);
+
             if (!event) throw new Error(`Unknown configurable browser event "${path}".`);
+
             return event as unknown as BrowserEventHarness<TArgs, TRegistrationArgs>;
         },
         hasCapability(path): boolean {
@@ -695,13 +729,17 @@ export const createConfigurableNamespaces = (options: ConfigurableNamespacesOpti
             path: string
         ): BrowserMethod<TApi, TResult> {
             const method = methods.get(path);
+
             if (!method) throw new Error(`Unknown configurable browser method "${path}".`);
+
             return method as BrowserMethod<TApi, TResult>;
         },
         operaSidebarActionApi: apiNamespaces.operaSidebarAction as unknown as OperaSidebarActionConfigurableApi,
         reset(): void {
             for (const method of methods.values()) method.reset();
+
             for (const event of events.values()) event.reset();
+
             for (const entry of entries) setCapability(entry.path, true);
         },
         setCapability,

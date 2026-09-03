@@ -1,7 +1,7 @@
-import {BrowserGuessSource, BrowserName, guessBrowser} from "../browserDetection";
+import {BrowserGuessSource, BrowserName, guessBrowser} from "../browser-detection";
 import {getI18nUILanguage} from "../i18n";
 import {getId} from "../runtime";
-import {canOpenSidebar, getSidebarTitle, openSidebar, SidebarError, setSidebarTitle} from "../sidebar";
+import {canOpenSidebar, getSidebarTitle, openSidebar, setSidebarTitle, SidebarError} from "../sidebar";
 import {onTabCreated} from "../tabs";
 import {createBrowserHarness, createTabFixture, installBrowserGlobals, installGlobals} from "./index";
 
@@ -51,19 +51,23 @@ describe("transactional browser globals", () => {
 
     test("distinguishes omitted globals from explicit undefined and restores profile markers", () => {
         const outerHarness = createBrowserHarness();
+
         const outerRestore = installGlobals({
             browser: outerHarness.browser,
             chrome: outerHarness.chrome,
             opr: {},
             safari: {marker: "original"},
         });
+
         restorers.push(outerRestore);
+
         const outerDescriptors = {
             browser: Reflect.getOwnPropertyDescriptor(globalThis, "browser"),
             chrome: Reflect.getOwnPropertyDescriptor(globalThis, "chrome"),
             opr: Reflect.getOwnPropertyDescriptor(globalThis, "opr"),
             safari: Reflect.getOwnPropertyDescriptor(globalThis, "safari"),
         };
+
         const profileHarness = createBrowserHarness();
         const restoreProfile = installBrowserGlobals(profileHarness, {profile: "chrome"});
         restorers.push(restoreProfile);
@@ -100,6 +104,7 @@ describe("browser profiles and routing", () => {
             pathname: "/content/page.html",
             protocol: "https:",
         });
+
         expect(globalThis.window.location).toBe(globalThis.location);
     });
 
@@ -115,10 +120,12 @@ describe("browser profiles and routing", () => {
         restoreFirefox();
         const browserWithoutRuntimeId = harness.createProfileFacade("browser", true);
         Reflect.deleteProperty(browserWithoutRuntimeId.runtime, "id");
+
         const restoreFallback = installBrowserGlobals(harness, {
             globals: {browser: browserWithoutRuntimeId, chrome: harness.chrome},
             profile: "custom",
         });
+
         restorers.push(restoreFallback);
 
         expect(getI18nUILanguage()).toBe("chrome-language");
@@ -126,6 +133,7 @@ describe("browser profiles and routing", () => {
 
     test("throws a clear production error when neither namespace is available", () => {
         const harness = createBrowserHarness();
+
         restorers.push(
             installBrowserGlobals(harness, {
                 globals: {browser: undefined, chrome: undefined},
@@ -196,17 +204,20 @@ describe("browser profiles and routing", () => {
 
         await expect(setSidebarTitle("Configured title", 4)).resolves.toBeUndefined();
         await expect(getSidebarTitle(4)).resolves.toBe("Opera title");
+
         expect(operaHarness.sidebar.opera.setTitle.calls[0]).toMatchObject({
             args: [{tabId: 4, title: "Configured title"}],
             callback: undefined,
             invocation: "sync",
         });
+
         expect(operaHarness.sidebar.opera.getTitle.calls[0]).toMatchObject({invocation: "callback"});
     });
 
     test("none flavor exposes the real SidebarError path", async () => {
         const harness = createBrowserHarness();
         harness.sidebar.flavor = "none";
+
         restorers.push(
             installBrowserGlobals(harness, {
                 globals: {browser: undefined, chrome: harness.chrome, opr: undefined, safari: undefined},
@@ -215,6 +226,7 @@ describe("browser profiles and routing", () => {
         );
 
         await expect(openSidebar({windowId: 1})).rejects.toBeInstanceOf(SidebarError);
+
         await expect(openSidebar({windowId: 1})).rejects.toThrow(
             "The sidebarAction.open API is not supported in this browser"
         );
@@ -231,16 +243,20 @@ describe("raw events and production listener error handling", () => {
         const tab = createTabFixture();
 
         const rawFailure = new Error("raw listener failed");
+
         harness.tabs.events.onCreated.api.addListener(() => {
             throw rawFailure;
         });
+
         await expect(harness.tabs.events.onCreated.emit(tab)).rejects.toBe(rawFailure);
 
         harness.tabs.events.onCreated.reset();
         const syncFailure = new Error("sync listener failed");
+
         const unsubscribeSync = onTabCreated(() => {
             throw syncFailure;
         });
+
         await expect(harness.tabs.events.onCreated.emit(tab)).resolves.toBeUndefined();
         unsubscribeSync();
         expect(harness.listenerErrors.entries).toEqual([{args: [], error: syncFailure, kind: "sync"}]);
@@ -248,9 +264,11 @@ describe("raw events and production listener error handling", () => {
         harness.tabs.events.onCreated.reset();
         harness.listenerErrors.reset();
         const promiseFailure = new Error("promise listener failed");
+
         const unsubscribePromise = onTabCreated(async () => {
             throw promiseFailure;
         });
+
         await expect(harness.tabs.events.onCreated.emit(tab)).rejects.toBe(promiseFailure);
         unsubscribePromise();
         expect(harness.listenerErrors.entries).toEqual([{args: [], error: promiseFailure, kind: "promise"}]);
@@ -258,12 +276,14 @@ describe("raw events and production listener error handling", () => {
         harness.tabs.events.onCreated.reset();
         harness.listenerErrors.reset();
         const thenableFailure = new Error("custom thenable failed");
+
         const thenable = {
-            // biome-ignore lint/suspicious/noThenProperty: This intentionally models a non-Promise thenable.
+            // This intentionally models a non-Promise thenable.
             then(_resolve: (value: never) => void, reject: (reason: unknown) => void): void {
                 reject(thenableFailure);
             },
         };
+
         const unsubscribeThenable = onTabCreated((() => thenable) as unknown as Parameters<typeof onTabCreated>[0]);
         await expect(harness.tabs.events.onCreated.emit(tab)).rejects.toBe(thenableFailure);
         unsubscribeThenable();
