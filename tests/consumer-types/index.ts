@@ -1,4 +1,11 @@
-import {containsPermissions, getManifest, onTabUpdated, queryTabs} from "@addon-core/browser";
+import {
+    containsPermissions,
+    createAlarmIfNotExists,
+    getManifest,
+    onSpecificAlarm,
+    onTabUpdated,
+    queryTabs,
+} from "@addon-core/browser";
 import {
     type BrowserHarness,
     type BrowserMethod,
@@ -22,6 +29,13 @@ const matchedTabs: Promise<chrome.tabs.Tab[]> = harness.browser.tabs.query({
 });
 
 const hasHostAccess: Promise<boolean> = containsPermissions({origins: ["https://shop.example.com/*"]});
+const alarmCreated: Promise<boolean> = createAlarmIfNotExists("sync", {periodInMinutes: 5});
+
+const unsubscribeAlarm: () => void = onSpecificAlarm("sync", async alarm => {
+    const currentAlarm: chrome.alarms.Alarm = alarm;
+    void currentAlarm;
+});
+
 const browserQuery: typeof chrome.tabs.query = harness.browser.tabs.query;
 
 const downloadValidationDelay: BrowserMethod<(milliseconds: number) => Promise<void>, void> =
@@ -43,6 +57,8 @@ void manifestName;
 void queryResult;
 void matchedTabs;
 void hasHostAccess;
+void alarmCreated;
+unsubscribeAlarm();
 restore();
 
 onTabUpdated((tabId, changeInfo, tab) => {

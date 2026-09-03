@@ -156,7 +156,7 @@ describe("testing coverage matrices", () => {
         expect(PUBLIC_EXPORT_COVERAGE.filter(entry => entry.coverage === "unsupported")).toEqual([]);
     });
 
-    test("keeps the three interfaces type-only and the other 328 exports runtime-visible", () => {
+    test("keeps the three interfaces type-only and the other 330 exports runtime-visible", () => {
         const {checker, exports} = rootExports();
 
         const typeOnly = exports

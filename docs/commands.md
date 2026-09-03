@@ -47,3 +47,5 @@ onSpecificCommand(
 ```
 
 Adds a listener that triggers only when the specified command is invoked. Returns an unsubscribe function.
+
+The callback may be async; synchronous errors and rejected Promises are logged by the listener wrapper.
