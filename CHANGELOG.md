@@ -1,5 +1,86 @@
 # Changelog
 
+## 🚀 Release `@addon-core/browser` v0.8.0 (2026-09-03)
+
+
+### ✨ Features
+
+* **alarms:** add helpers and preserve async command handlers ([a23ca47](https://github.com/addon-stack/browser/commit/a23ca47f3067a738dd2b25315a2144b97b08b3d2))
+
+
+* **testing:** add framework-agnostic browser harness ([32383c3](https://github.com/addon-stack/browser/commit/32383c3d34212f2a5e13101444875d8ef3f7892d))
+
+
+* **testing:** support URL match patterns and host permissions ([ec506b3](https://github.com/addon-stack/browser/commit/ec506b367b6fe453acd6920af7a330cdda3ea22c))
+
+
+
+
+### 🐛 Bug Fixed
+
+* **ci:** align local and CI Jest ESM execution ([e72c66d](https://github.com/addon-stack/browser/commit/e72c66d49cd72672a029640f5a877dbd9109beab))
+
+  Import Jest helpers explicitly in the three affected test suites.
+
+  Share the ESM launcher across tests, CI and pre-commit checks.
+
+* **ci:** retry temporary browser profile cleanup ([95758eb](https://github.com/addon-stack/browser/commit/95758eb2cdf6c54786a95338e38663a169481e93))
+
+
+* **tabs:** restore findTabById undefined contract ([4d22e91](https://github.com/addon-stack/browser/commit/4d22e916efd0114dfe735577c614c4ed07254f75))
+
+  Await the lookup and cover catch-all behavior through both browser facades.
+
+  Preserve getTab errors and document getTabUrl error paths.
+
+
+
+### 📝 Documentation
+
+* **testing:** document harness usage and limitations ([5f44f80](https://github.com/addon-stack/browser/commit/5f44f80bab7f2367f9572e73e0733a54419e2359))
+
+
+
+
+### 🧪 Tests
+
+* **testing:** integrate Chromium smoke checks into CI ([9a4cf11](https://github.com/addon-stack/browser/commit/9a4cf11123c91cd8c1ca46e8bc4cbdc0c299f97b))
+
+
+* **testing:** migrate suites and verify package consumers ([fdacb4e](https://github.com/addon-stack/browser/commit/fdacb4e2230ab3874fcf389f7083b8f357a09cc8))
+
+
+
+
+### 🧹 Chores
+
+* remove .mailmap file ([8540768](https://github.com/addon-stack/browser/commit/8540768d2c8bdb7e04356c92ff92ec8986eed57b))
+
+
+* **tooling:** migrate to ESLint and staged formatting ([492b682](https://github.com/addon-stack/browser/commit/492b682647026003fa6d64d214bd947ba7d4b227))
+
+  Replace Biome with ESLint, TypeScript support, and Stylistic formatting.
+  Enforce multiline padding and filename conventions while keeping errors in their owning modules.
+  Normalize source and documentation filenames and update imports and links.
+  Add staged autofixes in Husky and regression tests for formatting and Git index safety.
+
+
+
+### 🛠️ Refactoring
+
+* **downloads:** make validation delay controllable ([e249809](https://github.com/addon-stack/browser/commit/e2498093ec5dd5ee2ef73c79f501f9cc96c37662))
+
+  Keep the native 100 ms default and the public download signature.
+
+  Add a per-harness delay control with reset and clean consumer tests.
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 15
+
 ## 🚀 Release `@addon-core/browser` v0.7.2 (2026-07-28)
 
 
