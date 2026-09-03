@@ -3,11 +3,12 @@
 import assert from "node:assert/strict";
 import {spawn} from "node:child_process";
 import {once} from "node:events";
-import {mkdir, mkdtemp, rm, writeFile} from "node:fs/promises";
+import {mkdir, mkdtemp, writeFile} from "node:fs/promises";
 import {createServer} from "node:http";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {createBrowserHarness, createTabFixture} from "../../dist/testing/index.js";
+import {removeBrowserTemporaryDirectory} from "./cleanup.mjs";
 import {browserSmokeError, inspectBrowser} from "./launcher.mjs";
 
 // Reject unsupported binaries before opening a server, creating a profile or waiting for extension results.
@@ -107,6 +108,7 @@ async function probe(config) {
 let browser;
 let browserExit;
 let timeout;
+let assertions = 0;
 
 try {
     server.listen(0, "127.0.0.1");
@@ -193,7 +195,6 @@ try {
     }, 30000);
 
     await finished;
-    let assertions = 0;
 
     for (const profile of profiles) {
         const result = results.get(profile.name);
@@ -226,10 +227,6 @@ try {
             assertions++;
         }
     }
-
-    console.log(
-        `Real Chromium smoke: ${assertions} harness/browser comparisons passed across ${profiles.length} permission profiles.`
-    );
 } finally {
     clearTimeout(timeout);
 
@@ -242,5 +239,9 @@ try {
 
     server.closeAllConnections();
     await new Promise(resolveClose => server.close(resolveClose));
-    await rm(temporary, {recursive: true, force: true});
+    await removeBrowserTemporaryDirectory(temporary);
 }
+
+console.log(
+    `Real Chromium smoke: ${assertions} harness/browser comparisons passed across ${profiles.length} permission profiles; temporary profile removed.`
+);
