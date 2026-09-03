@@ -65,6 +65,7 @@
     "fix": "biome check --write --unsafe .",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:ci": "npm test -- --ci --passWithNoTests --coverage",
+    "test:browser-match-patterns": "node ./tests/browser-match-patterns/check.mjs",
     "test:consumer-types": "npm run build && node ./tests/consumer-types/check.mjs",
     "test:related": "npm test -- --bail --passWithNoTests",
     "typecheck": "tsc -p tsconfig.json --noEmit",

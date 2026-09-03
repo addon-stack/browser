@@ -93,3 +93,20 @@ For install/activation tests, emit `harness.runtime.events.onInstalled`, and let
 Promise so `emit()` can await it. Configure CSS/JS results through `harness.scripting`; the kit does not execute scripts.
 To verify CSS-before-JS, hold the CSS implementation until the test releases it, assert that `executeScript.calls` is
 still empty, then release and await dispatch. Call history order alone does not prove the application awaited CSS.
+
+## Real-browser check
+
+After building, contributors can compare selected queries and permission cases with a local Chromium/Chrome for
+Testing executable:
+
+```sh
+npm run build
+npm run test:browser-match-patterns -- "/absolute/path/to/chrome-for-testing"
+```
+
+The script uses a temporary MV3 extension/profile and loopback HTTP server, compares the real browser with the built
+harness, and removes its temporary files. It needs no automation package and is separate from the normal unit tests.
+It requires the full Chrome for Testing or Chromium executable, not regular Google Chrome or `chrome-headless-shell`.
+The launcher verifies the browser's `--version` before starting the smoke. A dedicated CI job runs it automatically,
+including before release. See [contributor setup and troubleshooting](../../CONTRIBUTING.md#browser-match-pattern-smoke).
+This focused smoke does not establish complete Chrome, Firefox, or Safari parity.
