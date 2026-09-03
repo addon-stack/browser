@@ -724,7 +724,10 @@ export const RAW_CAPABILITY_COVERAGE: readonly RawCapabilityEntry[] = [
         "addHostAccessRequest",
         "removeHostAccessRequest",
     ]),
-    ...methodCapabilities("permissions", "stateful", callbackInvocation, ["contains", "getAll", "remove", "request"]),
+    ...methodCapabilities("permissions", "stateful", callbackInvocation, ["contains", "getAll", "remove", "request"], {
+        contains: ["named permissions (membership)", "origins (http/https/file pattern containment; paths ignored)"],
+        remove: ["exact stored entries; no wildcard subtraction"],
+    }),
     ...eventCapabilities("permissions", ["onAdded", "onRemoved"]),
 
     ...propertyCapabilities("runtime", "stateful", ["id", "lastError"]),
@@ -801,7 +804,7 @@ export const RAW_CAPABILITY_COVERAGE: readonly RawCapabilityEntry[] = [
                 "splitViewId",
                 "status",
                 "title (literal only)",
-                "url (literal only)",
+                "url (http/https/file match-pattern subset; OR within arrays)",
                 "windowId",
                 "windowType",
             ],

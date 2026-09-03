@@ -1,4 +1,4 @@
-import {getManifest, onTabUpdated, queryTabs} from "@addon-core/browser";
+import {containsPermissions, getManifest, onTabUpdated, queryTabs} from "@addon-core/browser";
 import {
     type BrowserHarness,
     type BrowserMethod,
@@ -15,6 +15,10 @@ const harness: BrowserHarness = createBrowserHarness({
 const restore = installBrowserGlobals(harness, {profile: "firefox"});
 const manifestName: string = getManifest().name;
 const queryResult: Promise<chrome.tabs.Tab[]> = queryTabs({active: true});
+const matchedTabs: Promise<chrome.tabs.Tab[]> = harness.browser.tabs.query({
+    url: ["http://127.0.0.1/*", "https://*.example.com/*"],
+});
+const hasHostAccess: Promise<boolean> = containsPermissions({origins: ["https://shop.example.com/*"]});
 const browserQuery: typeof chrome.tabs.query = harness.browser.tabs.query;
 const downloadValidationDelay: BrowserMethod<(milliseconds: number) => Promise<void>, void> =
     harness.delays.downloadValidation;
@@ -31,6 +35,8 @@ downloadValidationDelay.setResult(undefined);
 void browserQuery;
 void manifestName;
 void queryResult;
+void matchedTabs;
+void hasHostAccess;
 restore();
 
 onTabUpdated((tabId, changeInfo, tab) => {

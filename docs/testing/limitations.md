@@ -7,8 +7,15 @@ Chrome, Firefox, Safari, Opera, or any other real browser.
 
 - `tabs.query()` uses AND equality matching for `status`, `lastFocusedWindow`, `windowId`, `windowType`, `active`,
   `index`, `currentWindow`, `highlighted`, `discarded`, `frozen`, `autoDiscardable`, `pinned`, `splitViewId`, `audible`,
-  `muted`, `groupId`, `title`, and `url`. `title` and `url` accept literal values only in v1; browser match patterns
-  and wildcards fail explicitly instead of returning a potentially incorrect result. Use `tabs.get()` for an ID.
+  `muted`, `groupId`, and `title`. `title` accepts literal values only; title wildcards fail explicitly. `url` supports
+  the documented [HTTP/HTTPS/file match-pattern subset](match-patterns.md), with OR inside URL arrays. Use `tabs.get()`
+  for an ID. URL/title visibility is not gated by permissions, and no implicit active/frozen filter is applied.
+- The matcher is profile-independent. `<all_urls>` covers only HTTP, HTTPS and file in this kit; other pattern
+  schemes and unsupported syntax fail explicitly. Serialized paths/queries are compared without Chromium's
+  percent-decoding equivalence rules; URL fragments are ignored. This is not a full vendor pattern engine.
+- `permissions.contains()` models pattern containment for explicitly granted origins, ignoring paths. It does not
+  infer grants from the manifest or simulate prompts, restricted pages, file-access toggles or user site-access
+  policy. Grant storage and removal remain exact-entry operations, without partial wildcard subtraction.
 - Complex APIs outside runtime, permissions, tabs, windows, and the scripting content-script registry are configurable
   stubs. They do not simulate the browser unless the test supplies an implementation or result.
 - `tabs.sendMessage()` and `tabs.connect()` are configurable stubs. The kit does not create content-script contexts,
@@ -46,5 +53,5 @@ Raw `createBrowserEvent().emit()` waits for Promises and arbitrary thenables and
 `captureListenerErrors` only structures the existing `console.error` calls. It does not hook listeners directly and is
 never enabled by default.
 
-Use real-browser integration tests for permissions prompts, URL-pattern semantics, service-worker suspension,
+Use real-browser integration tests for permissions prompts, full vendor URL-pattern semantics, service-worker suspension,
 cross-context messaging, content-script injection, browser UI, security boundaries, and browser-specific timing.

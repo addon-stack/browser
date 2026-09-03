@@ -57,6 +57,10 @@ harness.calls;
 Use `.browser` instead of `.chrome` when configuring a Firefox or Safari profile. `harness.configurable.active` follows
 the last profile selected by `installBrowserGlobals()`.
 
+`tabs.query` selects fixture URLs with a documented match-pattern subset. `permissions.contains` checks whether
+explicitly granted origins cover the requested patterns; manifest declarations do not grant access automatically.
+See [URL patterns and host permissions](match-patterns.md) for examples, validation, and scope limits.
+
 ## Download validation delay
 
 The production `download(options)` helper waits 100 ms before checking the created download. A fresh harness preserves

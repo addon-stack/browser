@@ -1,6 +1,7 @@
 import {type BrowserEventHarness, createBrowserEvent} from "./event";
 import {createTabFixture} from "./fixtures";
 import {missingEntityError} from "./internal";
+import {createUrlMatcher} from "./match-patterns";
 import {type BrowserMethod, createBrowserMethod} from "./method";
 import type {BrowserMemoryState} from "./browser-state";
 import type {RuntimeLastErrorController, TabsTestApi} from "./types";
@@ -76,7 +77,7 @@ const supportedQueryFields = new Set([
     "windowType",
 ]);
 
-const assertExactPattern = (field: "title" | "url", value: string): void => {
+const assertExactPattern = (field: "title", value: string): void => {
     if (value === "<all_urls>" || value.includes("*")) {
         throw new Error(`tabs.query ${field} match patterns are not supported; use an exact value`);
     }
@@ -285,10 +286,8 @@ export const createTabsHarness = (
                 if (!supportedQueryFields.has(key)) throw new Error(`tabs.query filter "${key}" is not supported`);
             }
 
-            const exactUrls = typeof queryInfo.url === "string" ? [queryInfo.url] : queryInfo.url;
-            exactUrls?.forEach(url => {
-                assertExactPattern("url", url);
-            });
+            const urls = typeof queryInfo.url === "string" ? [queryInfo.url] : queryInfo.url;
+            const matchesUrl = urls === undefined ? undefined : createUrlMatcher(urls, "tabs.query");
             if (queryInfo.title) assertExactPattern("title", queryInfo.title);
 
             const currentWindowId = state.currentWindowId();
@@ -323,7 +322,7 @@ export const createTabsHarness = (
                         return false;
                     if (queryInfo.groupId !== undefined && tab.groupId !== queryInfo.groupId) return false;
                     if (queryInfo.title !== undefined && tab.title !== queryInfo.title) return false;
-                    if (exactUrls && (!tab.url || !exactUrls.includes(tab.url))) return false;
+                    if (matchesUrl && (!tab.url || !matchesUrl(tab.url))) return false;
                     return true;
                 })
                 .sort((left, right) => left.windowId - right.windowId || left.index - right.index)

@@ -1,5 +1,6 @@
 import {type BrowserEventHarness, createBrowserEvent} from "./event";
 import {createPermissionsFixture} from "./fixtures";
+import {coversOrigin, parseOrigins} from "./match-patterns";
 import {type BrowserMethod, createBrowserMethod} from "./method";
 import type {PermissionsTestApi, RuntimeLastErrorController} from "./types";
 
@@ -31,6 +32,7 @@ export const createPermissionsHarness = (
     nextSequence?: () => number
 ): PermissionsHarness => {
     const initial = createPermissionsFixture(initialValue);
+    parseOrigins(initial.origins, "permissions initial state");
     let permissions = new Set(initial.permissions ?? []);
     let origins = new Set(initial.origins ?? []);
 
@@ -56,7 +58,11 @@ export const createPermissionsHarness = (
     const contains = createBrowserMethod<typeof chrome.permissions.contains, boolean>({
         callback: "last",
         implementation: ((value: chrome.permissions.Permissions, callback?: (result: boolean) => void) => {
-            const result = includesAll(permissions, value.permissions) && includesAll(origins, value.origins);
+            const requested = parseOrigins(value.origins, "permissions.contains");
+            const granted = parseOrigins([...origins], "permissions.contains");
+            const result =
+                includesAll(permissions, value.permissions) &&
+                requested.every(origin => granted.some(grant => coversOrigin(grant, origin)));
             callback?.(result);
             return result;
         }) as unknown as typeof chrome.permissions.contains,
@@ -107,10 +113,13 @@ export const createPermissionsHarness = (
 
     const request = createBrowserMethod<typeof chrome.permissions.request, boolean>({
         callback: "last",
-        implementation: (async (value: chrome.permissions.Permissions, callback?: (result: boolean) => void) => {
-            await apply(value, "grant");
-            callback?.(true);
-            return true;
+        implementation: ((value: chrome.permissions.Permissions, callback?: (result: boolean) => void) => {
+            // Validate synchronously before mutation, including when the caller supplied a callback.
+            parseOrigins(value.origins, "permissions.request");
+            return apply(value, "grant").then(() => {
+                callback?.(true);
+                return true;
+            });
         }) as unknown as typeof chrome.permissions.request,
         invocation: "dual",
         lastError,
@@ -119,11 +128,13 @@ export const createPermissionsHarness = (
     });
     const remove = createBrowserMethod<typeof chrome.permissions.remove, boolean>({
         callback: "last",
-        implementation: (async (value: chrome.permissions.Permissions, callback?: (result: boolean) => void) => {
-            const changed = await apply(value, "revoke");
-            const result = Boolean(changed.permissions?.length || changed.origins?.length);
-            callback?.(result);
-            return result;
+        implementation: ((value: chrome.permissions.Permissions, callback?: (result: boolean) => void) => {
+            parseOrigins(value.origins, "permissions.remove");
+            return apply(value, "revoke").then(changed => {
+                const result = Boolean(changed.permissions?.length || changed.origins?.length);
+                callback?.(result);
+                return result;
+            });
         }) as unknown as typeof chrome.permissions.remove,
         invocation: "dual",
         lastError,
@@ -158,9 +169,11 @@ export const createPermissionsHarness = (
             return {origins: [...origins], permissions: [...permissions]};
         },
         async grant(value): Promise<void> {
+            parseOrigins(value.origins, "permissions.grant");
             await apply(value, "grant");
         },
         async revoke(value): Promise<void> {
+            parseOrigins(value.origins, "permissions.revoke");
             await apply(value, "revoke");
         },
         reset(): void {
@@ -173,6 +186,7 @@ export const createPermissionsHarness = (
             onRemoved.reset();
         },
         set(value): void {
+            parseOrigins(value.origins, "permissions.set");
             permissions = new Set(value.permissions ?? []);
             origins = new Set(value.origins ?? []);
         },

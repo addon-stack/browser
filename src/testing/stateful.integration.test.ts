@@ -158,9 +158,7 @@ describe("stateful browser test harness", () => {
             expect.objectContaining({id: createdTab.id, url: "https://literal.example/path"}),
         ]);
         await expect(queryTabs({url: "https://literal.example/path"})).resolves.toHaveLength(1);
-        await expect(queryTabs({url: "https://*.example/*"})).rejects.toThrow(
-            "tabs.query url match patterns are not supported"
-        );
+        await expect(queryTabs({url: "https://literal.example/*"})).resolves.toHaveLength(1);
         await expect(queryTabs({id: createdTab.id} as chrome.tabs.QueryInfo)).rejects.toThrow(
             'tabs.query filter "id" is not supported'
         );

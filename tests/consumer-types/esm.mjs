@@ -9,6 +9,8 @@ assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "chrome"), beforeCh
 assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "browser"), beforeBrowser);
 const harness = testing.createBrowserHarness({
     manifest: testing.createManifestFixture({name: "ESM consumer"}),
+    tabs: [testing.createTabFixture({id: 7, url: "http://127.0.0.1:62778/top.html#part"})],
+    permissions: {origins: ["https://*.example.com/*"]},
 });
 harness.delays.downloadValidation.setResult(undefined);
 harness.configurable.chrome.downloads.download.setResult(41);
@@ -18,6 +20,13 @@ const unsubscribe = harness.runtime.events.onMessage.on(() => true);
 
 try {
     assert.equal(production.getManifest().name, "ESM consumer");
+    assert.deepEqual(
+        (await production.queryTabs({url: ["http://127.0.0.1/*"], status: "complete"})).map(tab => tab.id),
+        [7]
+    );
+    assert.equal(await production.containsPermissions({origins: ["https://shop.example.com/*"]}), true);
+    assert.equal(await production.containsPermissions({origins: ["http://shop.example.com/*"]}), false);
+    await assert.rejects(production.queryTabs({url: "https://bad*host/*"}), /tabs.query/);
     assert.equal(await production.download({url: "https://example.test/esm.zip"}), 41);
     assert.deepEqual(
         harness.delays.downloadValidation.calls.map(call => call.args),

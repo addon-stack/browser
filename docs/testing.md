@@ -42,6 +42,7 @@ they read are supplied by the test.
 - [Primitives](testing/primitives.md) provide runner-independent methods and browser events.
 - [Harness and globals](testing/harness.md) provide browser profiles, state, capabilities, reset, and exact global
   restoration.
+- [URL patterns and host permissions](testing/match-patterns.md) cover wildcard tab queries and granted-origin checks.
 - [Jest usage](testing/jest.md) shows how to combine the kit with Jest without making the kit depend on Jest.
 - [Limitations](testing/limitations.md) describes intentional differences from real browsers.
 
