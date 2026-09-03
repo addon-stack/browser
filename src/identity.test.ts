@@ -9,261 +9,280 @@ import {
     onIdentitySignInChanged,
     removeCachedAuthToken,
 } from "./identity";
+import {
+    type BrowserHarness,
+    type BrowserTestApi,
+    createBrowserHarness,
+    createBrowserMethod,
+    createManifestFixture,
+    installGlobals,
+    type NavigatorTestValue,
+} from "./testing";
+
+const redirectUrl = "https://chrome-extension-id.chromiumapp.org/oauth?code=123";
 
 describe("identity", () => {
-    let originalBrowser: any;
-    let originalChrome: any;
-    let originalNavigatorDescriptor: PropertyDescriptor | undefined;
+    let harness: BrowserHarness;
+    let restoreGlobals: () => void;
 
     beforeEach(() => {
-        originalBrowser = globalThis.browser;
-        originalChrome = globalThis.chrome;
-        originalNavigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+        harness = createBrowserHarness({
+            extensionId: "chrome-extension-id",
+            manifest: createManifestFixture({manifest_version: 3}),
+        });
 
-        delete (globalThis as any).browser;
-        delete (globalThis as any).chrome;
-        delete (globalThis as any).navigator;
+        restoreGlobals = installGlobals({
+            browser: undefined,
+            chrome: harness.chrome,
+            navigator: undefined,
+            opr: undefined,
+            safari: undefined,
+        });
     });
 
     afterEach(() => {
-        (globalThis as any).browser = originalBrowser;
-        globalThis.chrome = originalChrome;
-        restoreGlobalProperty("navigator", originalNavigatorDescriptor);
-        jest.resetAllMocks();
+        restoreGlobals();
+        jest.restoreAllMocks();
     });
 
-    const setChromeIdentity = (
-        identity: Partial<typeof chrome.identity>,
-        lastError?: chrome.runtime.LastError,
-        manifestVersion: 2 | 3 = 3
-    ): void => {
-        globalThis.chrome = {
-            identity,
-            runtime: {
-                getManifest: jest.fn(() => ({manifest_version: manifestVersion})),
-                id: "chrome-extension-id",
-                lastError,
-            },
-        } as any;
-    };
+    const installChromeWithNavigator = (navigator: NavigatorTestValue): void => {
+        restoreGlobals();
 
-    const createEvent = () => {
-        const addListener = jest.fn();
-        const removeListener = jest.fn();
-
-        return {addListener, removeListener};
-    };
-
-    const setNavigator = (navigator: Partial<Navigator>): void => {
-        Object.defineProperty(globalThis, "navigator", {
-            configurable: true,
-            value: navigator,
-            writable: true,
+        restoreGlobals = installGlobals({
+            browser: undefined,
+            chrome: harness.chrome,
+            navigator,
+            opr: undefined,
+            safari: undefined,
         });
     };
 
-    const restoreGlobalProperty = (name: string, descriptor: PropertyDescriptor | undefined): void => {
-        if (descriptor) {
-            Object.defineProperty(globalThis, name, descriptor);
+    const installFirefox = (): void => {
+        restoreGlobals();
 
-            return;
-        }
-
-        delete (globalThis as any)[name];
+        restoreGlobals = installGlobals({
+            browser: harness.browser,
+            chrome: harness.chrome,
+            navigator: undefined,
+            opr: undefined,
+            safari: undefined,
+        });
     };
 
-    test("should generate a redirect url", () => {
-        const getRedirectURL = jest.fn((path?: string) => `https://chrome-extension-id.chromiumapp.org/${path}`);
-        setChromeIdentity({getRedirectURL});
+    test("should generate a redirect url through a configurable sync method", () => {
+        harness.configurable.chrome.identity.getRedirectURL.setResult(
+            "https://chrome-extension-id.chromiumapp.org/oauth"
+        );
 
         expect(getIdentityRedirectUrl("oauth")).toBe("https://chrome-extension-id.chromiumapp.org/oauth");
-        expect(getRedirectURL).toHaveBeenCalledWith("oauth");
+
+        expect(harness.configurable.chrome.identity.getRedirectURL.calls).toMatchObject([
+            {args: ["oauth"], callback: undefined, invocation: "sync"},
+        ]);
     });
 
-    test("should launch a Chrome MV2 callback web auth flow", async () => {
-        const launchWebAuthFlowMock = jest.fn(
-            (_details: chrome.identity.WebAuthFlowDetails, cb: (url: string) => void) =>
-                cb("https://chrome-extension-id.chromiumapp.org/oauth?code=123")
-        );
-        setChromeIdentity({launchWebAuthFlow: launchWebAuthFlowMock as any}, undefined, 2);
+    test.each([2, 3] as const)("should launch a Chrome MV%s callback web auth flow", async manifestVersion => {
+        harness.runtime.setManifest(createManifestFixture({manifest_version: manifestVersion}));
+        harness.configurable.chrome.identity.launchWebAuthFlow.setResult(redirectUrl);
+        const details = {interactive: true, url: "https://accounts.example/oauth"};
 
-        await expect(launchWebAuthFlow({url: "https://accounts.example/oauth", interactive: true})).resolves.toBe(
-            "https://chrome-extension-id.chromiumapp.org/oauth?code=123"
-        );
-        expect(launchWebAuthFlowMock).toHaveBeenCalledWith(
-            {url: "https://accounts.example/oauth", interactive: true},
-            expect.any(Function)
-        );
+        await expect(launchWebAuthFlow(details)).resolves.toBe(redirectUrl);
+
+        expect(harness.configurable.chrome.identity.launchWebAuthFlow.calls).toMatchObject([
+            {
+                args: [details],
+                callback: expect.any(Function),
+                callbackCalls: [[redirectUrl]],
+                invocation: "callback",
+            },
+        ]);
     });
 
-    test("should launch a Chrome MV3 callback web auth flow", async () => {
-        const launchWebAuthFlowMock = jest.fn(
-            (_details: chrome.identity.WebAuthFlowDetails, cb: (url: string) => void) =>
-                cb("https://chrome-extension-id.chromiumapp.org/oauth?code=123")
-        );
-        setChromeIdentity({launchWebAuthFlow: launchWebAuthFlowMock as any}, undefined, 3);
-
-        await expect(launchWebAuthFlow({url: "https://accounts.example/oauth", interactive: true})).resolves.toBe(
-            "https://chrome-extension-id.chromiumapp.org/oauth?code=123"
-        );
-        expect(launchWebAuthFlowMock).toHaveBeenCalledWith(
-            {url: "https://accounts.example/oauth", interactive: true},
-            expect.any(Function)
-        );
-    });
-
-    test("should not use Firefox promise-only flow from a user agent fallback", async () => {
-        const launchWebAuthFlowMock = jest.fn(
-            (_details: chrome.identity.WebAuthFlowDetails, cb: (url: string) => void) =>
-                cb("https://chrome-extension-id.chromiumapp.org/oauth?code=123")
-        );
-        setChromeIdentity({launchWebAuthFlow: launchWebAuthFlowMock as any}, undefined, 3);
-        setNavigator({
+    test("should not use the Firefox Promise branch from a user-agent fallback alone", async () => {
+        installChromeWithNavigator({
             userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:126.0) Gecko/20100101 Firefox/126.0",
         });
 
-        await expect(launchWebAuthFlow({url: "https://accounts.example/oauth", interactive: true})).resolves.toBe(
-            "https://chrome-extension-id.chromiumapp.org/oauth?code=123"
-        );
-        expect(launchWebAuthFlowMock).toHaveBeenCalledWith(
-            {url: "https://accounts.example/oauth", interactive: true},
-            expect.any(Function)
-        );
+        harness.configurable.chrome.identity.launchWebAuthFlow.setResult(redirectUrl);
+
+        await expect(launchWebAuthFlow({url: "https://accounts.example/oauth"})).resolves.toBe(redirectUrl);
+
+        expect(harness.configurable.chrome.identity.launchWebAuthFlow.calls[0]).toMatchObject({
+            callback: expect.any(Function),
+            invocation: "callback",
+        });
     });
 
-    test("should launch a Firefox promise-only web auth flow without callback", async () => {
-        const getBrowserInfo = jest.fn(() =>
-            Promise.resolve({buildID: "1", name: "Firefox", vendor: "Mozilla", version: "86"})
-        );
-        const launchWebAuthFlowMock = jest.fn((_details: any) =>
-            Promise.resolve("https://extension-id.extensions.allizom.org/oauth?code=123")
-        );
-        (globalThis as any).browser = {
-            identity: {
-                launchWebAuthFlow: launchWebAuthFlowMock,
-            },
-            runtime: {
-                getBrowserInfo,
-                getManifest: jest.fn(() => ({manifest_version: 2})),
-                id: "firefox-extension-id",
-                lastError: undefined,
-            },
-        };
+    test("should use the dual Promise path for a Firefox runtime", async () => {
+        installFirefox();
+        const firefoxRedirect = "https://extension-id.extensions.allizom.org/oauth?code=123";
+        harness.configurable.browser.identity.launchWebAuthFlow.setResult(firefoxRedirect);
 
-        await expect(
-            launchWebAuthFlow({
-                redirect_uri: "https://extension-id.extensions.allizom.org/oauth",
-                url: "https://accounts.example/oauth",
-            })
-        ).resolves.toBe("https://extension-id.extensions.allizom.org/oauth?code=123");
-        expect(launchWebAuthFlowMock).toHaveBeenCalledWith({
+        const details = {
             redirect_uri: "https://extension-id.extensions.allizom.org/oauth",
             url: "https://accounts.example/oauth",
-        });
-        expect(getBrowserInfo).toHaveBeenCalledTimes(1);
+        };
+
+        await expect(launchWebAuthFlow(details)).resolves.toBe(firefoxRedirect);
+
+        expect(harness.configurable.browser.identity.launchWebAuthFlow.calls).toMatchObject([
+            {args: [details], callback: undefined, callbackCalls: [], invocation: "promise"},
+        ]);
+
+        expect(harness.runtime.getBrowserInfo.calls).toHaveLength(1);
+        expect(harness.configurable.chrome.identity.launchWebAuthFlow.calls).toHaveLength(0);
     });
 
-    test("should reject launchWebAuthFlow when the browser promise rejects", async () => {
-        const errorMessage = "Authorization flow failed";
-        setChromeIdentity({
-            launchWebAuthFlow: jest.fn((_details: chrome.identity.WebAuthFlowDetails) =>
-                Promise.reject(new Error(errorMessage))
-            ),
-        } as any);
+    test("should support a promise-tolerant implementation that ignores a supplied callback", async () => {
+        const method = createBrowserMethod<typeof chrome.identity.launchWebAuthFlow, string | undefined>({
+            callback: "last",
+            invocation: "promise-tolerant",
+            name: "identity.launchWebAuthFlow",
+        });
 
-        await expect(launchWebAuthFlow({url: "https://accounts.example/oauth"})).rejects.toThrow(errorMessage);
+        method.setResult(redirectUrl);
+
+        const chromeApi = {
+            ...harness.chrome,
+            identity: {...harness.chrome.identity, launchWebAuthFlow: method.api},
+        } as BrowserTestApi;
+
+        restoreGlobals();
+        restoreGlobals = installGlobals({browser: undefined, chrome: chromeApi});
+
+        await expect(launchWebAuthFlow({url: "https://accounts.example/oauth"})).resolves.toBe(redirectUrl);
+
+        expect(method.calls).toMatchObject([
+            {
+                callback: expect.any(Function),
+                callbackCalls: [],
+                invocation: "promise-tolerant",
+            },
+        ]);
+    });
+
+    test("should reject launchWebAuthFlow through callback-scoped runtime.lastError", async () => {
+        harness.configurable.chrome.identity.launchWebAuthFlow.failNext(new Error("Authorization flow failed"));
+
+        await expect(launchWebAuthFlow({url: "https://accounts.example/oauth"})).rejects.toThrow(
+            "Authorization flow failed"
+        );
+
+        expect(harness.runtime.lastError).toBeUndefined();
     });
 
     test("should normalize getAuthToken callback token and granted scopes", async () => {
-        const getAuthTokenMock = jest.fn((_details: chrome.identity.TokenDetails, cb: any) =>
-            cb("access-token", ["email", "profile"])
-        );
-        setChromeIdentity({getAuthToken: getAuthTokenMock as any});
+        harness.configurable.chrome.identity.getAuthToken.setImplementation(((
+            _details: chrome.identity.TokenDetails,
+            callback: (token: string, scopes: string[]) => void
+        ) => {
+            callback("access-token", ["email", "profile"]);
+        }) as unknown as typeof chrome.identity.getAuthToken);
 
         await expect(getAuthToken({interactive: true})).resolves.toEqual({
             grantedScopes: ["email", "profile"],
             token: "access-token",
         });
-        expect(getAuthTokenMock).toHaveBeenCalledWith({interactive: true}, expect.any(Function));
+
+        expect(harness.configurable.chrome.identity.getAuthToken.calls).toMatchObject([
+            {
+                args: [{interactive: true}],
+                callbackCalls: [["access-token", ["email", "profile"]]],
+                invocation: "hybrid",
+            },
+        ]);
     });
 
     test("should keep object-style getAuthToken results", async () => {
         const result = {grantedScopes: ["email"], token: "access-token"};
-        const getAuthTokenMock = jest.fn((_details: chrome.identity.TokenDetails, cb: any) => cb(result));
-        setChromeIdentity({getAuthToken: getAuthTokenMock as any});
+        harness.configurable.chrome.identity.getAuthToken.setResult(result);
 
         await expect(getAuthToken()).resolves.toBe(result);
-        expect(getAuthTokenMock).toHaveBeenCalledWith({}, expect.any(Function));
+        expect(harness.configurable.chrome.identity.getAuthToken.calls[0]?.args).toEqual([{}]);
     });
 
     test("should treat a null getAuthToken callback value as a token result", async () => {
-        const getAuthTokenMock = jest.fn((_details: chrome.identity.TokenDetails, cb: any) => cb(null));
-        setChromeIdentity({getAuthToken: getAuthTokenMock as any});
+        harness.configurable.chrome.identity.getAuthToken.setImplementation(((
+            _details: chrome.identity.TokenDetails,
+            callback: (token: null) => void
+        ) => {
+            callback(null);
+        }) as unknown as typeof chrome.identity.getAuthToken);
 
-        await expect(getAuthToken()).resolves.toEqual({
-            grantedScopes: undefined,
-            token: null,
-        });
+        await expect(getAuthToken()).resolves.toEqual({grantedScopes: undefined, token: null});
     });
 
-    test("should reject getAuthToken when runtime lastError is set", async () => {
-        const errorMessage = "OAuth token unavailable";
-        setChromeIdentity(
-            {
-                getAuthToken: jest.fn((_details: chrome.identity.TokenDetails, cb: any) => cb(undefined)),
-            } as any,
-            {message: errorMessage}
-        );
+    test("should reject getAuthToken when runtime.lastError is set for the callback", async () => {
+        harness.configurable.chrome.identity.getAuthToken.failNext(new Error("OAuth token unavailable"));
 
-        await expect(getAuthToken()).rejects.toThrow(errorMessage);
+        await expect(getAuthToken()).rejects.toThrow("OAuth token unavailable");
+        expect(harness.runtime.lastError).toBeUndefined();
+    });
+
+    test("should model the hybrid callback and thenable race", async () => {
+        const callbackResult = {grantedScopes: ["email"], token: "callback-token"};
+        const promiseResult = {grantedScopes: ["profile"], token: "promise-token"};
+
+        harness.configurable.chrome.identity.getAuthToken.setImplementation(((
+            _details: chrome.identity.TokenDetails,
+            callback: (result: chrome.identity.GetAuthTokenResult) => void
+        ) => {
+            callback(callbackResult);
+
+            return Promise.resolve(promiseResult);
+        }) as unknown as typeof chrome.identity.getAuthToken);
+
+        await expect(getAuthToken()).resolves.toBe(callbackResult);
+
+        expect(harness.configurable.chrome.identity.getAuthToken.calls).toMatchObject([
+            {callbackCalls: [[callbackResult]], invocation: "hybrid"},
+        ]);
     });
 
     test("should remove a cached auth token", async () => {
-        const removeCachedAuthTokenMock = jest.fn((_details: chrome.identity.InvalidTokenDetails, cb: () => void) =>
-            cb()
-        );
-        setChromeIdentity({removeCachedAuthToken: removeCachedAuthTokenMock as any});
+        harness.configurable.chrome.identity.removeCachedAuthToken.setResult(undefined);
+        const details = {token: "access-token"};
 
-        await expect(removeCachedAuthToken({token: "access-token"})).resolves.toBeUndefined();
-        expect(removeCachedAuthTokenMock).toHaveBeenCalledWith({token: "access-token"}, expect.any(Function));
+        await expect(removeCachedAuthToken(details)).resolves.toBeUndefined();
+        expect(harness.configurable.chrome.identity.removeCachedAuthToken.calls[0]?.args).toEqual([details]);
     });
 
     test("should clear all cached auth tokens", async () => {
-        const clearAllCachedAuthTokensMock = jest.fn((cb: () => void) => cb());
-        setChromeIdentity({clearAllCachedAuthTokens: clearAllCachedAuthTokensMock as any});
+        harness.configurable.chrome.identity.clearAllCachedAuthTokens.setResult(undefined);
 
         await expect(clearAllCachedAuthTokens()).resolves.toBeUndefined();
-        expect(clearAllCachedAuthTokensMock).toHaveBeenCalledWith(expect.any(Function));
+        expect(harness.configurable.chrome.identity.clearAllCachedAuthTokens.calls).toHaveLength(1);
     });
 
     test("should get profile user info", async () => {
         const profile = {email: "user@example.com", id: "gaia-id"};
-        const getProfileUserInfoMock = jest.fn((_details: chrome.identity.ProfileDetails, cb: any) => cb(profile));
-        setChromeIdentity({getProfileUserInfo: getProfileUserInfoMock as any});
+        harness.configurable.chrome.identity.getProfileUserInfo.setResult(profile);
 
         await expect(getProfileUserInfo({accountStatus: "ANY"})).resolves.toBe(profile);
-        expect(getProfileUserInfoMock).toHaveBeenCalledWith({accountStatus: "ANY"}, expect.any(Function));
+
+        expect(harness.configurable.chrome.identity.getProfileUserInfo.calls[0]?.args).toEqual([
+            {accountStatus: "ANY"},
+        ]);
     });
 
     test("should get identity accounts", async () => {
         const accounts = [{id: "account-id"}];
-        const getAccountsMock = jest.fn((cb: any) => cb(accounts));
-        setChromeIdentity({getAccounts: getAccountsMock as any});
+        harness.configurable.chrome.identity.getAccounts.setResult(accounts);
 
         await expect(getIdentityAccounts()).resolves.toBe(accounts);
-        expect(getAccountsMock).toHaveBeenCalledWith(expect.any(Function));
+        expect(harness.configurable.chrome.identity.getAccounts.calls).toHaveLength(1);
     });
 
-    test("should subscribe to sign-in changes and unsubscribe", () => {
-        const onSignInChangedEvent = createEvent();
-        setChromeIdentity({onSignInChanged: onSignInChangedEvent as any});
-        const callback = jest.fn();
+    test("should subscribe, emit and unsubscribe sign-in changes", async () => {
+        const callback = jest.fn<(account: chrome.identity.AccountInfo, signedIn: boolean) => void>();
+        const account = {id: "account-id"};
 
         const unsubscribe = onIdentitySignInChanged(callback);
+        await harness.configurable.chrome.identity.onSignInChanged.emit(account, true);
 
-        expect(onSignInChangedEvent.addListener).toHaveBeenCalledWith(expect.any(Function));
-        const listener = onSignInChangedEvent.addListener.mock.calls[0][0];
+        expect(callback).toHaveBeenCalledWith(account, true);
+        expect(harness.configurable.chrome.identity.onSignInChanged.listenerCount()).toBe(1);
         unsubscribe();
-        expect(onSignInChangedEvent.removeListener).toHaveBeenCalledWith(listener);
+        expect(harness.configurable.chrome.identity.onSignInChanged.listenerCount()).toBe(0);
     });
 });

@@ -1,146 +1,170 @@
-import {afterEach, beforeEach, describe, expect, jest, test} from "@jest/globals";
+import {afterEach, describe, expect, jest, test} from "@jest/globals";
+import {type BrowserTestApi, createBrowserEvent, installGlobals} from "./testing";
+import {createListenerErrorCapture} from "./testing/listener-errors";
 import {callWithPromise, checkLastError, handleListener, safeListener} from "./utils";
 
+const runtimeApi = (lastError?: chrome.runtime.LastError): BrowserTestApi =>
+    ({runtime: {lastError}}) as unknown as BrowserTestApi;
+
 describe("utils", () => {
-    let originalChrome: any;
-    let originalBrowser: any;
-    let originalConsoleError: any;
-
-    beforeEach(() => {
-        originalChrome = globalThis.chrome;
-        originalBrowser = globalThis.browser;
-        originalConsoleError = console.error;
-        console.error = jest.fn();
-
-        delete (globalThis as any).chrome;
-        delete (globalThis as any).browser;
-    });
+    let restoreGlobals: () => void = () => undefined;
 
     afterEach(() => {
-        globalThis.chrome = originalChrome;
-        (globalThis as any).browser = originalBrowser;
-        console.error = originalConsoleError;
-        jest.resetAllMocks();
+        restoreGlobals();
+        restoreGlobals = () => undefined;
+        jest.restoreAllMocks();
     });
+
+    const setGlobals = (values: Parameters<typeof installGlobals>[0]): void => {
+        restoreGlobals();
+        restoreGlobals = installGlobals(values);
+    };
 
     describe("checkLastError", () => {
         test("should not throw if lastError is undefined", () => {
-            globalThis.chrome = {runtime: {lastError: undefined}} as any;
+            setGlobals({browser: undefined, chrome: runtimeApi()});
+
             expect(() => checkLastError()).not.toThrow();
         });
 
         test("should throw Error if lastError exists", () => {
             const errorMessage = "Some error";
-            globalThis.chrome = {runtime: {lastError: {message: errorMessage}}} as any;
+            setGlobals({browser: undefined, chrome: runtimeApi({message: errorMessage})});
+
             expect(() => checkLastError()).toThrow(errorMessage);
         });
 
         test("should throw Error if WebExtension API is not available", () => {
+            setGlobals({browser: undefined, chrome: undefined});
+
             expect(() => checkLastError()).toThrow("WebExtension API not available in this context");
         });
     });
 
     describe("callWithPromise", () => {
         test("should resolve with result when successful", async () => {
-            globalThis.chrome = {runtime: {lastError: undefined}} as any;
+            setGlobals({browser: undefined, chrome: runtimeApi()});
             const expectedResult = {foo: "bar"};
-            const executor = (cb: any) => cb(expectedResult);
+            const executor = (callback: (result: typeof expectedResult) => void): void => callback(expectedResult);
 
-            const result = await callWithPromise(executor);
-            expect(result).toBe(expectedResult);
+            await expect(callWithPromise(executor)).resolves.toBe(expectedResult);
         });
 
         test("should resolve with undefined when result is undefined", async () => {
-            globalThis.chrome = {runtime: {lastError: undefined}} as any;
-            const executor = (cb: any) => cb(undefined);
+            setGlobals({browser: undefined, chrome: runtimeApi()});
+            const executor = (callback: (result: undefined) => void): void => callback(undefined);
 
-            const result = await callWithPromise(executor);
-            expect(result).toBeUndefined();
+            await expect(callWithPromise(executor)).resolves.toBeUndefined();
         });
 
         test("should reject when lastError exists", async () => {
             const errorMessage = "Async error";
-            globalThis.chrome = {runtime: {lastError: {message: errorMessage}}} as any;
-            const executor = (cb: any) => cb(null);
+            setGlobals({browser: undefined, chrome: runtimeApi({message: errorMessage})});
+            const executor = (callback: (result: null) => void): void => callback(null);
 
             await expect(callWithPromise(executor)).rejects.toThrow(errorMessage);
         });
 
         test("should reject when lastError exists even if result is provided", async () => {
             const errorMessage = "Async error";
-            globalThis.chrome = {runtime: {lastError: {message: errorMessage}}} as any;
-            const executor = (cb: any) => cb({data: "some data"});
+            setGlobals({browser: undefined, chrome: runtimeApi({message: errorMessage})});
+            const executor = (callback: (result: {data: string}) => void): void => callback({data: "some data"});
 
             await expect(callWithPromise(executor)).rejects.toThrow(errorMessage);
         });
 
         test("should resolve with result from returned Promise", async () => {
             const expectedResult = {foo: "bar"};
-            const executor = () => Promise.resolve(expectedResult);
+            const executor = (): Promise<typeof expectedResult> => Promise.resolve(expectedResult);
 
-            const result = await callWithPromise(executor);
-            expect(result).toBe(expectedResult);
+            await expect(callWithPromise(executor)).resolves.toBe(expectedResult);
         });
 
         test("should reject when returned Promise rejects", async () => {
-            const errorMessage = "Promise fail";
-            const executor = () => Promise.reject(new Error(errorMessage));
+            const error = new Error("Promise fail");
+            const executor = (): Promise<never> => Promise.reject(error);
 
-            await expect(callWithPromise(executor)).rejects.toThrow(errorMessage);
+            await expect(callWithPromise(executor)).rejects.toBe(error);
         });
     });
 
     describe("safeListener", () => {
         test("should execute listener and return result", () => {
-            const expectedResult = "success";
-            const listener = jest.fn().mockReturnValue(expectedResult);
+            const listener = jest.fn<(argument: string) => string>(() => "success");
             const wrapped = safeListener(listener);
 
-            const result = wrapped("arg1");
+            expect(wrapped("arg1")).toBe("success");
             expect(listener).toHaveBeenCalledWith("arg1");
-            expect(result).toBe(expectedResult);
         });
 
-        test("should catch sync error and log it", () => {
+        test("should suppress and capture a synchronous listener error", async () => {
+            const capture = createListenerErrorCapture();
+            setGlobals({consoleError: capture.handler});
             const error = new Error("Sync fail");
-            const listener = () => {
-                throw error;
-            };
-            const wrapped = safeListener(listener);
+            const event = createBrowserEvent<[]>();
 
-            const result = wrapped();
-            expect(result).toBeUndefined();
-            expect(console.error).toHaveBeenCalledWith("Listener error:", error);
+            event.api.addListener(
+                safeListener(() => {
+                    throw error;
+                })
+            );
+
+            await expect(event.emit()).resolves.toBeUndefined();
+            expect(capture.entries).toEqual([{args: [], error, kind: "sync"}]);
         });
 
-        test("should catch promise rejection and log it", async () => {
+        test("should log a native Promise rejection while preserving the rejection", async () => {
+            const capture = createListenerErrorCapture();
+            setGlobals({consoleError: capture.handler});
             const error = new Error("Async fail");
-            const listener = () => Promise.reject(error);
-            const wrapped = safeListener(listener);
+            const event = createBrowserEvent<[]>();
+            event.api.addListener(safeListener(() => Promise.reject(error)));
 
-            const result = wrapped();
-            expect(result).toBeInstanceOf(Promise);
+            await expect(event.emit()).rejects.toBe(error);
+            expect(capture.entries).toEqual([{args: [], error, kind: "promise"}]);
+        });
 
-            // Wait for promise rejection to be handled
-            await new Promise(resolve => setTimeout(resolve, 0));
-            expect(console.error).toHaveBeenCalledWith("Listener in promise error:", error);
+        test("should not log a custom thenable rejection, while the event still observes it", async () => {
+            const capture = createListenerErrorCapture();
+            setGlobals({consoleError: capture.handler});
+            const error = new Error("Thenable fail");
+
+            const thenable = {
+                // This test intentionally models a non-Promise thenable.
+                then(_resolve: (value: never) => void, reject: (reason: unknown) => void): void {
+                    reject(error);
+                },
+            };
+
+            const event = createBrowserEvent<[]>();
+            event.api.addListener(safeListener(() => thenable));
+
+            await expect(event.emit()).rejects.toBe(error);
+            expect(capture.entries).toEqual([]);
+        });
+
+        test("should preserve and forward unknown console errors", () => {
+            const forward = jest.fn<(...args: unknown[]) => void>();
+            const capture = createListenerErrorCapture(forward);
+            const error = new Error("Unrecognized");
+
+            capture.handler("Unexpected prefix", error, {source: "test"});
+
+            expect(capture.raw).toEqual([["Unexpected prefix", error, {source: "test"}]]);
+            expect(forward).toHaveBeenCalledWith("Unexpected prefix", error, {source: "test"});
         });
     });
 
     describe("handleListener", () => {
         test("should add listener and return unsubscribe function", () => {
-            const addListener = jest.fn();
-            const removeListener = jest.fn();
-            const target = {addListener, removeListener} as any;
-            const callback = () => {};
+            const event = createBrowserEvent<[string]>();
+            const callback = jest.fn<(value: string) => void>();
 
-            const unsubscribe = handleListener(target, callback);
+            const unsubscribe = handleListener(event.api as chrome.events.Event<(value: string) => void>, callback);
 
-            expect(addListener).toHaveBeenCalled();
-            expect(typeof unsubscribe).toBe("function");
-
+            expect(event.listenerCount()).toBe(1);
             unsubscribe();
-            expect(removeListener).toHaveBeenCalled();
+            expect(event.listenerCount()).toBe(0);
         });
     });
 });

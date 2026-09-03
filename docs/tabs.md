@@ -368,7 +368,9 @@ Removes previously inserted CSS using the MV2 `chrome.tabs.removeCSS`. Not avail
 getTabUrl(tabId: number): Promise<string>
 ```
 
-Returns the current URL of the specified tab or throws if it cannot be determined.
+Returns the current URL of the specified tab. Rejects with an `Error` whose message is
+`Tab id "${tabId}" not exist` if the tab lookup fails, or `URL not exist by tab id ${tabId}` if the tab exists but has no
+URL. The supplied tab ID replaces `${tabId}` in each message.
 
 <a name="getActiveTab"></a>
 
@@ -408,7 +410,9 @@ Returns the first tab matching the query, if any.
 findTabById(tabId: number): Promise<chrome.tabs.Tab | undefined>
 ```
 
-Resolves with the tab for the given ID, or `undefined` if not available.
+Resolves with the tab for the given ID, or `undefined` when `getTab(tabId)` rejects. The helper preserves its catch-all
+lookup policy: any lookup rejection is normalized to `undefined`, not only a missing-tab error. Use `getTab()` when the
+original browser error is needed.
 
 <a name="findTabByUrl"></a>
 

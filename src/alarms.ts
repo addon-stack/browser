@@ -14,6 +14,18 @@ export const clearAllAlarm = (): Promise<boolean> => callWithPromise(cb => alarm
 export const createAlarm = (name: string, info: AlarmCreateInfo): Promise<void> =>
     callWithPromise(cb => alarms().create(name, info, cb));
 
+export const createAlarmIfNotExists = async (name: string, info: AlarmCreateInfo): Promise<boolean> => {
+    const alarm = await getAlarm(name);
+
+    if (alarm) {
+        return false;
+    }
+
+    await createAlarm(name, info);
+
+    return true;
+};
+
 export const getAlarm = (name: string): Promise<Alarm | undefined> => callWithPromise(cb => alarms().get(name, cb));
 
 export const getAllAlarm = (): Promise<Alarm[]> => callWithPromise(cb => alarms().getAll(cb));
@@ -21,4 +33,12 @@ export const getAllAlarm = (): Promise<Alarm[]> => callWithPromise(cb => alarms(
 // Events
 export const onAlarm = (callback: Parameters<typeof chrome.alarms.onAlarm.addListener>[0]): (() => void) => {
     return handleListener(alarms().onAlarm, callback);
+};
+
+export const onSpecificAlarm = (name: string, callback: Parameters<typeof onAlarm>[0]): (() => void) => {
+    return onAlarm(alarm => {
+        if (alarm.name === name) {
+            return callback(alarm);
+        }
+    });
 };

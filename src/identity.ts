@@ -1,5 +1,5 @@
 import {browser} from "./browser";
-import {BrowserGuessSource, BrowserName, guessBrowser, isBrowser} from "./browserDetection";
+import {BrowserGuessSource, BrowserName, guessBrowser, isBrowser} from "./browser-detection";
 import {callWithPromise, checkLastError, handleListener} from "./utils";
 
 type AccountInfo = chrome.identity.AccountInfo;
@@ -26,6 +26,7 @@ export const getIdentityRedirectUrl = (path?: string): string => identity().getR
 
 export const launchWebAuthFlow = async (details: LaunchWebAuthFlowDetails): Promise<string | undefined> => {
     const browserGuess = await guessBrowser();
+
     const isFirefoxRuntime =
         isBrowser(browserGuess, BrowserName.Firefox) && browserGuess.source === BrowserGuessSource.RuntimeBrowserInfo;
 

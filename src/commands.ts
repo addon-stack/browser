@@ -17,7 +17,7 @@ export const onCommand = (callback: Parameters<typeof chrome.commands.onCommand.
 export const onSpecificCommand = (command: string, callback: (tab?: Tab) => any): (() => void) => {
     return onCommand((name, tab) => {
         if (command === name) {
-            callback(tab);
+            return callback(tab);
         }
     });
 };

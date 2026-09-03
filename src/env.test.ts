@@ -1,135 +1,137 @@
-import {afterEach, beforeEach, describe, expect, jest, test} from "@jest/globals";
+import {afterEach, beforeEach, describe, expect, test} from "@jest/globals";
 import {isBackground} from "./env";
+import {
+    type BrowserHarness,
+    type BrowserTestApi,
+    createBrowserHarness,
+    createManifestFixture,
+    installBrowserGlobals,
+    installGlobals,
+} from "./testing";
 
 describe("isBackground", () => {
-    let originalBrowserDescriptor: PropertyDescriptor | undefined;
-    let originalChromeDescriptor: PropertyDescriptor | undefined;
-    let originalWindowDescriptor: PropertyDescriptor | undefined;
-    let originalLocationDescriptor: PropertyDescriptor | undefined;
+    let harness: BrowserHarness;
+    let restoreGlobals: () => void = () => undefined;
 
     beforeEach(() => {
-        originalBrowserDescriptor = Object.getOwnPropertyDescriptor(globalThis, "browser");
-        originalChromeDescriptor = Object.getOwnPropertyDescriptor(globalThis, "chrome");
-        originalWindowDescriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
-        originalLocationDescriptor = Object.getOwnPropertyDescriptor(globalThis, "location");
-
-        delete (globalThis as any).browser;
-        delete (globalThis as any).chrome;
-        delete (globalThis as any).window;
-        delete (globalThis as any).location;
+        harness = createBrowserHarness();
     });
 
     afterEach(() => {
-        restoreGlobalProperty("browser", originalBrowserDescriptor);
-        restoreGlobalProperty("chrome", originalChromeDescriptor);
-        restoreGlobalProperty("window", originalWindowDescriptor);
-        restoreGlobalProperty("location", originalLocationDescriptor);
-        jest.resetAllMocks();
+        restoreGlobals();
+        restoreGlobals = () => undefined;
     });
 
-    const setGlobalProperty = (name: string, value: unknown): void => {
-        Object.defineProperty(globalThis, name, {
-            configurable: true,
-            value,
-            writable: true,
-        });
-    };
-
-    const restoreGlobalProperty = (name: string, descriptor: PropertyDescriptor | undefined): void => {
-        if (descriptor) {
-            Object.defineProperty(globalThis, name, descriptor);
-
-            return;
-        }
-
-        delete (globalThis as any)[name];
-    };
-
-    const setRuntime = (runtime: object | undefined): void => {
-        setGlobalProperty("chrome", runtime ? {runtime} : {});
-    };
-
-    const setWindow = (pathname: string): void => {
-        setGlobalProperty("window", {});
-        setGlobalProperty("location", {pathname});
+    const installProfile = (context: "backgroundPage" | "extensionPage" | "none" | "serviceWorker"): void => {
+        restoreGlobals = installBrowserGlobals(harness, {context, profile: "chrome"});
     };
 
     test("returns false when the browser API is unavailable", () => {
+        restoreGlobals = installBrowserGlobals(harness, {
+            context: "none",
+            globals: {browser: undefined, chrome: undefined},
+            profile: "custom",
+        });
+
         expect(isBackground()).toBe(false);
     });
 
     test("returns false when runtime is unavailable", () => {
-        setRuntime(undefined);
+        restoreGlobals = installGlobals({
+            browser: undefined,
+            chrome: {} as BrowserTestApi,
+            location: undefined,
+            window: undefined,
+        });
 
         expect(isBackground()).toBe(false);
     });
 
     test("returns false when runtime.id is unavailable", () => {
-        setRuntime({getManifest: jest.fn()});
+        restoreGlobals = installGlobals({
+            browser: undefined,
+            chrome: {runtime: {getManifest: harness.runtime.getManifest.api}} as unknown as BrowserTestApi,
+            location: undefined,
+            window: undefined,
+        });
 
         expect(isBackground()).toBe(false);
     });
 
-    test("returns false without throwing when runtime.getManifest is unavailable", () => {
-        setRuntime({id: "extension-id", getManifest: undefined});
+    test("returns false when runtime.getManifest capability is unavailable", () => {
+        harness.capabilities.set("runtime.getManifest", false);
+        installProfile("none");
 
         expect(() => isBackground()).not.toThrow();
         expect(isBackground()).toBe(false);
     });
 
-    test("returns false when runtime.getManifest is not a function", () => {
-        setRuntime({id: "extension-id", getManifest: "manifest"});
+    test("returns false when runtime.getManifest is malformed", () => {
+        const chromeApi = {
+            ...harness.chrome,
+            runtime: {...harness.chrome.runtime, getManifest: "manifest"},
+        } as unknown as BrowserTestApi;
+
+        restoreGlobals = installGlobals({
+            browser: undefined,
+            chrome: chromeApi,
+            location: undefined,
+            window: undefined,
+        });
 
         expect(isBackground()).toBe(false);
     });
 
     test("identifies an MV3 service worker as background", () => {
-        setRuntime({
-            getManifest: jest.fn(() => ({
-                background: {service_worker: "service-worker.js"},
-                manifest_version: 3,
-            })),
-            id: "extension-id",
-        });
+        harness.runtime.setManifest(
+            createManifestFixture({background: {service_worker: "service-worker.js"}, manifest_version: 3})
+        );
+
+        installProfile("serviceWorker");
 
         expect(isBackground()).toBe(true);
     });
 
     test("does not identify an MV3 extension document as background", () => {
-        setRuntime({
-            getManifest: jest.fn(() => ({
-                background: {service_worker: "service-worker.js"},
-                manifest_version: 3,
-            })),
-            id: "extension-id",
-        });
-        setWindow("/popup.html");
+        harness.runtime.setManifest(
+            createManifestFixture({background: {service_worker: "service-worker.js"}, manifest_version: 3})
+        );
+
+        installProfile("extensionPage");
 
         expect(isBackground()).toBe(false);
     });
 
     test("identifies an MV2 generated background page as background", () => {
-        setRuntime({
-            getManifest: jest.fn(() => ({
-                background: {scripts: ["background.js"]},
-                manifest_version: 2,
-            })),
-            id: "extension-id",
-        });
-        setWindow("/_generated_background_page.html");
+        harness.runtime.setManifest(
+            createManifestFixture({background: {scripts: ["background.js"]}, manifest_version: 2})
+        );
+
+        installProfile("backgroundPage");
 
         expect(isBackground()).toBe(true);
     });
 
-    test("does not identify a regular extension page as background", () => {
-        setRuntime({
-            getManifest: jest.fn(() => ({
-                background: {scripts: ["background.js"]},
-                manifest_version: 2,
-            })),
-            id: "extension-id",
+    test("does not identify a regular MV2 extension page as background", () => {
+        harness.runtime.setManifest(
+            createManifestFixture({background: {scripts: ["background.js"]}, manifest_version: 2})
+        );
+
+        installProfile("extensionPage");
+
+        expect(isBackground()).toBe(false);
+    });
+
+    test("treats a malformed location value as a non-background extension page", () => {
+        harness.runtime.setManifest(
+            createManifestFixture({background: {scripts: ["background.js"]}, manifest_version: 2})
+        );
+
+        restoreGlobals = installBrowserGlobals(harness, {
+            context: "extensionPage",
+            globals: {location: {}},
+            profile: "chrome",
         });
-        setWindow("/popup.html");
 
         expect(isBackground()).toBe(false);
     });

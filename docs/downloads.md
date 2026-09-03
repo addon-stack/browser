@@ -59,7 +59,12 @@ Cancels the specified download.
 download(options: chrome.downloads.DownloadOptions): Promise<number>
 ```
 
-Initiates a download with the given options, resolving to the download ID. The wrapper sets `conflictAction: "uniquify"` by default and validates early errors. May throw `BlockDownloadError` if the download is interrupted (e.g., `USER_CANCELED`).
+Initiates a download with the given options, resolving to the download ID. The wrapper sets `conflictAction: "uniquify"` by default and waits 100 ms before validating the newly created download item. It may throw `BlockDownloadError` when the item cannot be found or the download is interrupted with `USER_CANCELED`.
+
+The default validation delay remains 100 ms. Tests using `@addon-core/browser/testing` can skip or defer this wait with
+`harness.delays.downloadValidation`, without changing the `download(options)` signature or patching global timers.
+See [Download validation delay](testing/harness.md#download-validation-delay) for the test-only control. Controlling the
+wait does not simulate the browser's download lifecycle or prove browser compatibility.
 
 <a name="eraseDownload"></a>
 

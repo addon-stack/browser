@@ -1,4 +1,5 @@
 import {browser} from "./browser";
+import {waitForDownloadValidation} from "./internal/download-validation";
 import {callWithPromise, handleListener} from "./utils";
 
 type DownloadItem = chrome.downloads.DownloadItem;
@@ -27,7 +28,7 @@ export const download = async (options: DownloadOptions): Promise<number> => {
         throw new Error("Download id not created");
     }
 
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await waitForDownloadValidation(downloads(), 100);
 
     const item = await findDownload(downloadId);
 

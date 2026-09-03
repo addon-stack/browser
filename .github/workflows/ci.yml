@@ -18,6 +18,42 @@ on:
         default: false
 
 jobs:
+  # One real-browser check, not an OS x Node matrix. Release also waits for this reusable CI job.
+  browser-match-patterns:
+    name: Browser match-pattern smoke
+    # Keep Chromium's sandbox enabled; Ubuntu 23.10+ restricts user namespaces for downloaded binaries.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Chrome for Testing
+        id: chrome
+        uses: browser-actions/setup-chrome@2e1d749697dd1612b833dba4a722266286fbefcd # v2.1.2
+        with:
+          chrome-version: stable
+          install-dependencies: true
+
+      - name: Run browser match-pattern smoke
+        env:
+          CHROME_FOR_TESTING_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: npm run test:browser-match-patterns -- "$CHROME_FOR_TESTING_PATH"
+
   compute-matrix:
     name: Compute matrix
     runs-on: ubuntu-latest
@@ -28,19 +64,17 @@ jobs:
       - id: set
         run: |
           if [[ "${{ inputs.full }}" == "true" ]]; then
-            echo 'matrix={"os":["ubuntu-latest","windows-latest"],"node":[18,20,22]}' >> $GITHUB_OUTPUT
-            echo 'name_suffix=(full matrix)' >> $GITHUB_OUTPUT
+            echo 'matrix={"os":["ubuntu-latest","windows-latest"],"node":[18,20,22]}' >> "$GITHUB_OUTPUT"
+            echo 'name_suffix=(full matrix)' >> "$GITHUB_OUTPUT"
           else
-            echo 'matrix={"os":["ubuntu-latest"],"node":[20]}' >> $GITHUB_OUTPUT
-            echo 'name_suffix=' >> $GITHUB_OUTPUT
+            echo 'matrix={"os":["ubuntu-latest"],"node":[20]}' >> "$GITHUB_OUTPUT"
+            echo 'name_suffix=' >> "$GITHUB_OUTPUT"
           fi
 
   build-and-test:
     name: Build, Lint, Test ${{ needs.compute-matrix.outputs.name_suffix }}
     needs: compute-matrix
     runs-on: ${{ matrix.os }}
-    env:
-      NODE_OPTIONS: --experimental-vm-modules
     permissions:
       contents: read
     strategy:

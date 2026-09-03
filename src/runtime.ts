@@ -1,6 +1,6 @@
 import {browser} from "./browser";
-import {callWithPromise, handleListener} from "./utils";
 import type {FirefoxRuntime} from "./types";
+import {callWithPromise, handleListener} from "./utils";
 
 type BrowserInfo = browser.runtime.BrowserInfo;
 
