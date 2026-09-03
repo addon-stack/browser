@@ -9,7 +9,10 @@ const fixtureDirectory = dirname(fileURLToPath(import.meta.url));
 const packageDirectory = join(fixtureDirectory, "../..");
 const temporaryDirectory = mkdtempSync(join(tmpdir(), "addon-core-browser-consumer-"));
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-const npmOptions = {shell: process.platform === "win32"};
+const npmOptions = {
+    env: {...process.env, npm_config_cache: join(temporaryDirectory, "npm-cache")},
+    shell: process.platform === "win32",
+};
 
 try {
     const [{filename}] = JSON.parse(
@@ -36,10 +39,24 @@ try {
     assert.equal(installedPackage.dependencies?.["@types/chrome"], "^0.2.2");
     assert.equal(installedPackage.peerDependencies?.["@types/chrome"], undefined);
     assert.equal(installedPackage.types, "dist/index.d.ts");
+    assert.deepEqual(installedPackage.exports?.["./testing"], {
+        types: "./dist/testing/index.d.ts",
+        import: "./dist/testing/index.js",
+        require: "./dist/testing/index.cjs",
+    });
 
     const declarations = readFileSync(join(installedPackageDirectory, installedPackage.types), "utf8");
+    const testingDeclarations = readFileSync(join(installedPackageDirectory, "dist/testing/index.d.ts"), "utf8");
 
     assert.match(declarations, /^\/\/\/ <reference types="chrome" \/>/);
+    assert.match(testingDeclarations, /^\/\/\/ <reference types="chrome" \/>/);
+    assert.match(testingDeclarations, /^\/\/\/ <reference path="\.\.\/api\.d\.ts" \/>/m);
+    for (const file of ["dist/testing/index.js", "dist/testing/index.cjs"]) {
+        assert.equal(existsSync(join(installedPackageDirectory, file)), true, `${file} is missing from the tarball`);
+    }
+    for (const file of ["dist/testing/index.js.map", "dist/testing/index.cjs.map"]) {
+        assert.equal(existsSync(join(installedPackageDirectory, file)), false, `${file} must not be in the tarball`);
+    }
     assert.equal(existsSync(join(consumerDirectory, "node_modules/@types/chrome")), true);
 
     execFileSync(
@@ -49,6 +66,8 @@ try {
             stdio: "inherit",
         }
     );
+    execFileSync(process.execPath, [join(consumerDirectory, "esm.mjs")], {cwd: consumerDirectory, stdio: "inherit"});
+    execFileSync(process.execPath, [join(consumerDirectory, "cjs.cjs")], {cwd: consumerDirectory, stdio: "inherit"});
 } finally {
     rmSync(temporaryDirectory, {force: true, recursive: true});
 }

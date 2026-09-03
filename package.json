@@ -42,6 +42,11 @@
       "types": "./dist/utils.d.ts",
       "import": "./dist/utils.js",
       "require": "./dist/utils.cjs"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "import": "./dist/testing/index.js",
+      "require": "./dist/testing/index.cjs"
     }
   },
   "files": [
@@ -53,15 +58,16 @@
   },
   "scripts": {
     "prepare": "husky",
-    "build": "tsup && node ./scripts/copy-api-types.mjs",
+    "build": "tsup && node ./scripts/copy-api-types.mjs && node ./scripts/verify-build.mjs",
     "prepublishOnly": "npm run build",
     "dev": "tsup --watch",
     "lint": "biome check .",
     "fix": "biome check --write --unsafe .",
-    "test": "jest",
-    "test:ci": "jest --ci --passWithNoTests --coverage",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:ci": "npm test -- --ci --passWithNoTests --coverage",
+    "test:browser-match-patterns": "node ./tests/browser-match-patterns/check.mjs",
     "test:consumer-types": "npm run build && node ./tests/consumer-types/check.mjs",
-    "test:related": "jest --bail --passWithNoTests",
+    "test:related": "npm test -- --bail --passWithNoTests",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "release": "release-it",
     "release:preview": "release-it --no-github.release --no-npm.publish --no-git.tag --ci"

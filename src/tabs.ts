@@ -145,7 +145,7 @@ export const findTab = async (queryInfo?: QueryInfo): Promise<Tab | undefined> =
 
 export const findTabById = async (tabId: number): Promise<Tab | undefined> => {
     try {
-        return getTab(tabId);
+        return await getTab(tabId);
     } catch {
         return undefined;
     }

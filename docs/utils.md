@@ -62,7 +62,13 @@ export function getPlatformInfo(): Promise<chrome.runtime.PlatformInfo> {
 safeListener<T extends (...args: any[]) => any>(listener: T): T
 ```
 
-Wraps any listener function so that synchronous errors are caught and logged to the console. It also catches and logs rejected promises from async listeners. This ensures that one failing listener doesn't break the extension's execution flow.
+Wraps a listener and reports failures to `console.error`. The exact behavior depends on what the listener returns:
+
+- A synchronous throw is logged with `Listener error:` and suppressed; the wrapper returns `undefined`.
+- A rejected native `Promise` is logged with `Listener in promise error:`, but the original rejected promise is still returned to the caller.
+- A custom or cross-realm thenable is returned unchanged and is not logged because the implementation checks `result instanceof Promise`.
+
+The async cases are therefore observable by callers that await the returned value. `safeListener()` is not a general error-isolation boundary.
 
 ```ts
 import { safeListener } from "@addon-core/browser/utils";

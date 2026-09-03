@@ -1,4 +1,4 @@
-import {afterEach, beforeEach, describe, expect, jest, test} from "@jest/globals";
+import {afterEach, beforeEach, describe, expect, test} from "@jest/globals";
 import {
     closeOffscreen,
     createOffscreen,
@@ -9,51 +9,39 @@ import {
     hasOffscreenPath,
     hasOffscreenUrl,
 } from "./offscreen";
+import {type BrowserHarness, createBrowserHarness, createExtensionContextFixture, installGlobals} from "./testing";
 
 describe("offscreen", () => {
-    let originalChrome: any;
-    let contexts: chrome.runtime.ExtensionContext[];
+    let harness: BrowserHarness;
+    let restoreGlobals: () => void;
 
     beforeEach(() => {
-        originalChrome = globalThis.chrome;
-        contexts = [];
-
-        globalThis.chrome = {
-            runtime: {
-                id: "extension-id",
-                lastError: undefined,
-                getContexts: jest.fn((filter: chrome.runtime.ContextFilter, cb: (result: any) => void) => {
-                    const result = contexts.filter(context => {
-                        if (filter.contextTypes && !filter.contextTypes.includes(context.contextType)) {
-                            return false;
-                        }
-
-                        return !(
-                            filter.documentUrls &&
-                            (!context.documentUrl || !filter.documentUrls.includes(context.documentUrl))
-                        );
-                    });
-
-                    cb(result);
-                }),
-                getURL: jest.fn((path: string) => `chrome-extension://extension-id/${path.replace(/^\/+/, "")}`),
-            },
-            offscreen: {
-                closeDocument: jest.fn((cb: () => void) => cb()),
-                createDocument: jest.fn((_parameters: chrome.offscreen.CreateParameters, cb: () => void) => cb()),
-                hasDocument: jest.fn((cb: (result: boolean) => void) => cb(contexts.length !== 0)),
-            },
-        } as any;
+        harness = createBrowserHarness({extensionId: "extension-id"});
+        harness.configurable.chrome.offscreen.closeDocument.setResult(undefined);
+        harness.configurable.chrome.offscreen.createDocument.setResult(undefined);
+        harness.configurable.chrome.offscreen.hasDocument.setResult(false);
+        restoreGlobals = installGlobals({browser: undefined, chrome: harness.chrome});
     });
 
     afterEach(() => {
-        globalThis.chrome = originalChrome;
-        jest.resetAllMocks();
+        restoreGlobals();
     });
+
+    const setOffscreenContext = (documentUrl = "chrome-extension://extension-id/offscreen.html"): void => {
+        harness.runtime.setContexts([
+            createExtensionContextFixture({
+                contextId: "context-id",
+                contextType: "OFFSCREEN_DOCUMENT",
+                documentUrl,
+            }),
+        ]);
+    };
 
     test("should close the current offscreen document", async () => {
         await expect(closeOffscreen()).resolves.toBeUndefined();
-        expect(globalThis.chrome.offscreen.closeDocument).toHaveBeenCalledWith(expect.any(Function));
+        expect(harness.configurable.chrome.offscreen.closeDocument.calls).toMatchObject([
+            {args: [], callbackCalls: [[]], invocation: "callback"},
+        ]);
     });
 
     test("should create an offscreen document", async () => {
@@ -64,132 +52,68 @@ describe("offscreen", () => {
         };
 
         await expect(createOffscreen(parameters)).resolves.toBeUndefined();
-        expect(globalThis.chrome.offscreen.createDocument).toHaveBeenCalledWith(parameters, expect.any(Function));
+        expect(harness.configurable.chrome.offscreen.createDocument.calls).toMatchObject([
+            {args: [parameters], callbackCalls: [[]], invocation: "callback"},
+        ]);
     });
 
     test("should check whether an offscreen document exists", async () => {
         await expect(hasOffscreen()).resolves.toBe(false);
 
-        contexts = [
-            {
-                contextId: "context-id",
-                contextType: "OFFSCREEN_DOCUMENT",
-                documentUrl: "chrome-extension://extension-id/offscreen.html",
-                frameId: 0,
-                incognito: false,
-                tabId: -1,
-                windowId: -1,
-            },
-        ];
+        harness.configurable.chrome.offscreen.hasDocument.setResult(true);
 
         await expect(hasOffscreen()).resolves.toBe(true);
-        expect(globalThis.chrome.offscreen.hasDocument).toHaveBeenCalledWith(expect.any(Function));
+        expect(harness.configurable.chrome.offscreen.hasDocument.calls).toHaveLength(2);
     });
 
-    test("should return the current offscreen context", async () => {
-        const offscreenContext = {
+    test("should return the current offscreen context from stateful runtime contexts", async () => {
+        const offscreenContext = createExtensionContextFixture({
             contextId: "context-id",
             contextType: "OFFSCREEN_DOCUMENT",
             documentUrl: "chrome-extension://extension-id/offscreen.html",
-            frameId: 0,
-            incognito: false,
-            tabId: -1,
-            windowId: -1,
-        } as chrome.runtime.ExtensionContext;
-
-        contexts = [
-            {
-                ...offscreenContext,
-                contextId: "popup-id",
-                contextType: "POPUP",
-            },
+        });
+        harness.runtime.setContexts([
+            createExtensionContextFixture({contextId: "popup-id", contextType: "POPUP"}),
             offscreenContext,
-        ];
+        ]);
 
-        await expect(getOffscreenContext()).resolves.toBe(offscreenContext);
-        expect(globalThis.chrome.runtime.getContexts).toHaveBeenCalledWith(
-            {contextTypes: ["OFFSCREEN_DOCUMENT"]},
-            expect.any(Function)
-        );
+        await expect(getOffscreenContext()).resolves.toEqual(offscreenContext);
+        expect(harness.runtime.getContexts.calls).toMatchObject([
+            {
+                args: [{contextTypes: ["OFFSCREEN_DOCUMENT"]}],
+                callbackCalls: [[[offscreenContext]]],
+                invocation: "callback",
+            },
+        ]);
     });
 
     test("should return the current offscreen url", async () => {
-        contexts = [
-            {
-                contextId: "context-id",
-                contextType: "OFFSCREEN_DOCUMENT",
-                documentUrl: "chrome-extension://extension-id/offscreen.html",
-                frameId: 0,
-                incognito: false,
-                tabId: -1,
-                windowId: -1,
-            },
-        ];
+        setOffscreenContext();
 
         await expect(getOffscreenUrl()).resolves.toBe("chrome-extension://extension-id/offscreen.html");
     });
 
     test("should return the current offscreen pathname", async () => {
-        contexts = [
-            {
-                contextId: "context-id",
-                contextType: "OFFSCREEN_DOCUMENT",
-                documentUrl: "chrome-extension://extension-id/offscreen.html?mode=audio#ready",
-                frameId: 0,
-                incognito: false,
-                tabId: -1,
-                windowId: -1,
-            },
-        ];
+        setOffscreenContext("chrome-extension://extension-id/offscreen.html?mode=audio#ready");
 
         await expect(getOffscreenPath()).resolves.toBe("/offscreen.html");
     });
 
     test("should return undefined path for non-extension urls", async () => {
-        contexts = [
-            {
-                contextId: "context-id",
-                contextType: "OFFSCREEN_DOCUMENT",
-                documentUrl: "https://example.com/offscreen.html",
-                frameId: 0,
-                incognito: false,
-                tabId: -1,
-                windowId: -1,
-            },
-        ];
+        setOffscreenContext("https://example.com/offscreen.html");
 
         await expect(getOffscreenPath()).resolves.toBeUndefined();
     });
 
     test("should check the current offscreen url", async () => {
-        contexts = [
-            {
-                contextId: "context-id",
-                contextType: "OFFSCREEN_DOCUMENT",
-                documentUrl: "chrome-extension://extension-id/offscreen.html",
-                frameId: 0,
-                incognito: false,
-                tabId: -1,
-                windowId: -1,
-            },
-        ];
+        setOffscreenContext();
 
         await expect(hasOffscreenUrl("chrome-extension://extension-id/offscreen.html")).resolves.toBe(true);
         await expect(hasOffscreenUrl("chrome-extension://extension-id/other.html")).resolves.toBe(false);
     });
 
     test("should check the current offscreen path by pathname", async () => {
-        contexts = [
-            {
-                contextId: "context-id",
-                contextType: "OFFSCREEN_DOCUMENT",
-                documentUrl: "chrome-extension://extension-id/offscreen.html?mode=audio#ready",
-                frameId: 0,
-                incognito: false,
-                tabId: -1,
-                windowId: -1,
-            },
-        ];
+        setOffscreenContext("chrome-extension://extension-id/offscreen.html?mode=audio#ready");
 
         await expect(hasOffscreenPath("/offscreen.html")).resolves.toBe(true);
         await expect(hasOffscreenPath("/offscreen.html?mode=video#other")).resolves.toBe(true);

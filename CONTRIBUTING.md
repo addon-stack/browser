@@ -39,6 +39,7 @@ npm ci
 - `npm run format` — format with Biome
 - `npm run typecheck` — type-check with tsc
 - `npm test` / `npm run test:ci` — tests (Jest)
+- `npm run test:browser-match-patterns -- /absolute/path/to/browser` — real-browser match-pattern smoke (build first)
 
 Minimum Node.js version: current LTS (at release time).
 
@@ -133,7 +134,38 @@ Framework: **Jest** (`npm test`). Recommendations:
 - For events, verify that the returned function actually removes the listener.
 - Structure: co-locate tests with the module or use a `__tests__` folder.
 
-In CI use `npm run test:ci`.
+In CI use `npm run test:ci`. All test scripts (`npm test`, `npm run test:ci`, and `npm run test:related`) share the same Jest ESM launcher, including Node's `--experimental-vm-modules` flag. No manual `NODE_OPTIONS` setup is needed locally or in CI.
+
+Import Jest helpers explicitly in test files, for example `import {describe, expect, jest, test} from "@jest/globals"`. In ESM, the `jest` object is not a global. These imports belong only in test suites; the published `@addon-core/browser/testing` runtime remains runner-independent.
+
+### Browser match-pattern smoke
+
+Before releasing changes to the URL matcher or host-permission fake, run the real-browser smoke in addition to unit
+and clean-consumer tests. Obtain the full **Chrome for Testing** executable from the
+[official downloads](https://googlechromelabs.github.io/chrome-for-testing/) or use a Chromium build with extension
+support. No ChromeDriver, Playwright, or other automation package is needed. Do not use `chrome-headless-shell`.
+
+```sh
+npm run build
+npm run test:browser-match-patterns -- "/absolute/path/to/chrome-for-testing"
+```
+
+On macOS, pass the executable inside the app bundle, for example
+`/path/to/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing`, not the `.app` directory.
+The script verifies `--version` before starting. Regular Google Chrome is intentionally rejected:
+[Chrome 137+ removed `--load-extension` from branded builds](https://groups.google.com/a/chromium.org/g/chromium-extensions/c/1-g8EFx2BBY/m/S0ET5wPjCAAJ).
+A remaining timeout includes the selected binary/version, missing extension results, a setup hint, and bounded stderr.
+
+The smoke compares the built harness with real MV3 extension APIs, using a temporary browser profile and loopback
+HTTP server. It never uses your personal profile. It is separate from `npm test` so local unit tests need no browser.
+If the browser is unavailable locally, report the smoke as **not run**, not as passed.
+
+`.github/workflows/ci.yml` runs this command in one dedicated Ubuntu 22.04/Node 22 job using stable Chrome for Testing
+provided by `browser-actions/setup-chrome` (action revision pinned). The installed version is printed in the log.
+This runner keeps Chromium's sandbox enabled without working around the
+[AppArmor restrictions on downloaded binaries in Ubuntu 23.10+](https://pptr.dev/troubleshooting#issues-with-apparmor-on-ubuntu).
+The release workflow calls the same CI workflow and cannot publish if this job fails. This focused Chrome check is
+not Firefox/Safari validation or complete browser parity. See [scope and examples](docs/testing/match-patterns.md).
 
 ---
 
@@ -148,6 +180,9 @@ In CI use `npm run test:ci`.
 ## Releases and publishing (GitHub Actions + release-it)
 
 Releases are performed by maintainers.
+
+The reusable CI workflow includes the [browser match-pattern smoke](#browser-match-pattern-smoke). Keep it green
+alongside unit, type, build, and consumer checks before publishing; no separate manual browser-test waiver is implied.
 
 Flow (aligned with GitFlow):
 1) Merge features into `develop` via PRs.

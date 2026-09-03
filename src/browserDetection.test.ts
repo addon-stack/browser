@@ -7,65 +7,30 @@ import {
     isBrowser,
     isBrowserFamily,
 } from "./browserDetection";
+import {type BrowserHarness, createBrowserHarness, installBrowserGlobals} from "./testing";
 
 describe("browser detection", () => {
-    let originalBrowser: any;
-    let originalChrome: any;
-    let originalNavigatorDescriptor: PropertyDescriptor | undefined;
-    let originalOprDescriptor: PropertyDescriptor | undefined;
-    let originalSafariDescriptor: PropertyDescriptor | undefined;
+    let harness: BrowserHarness;
+    let restoreGlobals: () => void = () => undefined;
 
     beforeEach(() => {
-        originalBrowser = globalThis.browser;
-        originalChrome = globalThis.chrome;
-        originalNavigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, "navigator");
-        originalOprDescriptor = Object.getOwnPropertyDescriptor(globalThis, "opr");
-        originalSafariDescriptor = Object.getOwnPropertyDescriptor(globalThis, "safari");
-
-        delete (globalThis as any).browser;
-        delete (globalThis as any).chrome;
-        delete (globalThis as any).navigator;
-        delete (globalThis as any).opr;
-        delete (globalThis as any).safari;
+        harness = createBrowserHarness();
     });
 
     afterEach(() => {
-        (globalThis as any).browser = originalBrowser;
-        globalThis.chrome = originalChrome;
-        restoreGlobalProperty("navigator", originalNavigatorDescriptor);
-        restoreGlobalProperty("opr", originalOprDescriptor);
-        restoreGlobalProperty("safari", originalSafariDescriptor);
-        jest.resetAllMocks();
+        restoreGlobals();
+        restoreGlobals = () => undefined;
+        jest.restoreAllMocks();
     });
 
-    const setGlobalProperty = (name: string, value: any): void => {
-        Object.defineProperty(globalThis, name, {
-            configurable: true,
-            value,
-            writable: true,
+    test("guesses Firefox using runtime.getBrowserInfo from the Firefox facade", async () => {
+        harness.runtime.getBrowserInfo.setResult({
+            buildID: "20260708000000",
+            name: "Firefox",
+            vendor: "Mozilla",
+            version: "126.0",
         });
-    };
-
-    const restoreGlobalProperty = (name: string, descriptor: PropertyDescriptor | undefined): void => {
-        if (descriptor) {
-            Object.defineProperty(globalThis, name, descriptor);
-
-            return;
-        }
-
-        delete (globalThis as any)[name];
-    };
-
-    test("guesses Firefox using runtime.getBrowserInfo", async () => {
-        const getBrowserInfo = jest.fn(() =>
-            Promise.resolve({buildID: "20260708000000", name: "Firefox", vendor: "Mozilla", version: "126.0"})
-        );
-        (globalThis as any).browser = {
-            runtime: {
-                getBrowserInfo,
-                id: "firefox-extension-id",
-            },
-        };
+        restoreGlobals = installBrowserGlobals(harness, {context: "none", profile: "firefox"});
 
         await expect(guessBrowser()).resolves.toEqual({
             family: BrowserFamily.Firefox,
@@ -75,7 +40,9 @@ describe("browser detection", () => {
             vendor: "Mozilla",
             version: "126.0",
         });
-        expect(getBrowserInfo).toHaveBeenCalledTimes(1);
+        expect(harness.runtime.getBrowserInfo.calls).toMatchObject([
+            {args: [], callback: undefined, invocation: "promise"},
+        ]);
     });
 
     test("guesses Edge using userAgentData fullVersionList", async () => {
@@ -87,14 +54,20 @@ describe("browser detection", () => {
                 ],
             })
         );
-        setGlobalProperty("navigator", {
-            userAgentData: {
-                brands: [
-                    {brand: "Chromium", version: "126"},
-                    {brand: "Microsoft Edge", version: "126"},
-                ],
-                getHighEntropyValues,
+        restoreGlobals = installBrowserGlobals(harness, {
+            context: "none",
+            globals: {
+                navigator: {
+                    userAgentData: {
+                        brands: [
+                            {brand: "Chromium", version: "126"},
+                            {brand: "Microsoft Edge", version: "126"},
+                        ],
+                        getHighEntropyValues,
+                    },
+                },
             },
+            profile: "chrome",
         });
 
         await expect(guessBrowser()).resolves.toEqual({
@@ -109,11 +82,15 @@ describe("browser detection", () => {
 
     test("guesses Brave before generic Chromium brands", async () => {
         const isBrave = jest.fn(() => Promise.resolve(true));
-        setGlobalProperty("navigator", {
-            brave: {isBrave},
-            userAgentData: {
-                brands: [{brand: "Chromium", version: "126"}],
+        restoreGlobals = installBrowserGlobals(harness, {
+            context: "none",
+            globals: {
+                navigator: {
+                    brave: {isBrave},
+                    userAgentData: {brands: [{brand: "Chromium", version: "126"}]},
+                },
             },
+            profile: "chrome",
         });
 
         await expect(guessBrowser()).resolves.toEqual({
@@ -125,9 +102,15 @@ describe("browser detection", () => {
     });
 
     test("guesses Edge using navigator.userAgent fallback", async () => {
-        setGlobalProperty("navigator", {
-            userAgent:
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.2592.87",
+        restoreGlobals = installBrowserGlobals(harness, {
+            context: "none",
+            globals: {
+                navigator: {
+                    userAgent:
+                        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.2592.87",
+                },
+            },
+            profile: "chrome",
         });
 
         await expect(guessBrowser()).resolves.toMatchObject({
@@ -138,24 +121,67 @@ describe("browser detection", () => {
         });
     });
 
+    test("uses the Opera vendor marker when navigator hints are unavailable", async () => {
+        restoreGlobals = installBrowserGlobals(harness, {
+            context: "none",
+            globals: {navigator: {}},
+            profile: "opera",
+        });
+
+        await expect(guessBrowser()).resolves.toEqual({
+            family: BrowserFamily.Chromium,
+            name: BrowserName.Opera,
+            source: BrowserGuessSource.BrowserGlobal,
+        });
+        expect(globalThis.opr).toBeDefined();
+        expect(globalThis.safari).toBeUndefined();
+    });
+
+    test("uses the Safari vendor marker and removes the Opera marker", async () => {
+        restoreGlobals = installBrowserGlobals(harness, {
+            context: "none",
+            globals: {navigator: {}},
+            profile: "safari",
+        });
+
+        await expect(guessBrowser()).resolves.toEqual({
+            family: BrowserFamily.Safari,
+            name: BrowserName.Safari,
+            source: BrowserGuessSource.BrowserGlobal,
+        });
+        expect(globalThis.safari).toBeDefined();
+        expect(globalThis.opr).toBeUndefined();
+    });
+
     test("falls back to Chromium for chrome-extension urls", async () => {
-        const getURL = jest.fn((_path: string) => "chrome-extension://extension-id/");
-        globalThis.chrome = {
-            runtime: {
-                getURL,
-                id: "extension-id",
-            },
-        } as any;
+        restoreGlobals = installBrowserGlobals(harness, {
+            context: "none",
+            globals: {navigator: {}},
+            profile: "chrome",
+        });
 
         await expect(guessBrowser()).resolves.toEqual({
             family: BrowserFamily.Chromium,
             name: BrowserName.Chromium,
             source: BrowserGuessSource.ExtensionUrl,
         });
-        expect(getURL).toHaveBeenCalledWith("");
+        expect(harness.runtime.getURL.calls[0]?.args).toEqual([""]);
+        expect("getBrowserInfo" in globalThis.chrome.runtime).toBe(false);
     });
 
-    test("returns unknown when no browser signals are available", async () => {
+    test("returns unknown when a custom profile removes all browser signals", async () => {
+        restoreGlobals = installBrowserGlobals(harness, {
+            context: "none",
+            globals: {
+                browser: undefined,
+                chrome: undefined,
+                navigator: undefined,
+                opr: undefined,
+                safari: undefined,
+            },
+            profile: "custom",
+        });
+
         await expect(guessBrowser()).resolves.toEqual({
             family: BrowserFamily.Unknown,
             name: BrowserName.Unknown,

@@ -139,6 +139,13 @@ In addition to Chrome API wrappers, this package provides a set of low-level uti
 
 For a complete list of utility functions and examples, see the [Utilities Documentation](docs/utils.md).
 
+## Testing
+
+The framework-agnostic [`@addon-core/browser/testing`](docs/testing.md) subpath provides deterministic fixtures,
+configurable browser methods and events, stateful runtime/permissions/tabs/windows/scripting fakes, and reversible
+browser-global installation. Importing it never changes `globalThis`, and it has no dependency on Jest or another test
+runner.
+
 ## Not yet covered
 
 These commonly used WebExtensions/Chrome Extension APIs are not wrapped here yet (Chrome OS–only APIs are intentionally omitted). If you’d like to contribute, please see [CONTRIBUTING.md](CONTRIBUTING.md) and open an issue/PR.
