@@ -30,7 +30,7 @@ try {
     cpSync(fixtureDirectory, consumerDirectory, {recursive: true});
     writeFileSync(join(consumerDirectory, "package.json"), '{"private":true,"type":"module"}\n');
 
-    execFileSync(npm, ["install", "--ignore-scripts", "--no-package-lock", "--no-save", archive], {
+    execFileSync(npm, ["install", "--ignore-scripts", "--no-package-lock", "--no-save", archive, "jsdom@26.1.0"], {
         ...npmOptions,
         cwd: consumerDirectory,
         stdio: "inherit",
@@ -76,6 +76,16 @@ try {
 
     execFileSync(process.execPath, [join(consumerDirectory, "esm.mjs")], {cwd: consumerDirectory, stdio: "inherit"});
     execFileSync(process.execPath, [join(consumerDirectory, "cjs.cjs")], {cwd: consumerDirectory, stdio: "inherit"});
+    execFileSync(process.execPath, [join(consumerDirectory, "dom.mjs")], {cwd: consumerDirectory, stdio: "inherit"});
+
+    for (const format of ["esm", "cjs"]) {
+        for (const installer of ["raw", "profile"]) {
+            execFileSync(process.execPath, [join(consumerDirectory, "globals-restore.cjs"), format, installer], {
+                cwd: consumerDirectory,
+                stdio: "inherit",
+            });
+        }
+    }
 } finally {
     rmSync(temporaryDirectory, {force: true, recursive: true});
 }

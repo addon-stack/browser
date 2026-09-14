@@ -1,0 +1,314 @@
+[
+  {
+    "name": "BrowserCapabilitiesHarness",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserContext",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserContextFilter",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserContextInfo",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserContextKind",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserContextLifetime",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserContextOptions",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserContextSeed",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserContextsHarness",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserDelaysHarness",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserDocument",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserDocumentOptions",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserDocumentsHarness",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserEventApi",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserEventHarness",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserEventListener",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserEventRegistration",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserHarness",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserHarnessCall",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserHarnessOptions",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserMethod",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserMethodCall",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserMethodCallback",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserMethodInvocation",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserMethodInvocationStyle",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserMethodObservedInvocation",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserMethodOptions",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserProfile",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserTestApi",
+    "hasValue": false
+  },
+  {
+    "name": "ConfigurableHarness",
+    "hasValue": false
+  },
+  {
+    "name": "ContextRegistryOptions",
+    "hasValue": false
+  },
+  {
+    "name": "createBrowserEvent",
+    "hasValue": true
+  },
+  {
+    "name": "createBrowserHarness",
+    "hasValue": true
+  },
+  {
+    "name": "createBrowserMethod",
+    "hasValue": true
+  },
+  {
+    "name": "createExtensionContextFixture",
+    "hasValue": true
+  },
+  {
+    "name": "createInjectionResultFixture",
+    "hasValue": true
+  },
+  {
+    "name": "createInstalledDetailsFixture",
+    "hasValue": true
+  },
+  {
+    "name": "createManifestFixture",
+    "hasValue": true
+  },
+  {
+    "name": "createMessageSenderFixture",
+    "hasValue": true
+  },
+  {
+    "name": "createPermissionsFixture",
+    "hasValue": true
+  },
+  {
+    "name": "createTabFixture",
+    "hasValue": true
+  },
+  {
+    "name": "createWindowFixture",
+    "hasValue": true
+  },
+  {
+    "name": "EXPECTED_ROOT_RUNTIME_EXPORT_COUNT",
+    "hasValue": true
+  },
+  {
+    "name": "EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT",
+    "hasValue": true
+  },
+  {
+    "name": "ExtensionContextKind",
+    "hasValue": false
+  },
+  {
+    "name": "FirefoxSidebarActionTestApi",
+    "hasValue": false
+  },
+  {
+    "name": "getPublicExportCoverage",
+    "hasValue": true
+  },
+  {
+    "name": "getRawCapability",
+    "hasValue": true
+  },
+  {
+    "name": "installBrowserGlobals",
+    "hasValue": true
+  },
+  {
+    "name": "InstallBrowserGlobalsOptions",
+    "hasValue": false
+  },
+  {
+    "name": "installGlobals",
+    "hasValue": true
+  },
+  {
+    "name": "ListenerErrorBuffer",
+    "hasValue": false
+  },
+  {
+    "name": "ListenerErrorKind",
+    "hasValue": false
+  },
+  {
+    "name": "ListenerErrorRecord",
+    "hasValue": false
+  },
+  {
+    "name": "LocationTestValue",
+    "hasValue": false
+  },
+  {
+    "name": "NavigatorTestValue",
+    "hasValue": false
+  },
+  {
+    "name": "OperaSidebarActionTestApi",
+    "hasValue": false
+  },
+  {
+    "name": "PermissionsTestApi",
+    "hasValue": false
+  },
+  {
+    "name": "PUBLIC_EXPORT_COVERAGE",
+    "hasValue": true
+  },
+  {
+    "name": "PublicExportCoverage",
+    "hasValue": false
+  },
+  {
+    "name": "PublicExportCoverageEntry",
+    "hasValue": false
+  },
+  {
+    "name": "PublicExportKind",
+    "hasValue": false
+  },
+  {
+    "name": "RAW_CAPABILITY_COVERAGE",
+    "hasValue": true
+  },
+  {
+    "name": "RawCapabilityCoverage",
+    "hasValue": false
+  },
+  {
+    "name": "RawCapabilityEntry",
+    "hasValue": false
+  },
+  {
+    "name": "RawCapabilityKind",
+    "hasValue": false
+  },
+  {
+    "name": "RawFailureChannel",
+    "hasValue": false
+  },
+  {
+    "name": "RawMethodInvocation",
+    "hasValue": false
+  },
+  {
+    "name": "RuntimeTestApi",
+    "hasValue": false
+  },
+  {
+    "name": "ScriptingTestApi",
+    "hasValue": false
+  },
+  {
+    "name": "SidebarFlavor",
+    "hasValue": false
+  },
+  {
+    "name": "SidebarHarness",
+    "hasValue": false
+  },
+  {
+    "name": "SidePanelTestApi",
+    "hasValue": false
+  },
+  {
+    "name": "TabsTestApi",
+    "hasValue": false
+  },
+  {
+    "name": "TestGlobalValues",
+    "hasValue": false
+  },
+  {
+    "name": "TYPE_ONLY_ROOT_EXPORTS",
+    "hasValue": true
+  },
+  {
+    "name": "WindowsTestApi",
+    "hasValue": false
+  },
+  {
+    "name": "WindowTestValue",
+    "hasValue": false
+  }
+]

@@ -1,31 +1,29 @@
-import {createBrowserMemoryState} from "./browser-state";
-import {
-    type ConfigurableBrowserControls,
-    type ConfigurableNamespaces,
-    createConfigurableNamespaces,
-} from "./configurable";
-import {type BrowserDelaysHarness, createBrowserDelaysHarness} from "./delays";
-import {createLastErrorController} from "./internal";
-import {createListenerErrorCapture, type ListenerErrorBuffer} from "./listener-errors";
-import type {BrowserMethodCall} from "./method";
-import {createPermissionsHarness, type PermissionsHarness} from "./permissions";
-import {createRuntimeHarness, type RuntimeHarness} from "./runtime";
-import {createScriptingHarness, type ScriptingHarness} from "./scripting";
-import {createTabsHarness, type TabsHarness} from "./tabs";
+import type {BrowserDelaysHarness} from "./api";
+import {type ConfigurableBrowserControls, type ConfigurableNamespaces, createConfigurableNamespaces} from "./api/configurable";
+import {createBrowserDelaysHarness} from "./api/delays";
+import {createPermissionsHarness, type PermissionsHarness} from "./api/permissions";
+import {createRuntimeHarness, type RuntimeHarness} from "./api/runtime";
+import {createScriptingHarness, type ScriptingHarness} from "./api/scripting";
+import {createTabsHarness, type TabsHarness} from "./api/tabs";
+import {createWindowsHarness, type WindowsHarness} from "./api/windows";
+import type {ListenerErrorBuffer} from "./environment";
+import {createListenerErrorCapture} from "./environment/listener-errors";
+import {sidebarDefaultForProfile} from "./environment/profiles";
+import type {BrowserContextsHarness, ContextRegistryOptions} from "./model";
+import {createBrowserMemoryState} from "./model/browser-state";
+import type {BrowserHarnessCall, BrowserMethodCall} from "./primitives";
+import {createLastErrorController} from "./primitives/last-error";
 import type {
-    BrowserHarnessCall,
     BrowserProfile,
     BrowserTestApi,
     OperaSidebarActionTestApi,
     SidebarFlavor,
 } from "./types";
-import {createWindowsHarness, type WindowsHarness} from "./windows";
 
-export interface BrowserHarnessOptions {
+export interface BrowserHarnessOptions extends ContextRegistryOptions {
     extensionId?: string;
     manifest?: chrome.runtime.Manifest;
     permissions?: chrome.permissions.Permissions;
-    contexts?: readonly chrome.runtime.ExtensionContext[];
     messageSender?: chrome.runtime.MessageSender;
     tabs?: readonly chrome.tabs.Tab[];
     windows?: readonly chrome.windows.Window[];
@@ -56,6 +54,7 @@ export interface BrowserHarness {
     readonly chrome: BrowserTestApi;
     readonly browser: BrowserTestApi;
     readonly runtime: RuntimeHarness;
+    readonly contexts: BrowserContextsHarness;
     readonly permissions: PermissionsHarness;
     readonly tabs: TabsHarness;
     readonly windows: WindowsHarness;
@@ -67,6 +66,8 @@ export interface BrowserHarness {
     readonly listenerErrors: ListenerErrorBuffer;
     readonly calls: readonly BrowserHarnessCall[];
     reset(): void;
+    /** @internal Snapshot installation-owned profile settings for rollback and nested restoration. */
+    captureProfileState(): () => void;
     /** @internal Used by the profile installer. */
     setActiveProfile(profile: BrowserProfile): void;
     /** @internal Used by the profile installer without overriding an explicit flavor. */
@@ -109,16 +110,6 @@ const cloneFacade = (api: BrowserTestApi): BrowserTestApi => {
     return copy;
 };
 
-const sidebarDefaultForProfile = (profile: BrowserProfile): SidebarFlavor => {
-    if (profile === "firefox") return "firefoxSidebarAction";
-
-    if (profile === "opera") return "operaSidebarAction";
-
-    if (profile === "chrome") return "sidePanel";
-
-    return "none";
-};
-
 export const createBrowserHarness = (options: BrowserHarnessOptions = {}): BrowserHarness => {
     let sequence = 0;
     const nextSequence = (): number => ++sequence;
@@ -126,7 +117,8 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
     const state = createBrowserMemoryState({tabs: options.tabs, windows: options.windows});
     const configChrome = createConfigurableNamespaces({facade: "chrome", lastError, nextSequence});
     const configBrowser = createConfigurableNamespaces({facade: "browser", lastError, nextSequence});
-    const runtime = createRuntimeHarness(options, lastError, nextSequence);
+    const runtime = createRuntimeHarness(options, lastError, nextSequence, state);
+    state.onTabRemoved(runtime.removeTabContexts);
     const permissions = createPermissionsHarness(options.permissions, lastError, nextSequence);
     const tabs = createTabsHarness(state, lastError, nextSequence);
     const windows = createWindowsHarness(state, tabs, lastError, nextSequence);
@@ -300,6 +292,7 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         chrome,
         browser,
         runtime,
+        contexts: runtime.contextRegistry,
         permissions,
         tabs,
         windows,
@@ -309,6 +302,59 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         capabilities,
         sidebar,
         listenerErrors: listenerCapture,
+        captureProfileState() {
+            const previousProfile = activeProfile;
+            const previousScheme = runtime.urlScheme;
+            const previousFlavor = sidebarFlavor;
+            const previousExplicit = sidebarExplicit;
+            const previousBrowserInfoExplicit = explicitCapabilities.has("runtime.getBrowserInfo");
+            const restoreForward = listenerCapture.captureForward();
+
+            const descriptors = [{name: "chrome", api: chrome}, {name: "browser", api: browser}].flatMap(({name, api}) => [
+                {path: `${name}.sidePanel`, key: "sidePanel", target: api},
+                {path: `${name}.sidebarAction`, key: "sidebarAction", target: api},
+                {path: `${name}.runtime.getBrowserInfo`, key: "getBrowserInfo", target: api.runtime},
+            ]).map(entry => ({...entry, descriptor: Object.getOwnPropertyDescriptor(entry.target, entry.key)}));
+
+            return () => {
+                activeProfile = previousProfile;
+                sidebarFlavor = previousFlavor;
+                sidebarExplicit = previousExplicit;
+
+                if (previousBrowserInfoExplicit) explicitCapabilities.add("runtime.getBrowserInfo");
+                else explicitCapabilities.delete("runtime.getBrowserInfo");
+
+                const cleanups = [
+                    () => runtime.setUrlScheme(previousScheme),
+                    restoreForward,
+                    ...descriptors.map(({path, key, target, descriptor}) => () => {
+                        let restored: boolean;
+
+                        try {
+                            restored = descriptor
+                                ? Reflect.defineProperty(target, key, descriptor)
+                                : Reflect.deleteProperty(target, key);
+                        } catch (cause) {
+                            throw new Error(`Unable to restore harness ${path}`, {cause});
+                        }
+
+                        if (!restored) throw new Error(`Unable to restore harness ${path}`);
+                    }),
+                ];
+
+                const failures: unknown[] = [];
+
+                for (const cleanup of cleanups) {
+                    try {
+                        cleanup();
+                    } catch (error) {
+                        failures.push(error);
+                    }
+                }
+
+                if (failures.length > 0) throw new AggregateError(failures, "Unable to restore browser harness profile");
+            };
+        },
         get calls() {
             return [...callSources.flatMap(methodCalls), ...configChrome.calls, ...configBrowser.calls].sort(
                 (left, right) => left.sequence - right.sequence
@@ -334,7 +380,13 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         reset(): void {
             sequence = 0;
             state.reset();
-            runtime.reset();
+            const cleanupErrors: unknown[] = [];
+
+            try {
+                runtime.reset();
+            } catch (error) {
+                cleanupErrors.push(error);
+            }
 
             if (activeProfile === "firefox") runtime.setUrlScheme("moz-extension");
             else if (activeProfile === "safari") runtime.setUrlScheme("safari-web-extension");
@@ -359,6 +411,8 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
             sidebarExplicit = false;
             sidebarFlavor = sidebarDefaultForProfile(activeProfile);
             applySidebarFlavor();
+
+            if (cleanupErrors.length > 0) throw new AggregateError(cleanupErrors, "Browser harness context cleanup failed");
         },
         setActiveProfile(profile) {
             activeProfile = profile;
@@ -378,5 +432,3 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         },
     };
 };
-
-export {sidebarDefaultForProfile};

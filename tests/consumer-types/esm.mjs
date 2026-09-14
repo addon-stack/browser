@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import checkContexts from "./contexts.cjs";
 
 const beforeChrome = Object.getOwnPropertyDescriptor(globalThis, "chrome");
 const beforeBrowser = Object.getOwnPropertyDescriptor(globalThis, "browser");
@@ -7,6 +8,8 @@ const testing = await import("@addon-core/browser/testing");
 
 assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "chrome"), beforeChrome);
 assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "browser"), beforeBrowser);
+
+await checkContexts(production, testing);
 
 const harness = testing.createBrowserHarness({
     manifest: testing.createManifestFixture({name: "ESM consumer"}),

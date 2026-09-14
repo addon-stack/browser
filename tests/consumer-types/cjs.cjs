@@ -1,4 +1,5 @@
 const assert = require("node:assert/strict");
+const checkContexts = require("./contexts.cjs");
 
 const beforeChrome = Object.getOwnPropertyDescriptor(globalThis, "chrome");
 const beforeBrowser = Object.getOwnPropertyDescriptor(globalThis, "browser");
@@ -9,6 +10,8 @@ assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "chrome"), beforeCh
 assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "browser"), beforeBrowser);
 
 async function checkConsumer() {
+    await checkContexts(production, testing);
+
     const harness = testing.createBrowserHarness({
         manifest: testing.createManifestFixture({name: "CJS consumer"}),
         tabs: [testing.createTabFixture({id: 7, url: "http://127.0.0.1:62778/top.html#part"})],

@@ -97,6 +97,38 @@ async function probe(config) {
             report.permissions.push(await chrome.permissions.contains({origins: [origin]}));
         }
 
+        await chrome.scripting.executeScript({target: {tabId: tab.id}, func: () => chrome.runtime.id});
+        report.contentContexts = (await chrome.runtime.getContexts({tabIds: [tab.id]})).length;
+        const extensionUrl = chrome.runtime.getURL("page.html");
+        const extensionTab = await chrome.tabs.create({url: extensionUrl, active: false});
+
+        while ((await chrome.tabs.get(extensionTab.id)).status !== "complete") {
+            if (Date.now() > deadline) throw new Error("Extension context tab did not load");
+
+            await new Promise(resolveDelay => setTimeout(resolveDelay, 25));
+        }
+
+        report.extensionTab = await chrome.tabs.get(extensionTab.id);
+        report.contexts = await chrome.runtime.getContexts({});
+
+        report.contextFilters = [
+            {},
+            {contextTypes: ["BACKGROUND"]},
+            {contextTypes: ["TAB"]},
+            {tabIds: [extensionTab.id]},
+            {tabIds: [tab.id]},
+            {documentUrls: [extensionUrl]},
+            {contextIds: []},
+            {incognito: false, contextTypes: ["BACKGROUND"], tabIds: [extensionTab.id]},
+        ];
+
+        report.contextSelections = [];
+
+        for (const filter of report.contextFilters) {
+            report.contextSelections.push((await chrome.runtime.getContexts(filter)).map(context => context.contextId).sort());
+        }
+
+        await chrome.tabs.remove(extensionTab.id);
         await chrome.tabs.remove(tab.id);
     } catch (error) {
         report.error = String(error.stack || error);
@@ -140,7 +172,7 @@ try {
                 manifest_version: 3,
                 name: `Match smoke ${profile.name}`,
                 version: "1.0.0",
-                permissions: ["tabs"],
+                permissions: ["tabs", "scripting"],
                 host_permissions: profile.origins,
                 background: {service_worker: "worker.js"},
             })
@@ -150,6 +182,8 @@ try {
             join(directory, "worker.js"),
             `chrome.runtime.onInstalled.addListener(() => (${probe.toString()})(${JSON.stringify({name: profile.name, base, patterns, requestedOrigins})}));`
         );
+
+        await writeFile(join(directory, "page.html"), "<!doctype html><title>Extension context smoke</title>");
 
         extensions.push(directory);
     }
@@ -201,9 +235,20 @@ try {
         assert.equal(result.error, undefined, result.error);
 
         const harness = createBrowserHarness({
-            tabs: [createTabFixture(result.tab)],
+            tabs: [createTabFixture(result.tab), createTabFixture(result.extensionTab)],
             permissions: {origins: profile.origins},
+            contexts: result.contexts,
         });
+
+        assert.equal(result.contentContexts, 0, "runtime.getContexts must not enumerate content scripts");
+        assert.deepEqual(result.contexts.map(context => context.contextType).sort(), ["BACKGROUND", "TAB"]);
+        harness.contexts.create({kind: "contentScript", tabId: result.tab.id, url: result.tab.url});
+
+        for (const [index, filter] of result.contextFilters.entries()) {
+            const selected = await harness.chrome.runtime.getContexts(filter);
+            assert.deepEqual(selected.map(context => context.contextId).sort(), result.contextSelections[index]);
+            assertions++;
+        }
 
         for (const [index, url] of patterns.entries()) {
             const tabs = await harness.chrome.tabs.query({url, active: false, status: "complete", discarded: false});

@@ -7,6 +7,9 @@ import {
     queryTabs,
 } from "@addon-core/browser";
 import {
+    type BrowserContext,
+    type BrowserContextInfo,
+    type BrowserDocument,
     type BrowserHarness,
     type BrowserMethod,
     createBrowserHarness,
@@ -21,6 +24,14 @@ const harness: BrowserHarness = createBrowserHarness({
 });
 
 const restore = installBrowserGlobals(harness, {profile: "firefox"});
+const document: BrowserDocument = harness.contexts.documents.create({tabId: 7, url: "https://example.test/"});
+const context: BrowserContext = harness.contexts.create({kind: "contentScript", documentId: document.documentId});
+const contexts: readonly BrowserContextInfo[] = harness.contexts.list({kinds: ["contentScript"], tabIds: [7]});
+const tracked: Promise<number> = context.track(Promise.resolve(1));
+const cleanup: () => void = context.onDispose(() => undefined);
+void contexts;
+void tracked;
+cleanup();
 const manifestName: string = getManifest().name;
 const queryResult: Promise<chrome.tabs.Tab[]> = queryTabs({active: true});
 
@@ -60,6 +71,7 @@ void hasHostAccess;
 void alarmCreated;
 unsubscribeAlarm();
 restore();
+installBrowserGlobals(harness, {environment: "preserve"})();
 
 onTabUpdated((tabId, changeInfo, tab) => {
     const id: number = tabId;

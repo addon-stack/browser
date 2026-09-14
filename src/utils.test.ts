@@ -1,6 +1,6 @@
 import {afterEach, describe, expect, jest, test} from "@jest/globals";
 import {type BrowserTestApi, createBrowserEvent, installGlobals} from "./testing";
-import {createListenerErrorCapture} from "./testing/listener-errors";
+import {createListenerErrorCapture} from "./testing/environment/listener-errors";
 import {callWithPromise, checkLastError, handleListener, safeListener} from "./utils";
 
 const runtimeApi = (lastError?: chrome.runtime.LastError): BrowserTestApi =>

@@ -129,7 +129,9 @@ const listRuntimeSources = directory =>
 
         if (entry.isDirectory()) return listRuntimeSources(file);
 
-        if (!entry.name.endsWith(".ts") || entry.name.endsWith(".test.ts")) return [];
+        assert.doesNotMatch(entry.name, /\.(?:test|spec)\.[cm]?[jt]sx?$/, `Move test ${file} to tests/testing`);
+
+        if (!entry.name.endsWith(".ts")) return [];
 
         return [{file, source: readFileSync(file, "utf8")}];
     });
