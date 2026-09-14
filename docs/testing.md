@@ -43,6 +43,7 @@ they read are supplied by the test.
 - [Harness and globals](testing/harness.md) provide browser profiles, state, capabilities, reset, and exact global
   restoration.
 - [URL patterns and host permissions](testing/match-patterns.md) cover wildcard tab queries and granted-origin checks.
+- [Contexts and documents](testing/contexts.md) provide a shared registry, context-local subscriptions and cleanup.
 - [Jest usage](testing/jest.md) shows how to combine the kit with Jest without making the kit depend on Jest.
 - [Limitations](testing/limitations.md) describes intentional differences from real browsers.
 
@@ -60,3 +61,5 @@ browser compatibility, manifest behavior, security boundaries, lifecycle timing,
 Every harness owns independent state. Call `harness.reset()` between tests when reusing one harness, or create a fresh
 harness per test. Always call the restore function returned by `installBrowserGlobals()` in `finally`; it is safe to
 call more than once and restores the original property descriptors.
+Restore nested installations in reverse order. Use `environment: "preserve"` in jsdom or when the test already owns
+`window`, `document`, `location`, or `navigator`; see [preserving an existing environment](testing/harness.md#preserving-an-existing-environment).

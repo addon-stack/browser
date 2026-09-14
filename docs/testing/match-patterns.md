@@ -106,6 +106,8 @@ npm run test:browser-match-patterns -- "/absolute/path/to/chrome-for-testing"
 
 The script uses a temporary MV3 extension/profile and loopback HTTP server, compares the real browser with the built
 harness, and removes its temporary files. It needs no automation package and is separate from the normal unit tests.
+The same script also checks the [context registry's runtime query projection](contexts.md#runtime-queries-and-fixtures),
+including extension-page visibility and exclusion of content scripts from `runtime.getContexts()`.
 It requires the full Chrome for Testing or Chromium executable, not regular Google Chrome or `chrome-headless-shell`.
 The launcher verifies the browser's `--version` before starting the smoke. A dedicated CI job runs it automatically,
 including before release. See [contributor setup and troubleshooting](../../CONTRIBUTING.md#browser-match-pattern-smoke).

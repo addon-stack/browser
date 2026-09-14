@@ -18,8 +18,12 @@ Chrome, Firefox, Safari, Opera, or any other real browser.
   policy. Grant storage and removal remain exact-entry operations, without partial wildcard subtraction.
 - Complex APIs outside runtime, permissions, tabs, windows, and the scripting content-script registry are configurable
   stubs. They do not simulate the browser unless the test supplies an implementation or result.
-- `tabs.sendMessage()` and `tabs.connect()` are configurable stubs. The kit does not create content-script contexts,
-  route messages to a particular tab/frame, or simulate long-lived ports.
+- `tabs.sendMessage()` and `tabs.connect()` are configurable stubs. The [context registry](contexts.md) can represent
+  content scripts, documents and frames, but does not load application code, route messages between them or simulate
+  long-lived ports. Context-local `onMessage.emit()` is a separate manual event, not a routed request/response channel.
+- `runtime.getContexts()` reads registered extension contexts and excludes content scripts. Document/frame lifetimes
+  and cleanup are explicit; updating a tab URL does not simulate navigation. `offscreen.createDocument()`,
+  `hasDocument()` and `closeDocument()` remain configurable stubs and do not modify this registry yet.
 - `runtime.sendMessage()` resolves `undefined` when there are no message listeners. Chrome can instead report
   `Could not establish connection. Receiving end does not exist.` through callback-scoped `runtime.lastError` (or a
   rejected Promise).
@@ -32,6 +36,14 @@ Chrome, Firefox, Safari, Opera, or any other real browser.
 - Browser profiles model routing and common compatibility shapes, not complete vendor parity. In the Firefox profile,
   production wrappers normally use `harness.browser`; configuring the separate `harness.chrome` facade does not change
   that routing.
+- `environment: "preserve"` installs API namespaces and vendor markers without changing `window`, `document`,
+  `location` or `navigator`. UA-based detection still sees the original environment, not a simulated profile UA.
+  Context registration does not install globals or provide isolated JavaScript realms. Tracked operations reject on
+  disposal, but external work must cooperate with `context.signal` to stop its own side effects.
+- Global restoration cannot undo a property made non-configurable by the test or application. An in-order restore
+  attempts the remaining descriptors and harness settings, reports failures, and releases its stack entry; repeated
+  calls are no-ops even after failure. An out-of-order call changes nothing and can be retried after restoring the inner
+  installation. Use isolated processes for tests that irreversibly change globals.
 - Browser-event dispatch uses a listener snapshot. A listener removed by another listener during the same `emit()` is
   still called for that dispatch; Chrome and DOM events skip a listener removed before its turn.
 - The production `download()` helper retains its real 100 ms validation delay by default, including after
