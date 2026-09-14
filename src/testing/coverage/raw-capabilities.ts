@@ -76,11 +76,20 @@ const propertyCapabilities = (
     }));
 
 /**
- * Raw WebExtension members used by the production wrappers. The harness may
+ * Raw WebExtension members used by production wrappers and supported consumers (including Storage). The harness may
  * model a member statefully or expose a configurable test double, but it must
  * never synthesize an unlisted browser capability.
  */
 export const RAW_CAPABILITY_COVERAGE: readonly RawCapabilityEntry[] = [
+    ...["local", "sync", "session", "managed"].flatMap(area => [
+        ...methodCapabilities(`storage.${area}`, "stateful", {chrome: "dual", browser: "dual"}, ["get", "set", "remove", "clear", "getKeys"], {
+            get: ["all", "string", "string[]", "defaults"],
+            set: [area === "managed" ? "read-only" : "serialized enumerable data"],
+        }),
+        ...methodCapabilities(`storage.${area}`, area === "local" || area === "sync" ? "stateful" : "configurable", {chrome: "dual", browser: "dual"}, ["getBytesInUse"]),
+        ...eventCapabilities(`storage.${area}`, ["onChanged"]),
+    ]),
+    ...eventCapabilities("storage", ["onChanged"]),
     ...methodCapabilities("action", "configurable", callbackInvocation, [
         "disable",
         "enable",

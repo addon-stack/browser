@@ -1,4 +1,13 @@
 import type {ConfigurableBrowserApi} from "./api/configurable";
+import type {BrowserEventApi} from "./primitives";
+
+export type StorageAreaTestApi = Pick<chrome.storage.StorageArea, "get" | "getKeys" | "getBytesInUse" | "set" | "remove" | "clear"> & {
+    onChanged: BrowserEventApi<[Record<string, chrome.storage.StorageChange>]>;
+};
+
+export type StorageTestApi = Record<chrome.storage.AreaName, StorageAreaTestApi> & {
+    onChanged: BrowserEventApi<[Record<string, chrome.storage.StorageChange>, chrome.storage.AreaName]>;
+};
 
 export type RuntimeTestApi = Pick<
     typeof chrome.runtime,
@@ -147,6 +156,7 @@ export type BrowserTestApi = Omit<
     "permissions" | "runtime" | "scripting" | "sidePanel" | "tabs" | "windows"
 > & {
     runtime: RuntimeTestApi & ConfigurableBrowserApi["runtime"];
+    storage: StorageTestApi;
     permissions: PermissionsTestApi & ConfigurableBrowserApi["permissions"];
     tabs: TabsTestApi & ConfigurableBrowserApi["tabs"];
     windows: WindowsTestApi & ConfigurableBrowserApi["windows"];

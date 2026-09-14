@@ -83,7 +83,7 @@ success. Tests that deliberately make irreversible global changes should run in 
 
 ## Stateful and configurable controls
 
-`harness.contexts` owns [contexts and documents](contexts.md). `harness.runtime`, `harness.permissions`, `harness.tabs`, `harness.windows`, and `harness.scripting` expose the stateful
+`harness.contexts` owns [contexts and documents](contexts.md). `harness.runtime`, `harness.permissions`, `harness.tabs`, `harness.windows`, `harness.storage`, and `harness.scripting` expose the stateful
 controls and their methods/events. A namespace can still contain configurable members: for example,
 `tabs.sendMessage` and `tabs.connect` record calls but do not invent tab-context message or port routing. Complex
 namespaces are explicit configurable stubs:

@@ -12,3 +12,4 @@ export type {
     BrowserDocumentsHarness,
     ContextRegistryOptions,
 } from "./contexts";
+export type {BrowserStorageOptions, StorageQuotaLimits} from "./storage";

@@ -10,6 +10,7 @@ import {join} from "node:path";
 import {createBrowserHarness, createTabFixture} from "../../dist/testing/index.js";
 import {removeBrowserTemporaryDirectory} from "./cleanup.mjs";
 import {browserSmokeError, inspectBrowser} from "./launcher.mjs";
+import {storageProbe} from "./storage-probe.mjs";
 
 // Reject unsupported binaries before opening a server, creating a profile or waiting for extension results.
 const browserInfo = await inspectBrowser(process.argv[2]);
@@ -74,6 +75,7 @@ async function probe(config) {
     const report = {name: config.name};
 
     try {
+        report.storage = await storageProbe(chrome.storage);
         const tab = await chrome.tabs.create({url: `${config.base}/page?q=a+b#part`, active: false});
         const deadline = Date.now() + 10000;
 
@@ -172,7 +174,7 @@ try {
                 manifest_version: 3,
                 name: `Match smoke ${profile.name}`,
                 version: "1.0.0",
-                permissions: ["tabs", "scripting"],
+                permissions: ["tabs", "scripting", "storage"],
                 host_permissions: profile.origins,
                 background: {service_worker: "worker.js"},
             })
@@ -180,7 +182,7 @@ try {
 
         await writeFile(
             join(directory, "worker.js"),
-            `chrome.runtime.onInstalled.addListener(() => (${probe.toString()})(${JSON.stringify({name: profile.name, base, patterns, requestedOrigins})}));`
+            `const storageProbe = ${storageProbe.toString()}; chrome.runtime.onInstalled.addListener(() => (${probe.toString()})(${JSON.stringify({name: profile.name, base, patterns, requestedOrigins})}));`
         );
 
         await writeFile(join(directory, "page.html"), "<!doctype html><title>Extension context smoke</title>");
@@ -233,6 +235,24 @@ try {
     for (const profile of profiles) {
         const result = results.get(profile.name);
         assert.equal(result.error, undefined, result.error);
+        // The browser-report timeout no longer protects us after `finished` resolves. Bound the fake's probe too:
+        // a missing onChanged event must fail the smoke, not hang until the CI job timeout.
+        let storageTimeout;
+
+        try {
+            const actual = await Promise.race([
+                storageProbe(createBrowserHarness().chrome.storage),
+                new Promise((_, reject) => {
+                    storageTimeout = setTimeout(() => reject(new Error("Storage harness probe did not complete; check automatic onChanged delivery.")), 5000);
+                }),
+            ]);
+
+            assert.deepEqual(actual, result.storage, `${profile.name}: storage serialization, changes, selectors and bytes`);
+        } finally {
+            clearTimeout(storageTimeout);
+        }
+
+        assertions++;
 
         const harness = createBrowserHarness({
             tabs: [createTabFixture(result.tab), createTabFixture(result.extensionTab)],

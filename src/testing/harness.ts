@@ -1,15 +1,16 @@
-import type {BrowserDelaysHarness} from "./api";
+import type {BrowserDelaysHarness, BrowserStorageHarness} from "./api";
 import {type ConfigurableBrowserControls, type ConfigurableNamespaces, createConfigurableNamespaces} from "./api/configurable";
 import {createBrowserDelaysHarness} from "./api/delays";
 import {createPermissionsHarness, type PermissionsHarness} from "./api/permissions";
 import {createRuntimeHarness, type RuntimeHarness} from "./api/runtime";
 import {createScriptingHarness, type ScriptingHarness} from "./api/scripting";
+import {createStorageHarness} from "./api/storage";
 import {createTabsHarness, type TabsHarness} from "./api/tabs";
 import {createWindowsHarness, type WindowsHarness} from "./api/windows";
 import type {ListenerErrorBuffer} from "./environment";
 import {createListenerErrorCapture} from "./environment/listener-errors";
 import {sidebarDefaultForProfile} from "./environment/profiles";
-import type {BrowserContextsHarness, ContextRegistryOptions} from "./model";
+import type {BrowserContextsHarness, BrowserStorageOptions, ContextRegistryOptions} from "./model";
 import {createBrowserMemoryState} from "./model/browser-state";
 import type {BrowserHarnessCall, BrowserMethodCall} from "./primitives";
 import {createLastErrorController} from "./primitives/last-error";
@@ -28,6 +29,7 @@ export interface BrowserHarnessOptions extends ContextRegistryOptions {
     tabs?: readonly chrome.tabs.Tab[];
     windows?: readonly chrome.windows.Window[];
     registeredContentScripts?: readonly chrome.scripting.RegisteredContentScript[];
+    storage?: BrowserStorageOptions;
 }
 
 export interface BrowserCapabilitiesHarness {
@@ -59,6 +61,7 @@ export interface BrowserHarness {
     readonly tabs: TabsHarness;
     readonly windows: WindowsHarness;
     readonly scripting: ScriptingHarness;
+    readonly storage: BrowserStorageHarness;
     readonly delays: BrowserDelaysHarness;
     readonly configurable: ConfigurableHarness;
     readonly capabilities: BrowserCapabilitiesHarness;
@@ -123,6 +126,7 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
     const tabs = createTabsHarness(state, lastError, nextSequence);
     const windows = createWindowsHarness(state, tabs, lastError, nextSequence);
     const scripting = createScriptingHarness(options.registeredContentScripts, lastError, nextSequence);
+    const storage = createStorageHarness(options.storage, lastError, nextSequence);
     const listenerCapture = createListenerErrorCapture();
 
     const mergeDescriptors = (target: object, source: object): void => {
@@ -131,6 +135,15 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
 
     const chrome = configChrome.api as unknown as BrowserTestApi;
     const browser = configBrowser.api as unknown as BrowserTestApi;
+
+    const storageFacades = (): BrowserTestApi["storage"] => ({
+        ...storage.api,
+        local: {...storage.api.local}, sync: {...storage.api.sync},
+        session: {...storage.api.session}, managed: {...storage.api.managed},
+    });
+
+    chrome.storage = storageFacades();
+    browser.storage = storageFacades();
     const delays = createBrowserDelaysHarness([chrome.downloads, browser.downloads], nextSequence);
     const sidePanelChromeApi = configChrome.api.sidePanel;
     const sidePanelBrowserApi = configBrowser.api.sidePanel;
@@ -153,6 +166,14 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         mergeDescriptors(browser.windows, windows.api);
         mergeDescriptors(chrome.scripting, scripting.api);
         mergeDescriptors(browser.scripting, scripting.api);
+
+        for (const facade of [chrome, browser]) {
+            facade.storage.onChanged = storage.api.onChanged;
+
+            for (const area of ["local", "sync", "session", "managed"] as const) {
+                mergeDescriptors(facade.storage[area], storage.api[area]);
+            }
+        }
     };
 
     mergeStateful();
@@ -163,6 +184,11 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         ["tabs", tabs.api, tabs.api],
         ["windows", windows.api, windows.api],
         ["scripting", scripting.api, scripting.api],
+        ["storage.local", storage.api.local, storage.api.local],
+        ["storage.sync", storage.api.sync, storage.api.sync],
+        ["storage.session", storage.api.session, storage.api.session],
+        ["storage.managed", storage.api.managed, storage.api.managed],
+        ["storage", {onChanged: storage.api.onChanged}, {onChanged: storage.api.onChanged}],
     ] as const) {
         for (const [member, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(chromeNamespace))) {
             ownedChrome[`${namespace}.${member}`] = descriptor;
@@ -197,9 +223,10 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
     const setOwnedCapability = (path: string, enabled: boolean): boolean => {
         if (!(path in ownedChrome) && !(path in ownedBrowser)) return false;
 
-        const [namespace, member] = path.split(".");
-        const chromeNamespace = (chrome as unknown as Record<string, Record<string, unknown>>)[namespace];
-        const browserNamespace = (browser as unknown as Record<string, Record<string, unknown>>)[namespace];
+        const segments = path.split(".");
+        const member = segments.pop()!;
+        const chromeNamespace = segments.reduce<object>((value, key) => Reflect.get(value, key), chrome);
+        const browserNamespace = segments.reduce<object>((value, key) => Reflect.get(value, key), browser);
 
         if (enabled) {
             if (path in ownedChrome) Object.defineProperty(chromeNamespace, member, ownedChrome[path]);
@@ -232,20 +259,16 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
 
     const capabilities: BrowserCapabilitiesHarness = {
         has(path): boolean {
-            const [namespace, member] = path.split(".");
+            const segments = path.split(".");
+            const member = segments.pop()!;
 
-            const chromeNamespace = (chrome as unknown as Record<string, Record<string, unknown> | undefined>)[
-                namespace
-            ];
+            return [chrome, browser].some(facade => {
+                const parent = segments.reduce<unknown>((value, key) =>
+                    value && typeof value === "object" ? Reflect.get(value, key) : undefined, facade
+                );
 
-            const browserNamespace = (browser as unknown as Record<string, Record<string, unknown> | undefined>)[
-                namespace
-            ];
-
-            return (
-                Boolean(chromeNamespace && member in chromeNamespace) ||
-                Boolean(browserNamespace && member in browserNamespace)
-            );
+                return parent !== null && typeof parent === "object" && member in parent;
+            });
         },
         set(path, enabled): void {
             applyCapability(path, enabled);
@@ -286,6 +309,9 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         {namespace: "windows", source: windows as unknown as Record<string, unknown>},
         {namespace: "scripting", source: scripting as unknown as Record<string, unknown>},
         {namespace: "delays", source: delays as unknown as Record<string, unknown>},
+        ...(["local", "sync", "session", "managed"] as const).map(area => ({
+            namespace: `storage.${area}`, source: storage[area] as unknown as Record<string, unknown>,
+        })),
     ];
 
     return {
@@ -297,6 +323,7 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         tabs,
         windows,
         scripting,
+        storage,
         delays,
         configurable,
         capabilities,
@@ -395,6 +422,7 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
             tabs.reset();
             windows.reset();
             scripting.reset();
+            storage.reset();
             configChrome.reset();
             configBrowser.reset();
             delays.reset();

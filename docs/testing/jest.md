@@ -61,6 +61,7 @@ test("uses browser APIs alongside the application's DOM", () => {
 ```
 
 Restoring globals does not undo application DOM mutations. Clean those up using the application's usual test hooks.
+For stateful persistence without a module mock, see the [real Storage Jest/jsdom example](storage.md#real-addon-corestorage-consumer-jest--jsdom).
 Do not combine preserve mode with `context`; use [simulation mode](harness.md#preserving-an-existing-environment)
 in Node when testing generated context globals. Nested installations must restore in reverse order.
 

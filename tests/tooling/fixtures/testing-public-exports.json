@@ -112,6 +112,14 @@
     "hasValue": false
   },
   {
+    "name": "BrowserStorageHarness",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserStorageOptions",
+    "hasValue": false
+  },
+  {
     "name": "BrowserTestApi",
     "hasValue": false
   },
@@ -289,6 +297,22 @@
   },
   {
     "name": "SidePanelTestApi",
+    "hasValue": false
+  },
+  {
+    "name": "StorageAreaHarness",
+    "hasValue": false
+  },
+  {
+    "name": "StorageAreaTestApi",
+    "hasValue": false
+  },
+  {
+    "name": "StorageQuotaLimits",
+    "hasValue": false
+  },
+  {
+    "name": "StorageTestApi",
     "hasValue": false
   },
   {

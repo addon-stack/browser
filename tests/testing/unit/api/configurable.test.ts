@@ -4,10 +4,17 @@ import {RAW_CAPABILITY_COVERAGE} from "../../../../src/testing/coverage";
 import {createLastErrorController} from "../../../../src/testing/primitives/last-error";
 
 describe("configurable browser namespaces", () => {
-    test("materializes every configurable method and raw event from the capability matrix", () => {
+    test("materializes generic configurable members; Storage owns its nested controls", () => {
         const configurable = createConfigurableNamespaces({facade: "chrome"});
 
         for (const entry of RAW_CAPABILITY_COVERAGE) {
+            // Storage's own adapter supplies nested areas, including their configurable byte estimators.
+            // coverage.test.ts resolves these controls and validates both directions of stateful coverage.
+            if (entry.path.startsWith("storage.")) {
+                expect(() => entry.kind === "event" ? configurable.event(entry.path) : configurable.method(entry.path)).toThrow("Unknown configurable browser");
+                continue;
+            }
+
             if (entry.coverage === "configurable" && entry.kind === "method") {
                 expect(configurable.method(entry.path)).toBeDefined();
             }

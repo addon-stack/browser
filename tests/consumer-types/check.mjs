@@ -30,7 +30,7 @@ try {
     cpSync(fixtureDirectory, consumerDirectory, {recursive: true});
     writeFileSync(join(consumerDirectory, "package.json"), '{"private":true,"type":"module"}\n');
 
-    execFileSync(npm, ["install", "--ignore-scripts", "--no-package-lock", "--no-save", archive, "jsdom@26.1.0"], {
+    execFileSync(npm, ["install", "--ignore-scripts", "--no-package-lock", "--no-save", archive, "jsdom@26.1.0", "@addon-core/storage@0.7.0"], {
         ...npmOptions,
         cwd: consumerDirectory,
         stdio: "inherit",

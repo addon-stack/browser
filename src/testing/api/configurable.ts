@@ -596,7 +596,7 @@ const NO_RESULT_METHODS = new Set([
 const MULTI_RESULT_METHODS = new Set(["runtime.requestUpdateCheck"]);
 
 const isConfigurableMember = (entry: RawCapabilityEntry): boolean =>
-    entry.coverage === "configurable" || entry.kind === "event";
+    !entry.path.startsWith("storage.") && (entry.coverage === "configurable" || entry.kind === "event");
 
 const namespaceControl = (controls: Record<string, unknown>, api: object): Record<string, unknown> => ({
     ...controls,

@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
 const checkContexts = require("./contexts.cjs");
+const checkStorage = require("./storage.cjs");
 
 const beforeChrome = Object.getOwnPropertyDescriptor(globalThis, "chrome");
 const beforeBrowser = Object.getOwnPropertyDescriptor(globalThis, "browser");
@@ -11,6 +12,7 @@ assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "browser"), beforeB
 
 async function checkConsumer() {
     await checkContexts(production, testing);
+    await checkStorage(testing);
 
     const harness = testing.createBrowserHarness({
         manifest: testing.createManifestFixture({name: "CJS consumer"}),
@@ -66,7 +68,14 @@ async function checkConsumer() {
     assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "browser"), beforeBrowser);
 }
 
-checkConsumer().catch(error => {
+// A pending Promise alone does not keep CJS Node alive. An undelivered Storage event must not silently pass.
+let completed = false;
+process.once("beforeExit", () => assert.equal(completed, true, "CJS consumer did not complete"));
+
+checkConsumer().then(() => {
+    completed = true;
+}, error => {
+    completed = true;
     console.error(error);
     process.exitCode = 1;
 });

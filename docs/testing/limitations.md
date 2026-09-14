@@ -16,8 +16,14 @@ Chrome, Firefox, Safari, Opera, or any other real browser.
 - `permissions.contains()` models pattern containment for explicitly granted origins, ignoring paths. It does not
   infer grants from the manifest or simulate prompts, restricted pages, file-access toggles or user site-access
   policy. Grant storage and removal remain exact-entry operations, without partial wildcard subtraction.
-- Complex APIs outside runtime, permissions, tabs, windows, and the scripting content-script registry are configurable
+- Complex APIs outside runtime, permissions, tabs, windows, storage, and the scripting content-script registry are configurable
   stubs. They do not simulate the browser unless the test supplies an implementation or result.
+- [Storage](storage.md) models a Chromium-oriented enumerable-data subset, not persistence, remote sync, policy loading,
+  write-rate limits or context access permissions. Only sync has default size/count quotas. Session/managed byte usage
+  stays configurable. Default callbacks and change dispatch start synchronously; `flushChanges()` observes automatic
+  listener failures separately from successful writes. Reset cannot cancel consumer code or detached async work.
+  The `firefox` profile also uses this Chromium-oriented codec (`Date`/`RegExp` without enumerable properties become
+  `{}`), so it must not be used to establish Firefox-specific serialization behavior without a real Firefox probe.
 - `tabs.sendMessage()` and `tabs.connect()` are configurable stubs. The [context registry](contexts.md) can represent
   content scripts, documents and frames, but does not load application code, route messages between them or simulate
   long-lived ports. Context-local `onMessage.emit()` is a separate manual event, not a routed request/response channel.

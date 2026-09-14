@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {getManifest, getUrl} from "@addon-core/browser";
 import {createBrowserHarness, installBrowserGlobals, installGlobals} from "@addon-core/browser/testing";
 import {JSDOM} from "jsdom";
+import checkStorage from "./storage.cjs";
 
 const dom = new JSDOM('<button id="save">Save</button>', {url: "https://example.test/options"});
 
@@ -14,6 +15,7 @@ const before = [globalThis.window, globalThis.document, globalThis.location, glo
 const restore = installBrowserGlobals(harness, {environment: "preserve"});
 
 try {
+    await checkStorage({createBrowserHarness, installBrowserGlobals}, "preserve");
     [globalThis.window, globalThis.document, globalThis.location, globalThis.navigator].forEach((value, index) => assert.equal(value, before[index]));
     assert.equal(globalThis.document.querySelector("button").textContent, "Save");
     assert.equal(globalThis.location.href, "https://example.test/options");
