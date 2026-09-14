@@ -108,6 +108,10 @@
     "hasValue": false
   },
   {
+    "name": "BrowserOffscreenHarness",
+    "hasValue": false
+  },
+  {
     "name": "BrowserProfile",
     "hasValue": false
   },
@@ -229,6 +233,10 @@
   },
   {
     "name": "NavigatorTestValue",
+    "hasValue": false
+  },
+  {
+    "name": "OffscreenTestApi",
     "hasValue": false
   },
   {

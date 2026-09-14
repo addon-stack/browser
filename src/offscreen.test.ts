@@ -17,13 +17,11 @@ describe("offscreen", () => {
 
     beforeEach(() => {
         harness = createBrowserHarness({extensionId: "extension-id"});
-        harness.configurable.chrome.offscreen.closeDocument.setResult(undefined);
-        harness.configurable.chrome.offscreen.createDocument.setResult(undefined);
-        harness.configurable.chrome.offscreen.hasDocument.setResult(false);
         restoreGlobals = installGlobals({browser: undefined, chrome: harness.chrome});
     });
 
     afterEach(() => {
+        harness.reset();
         restoreGlobals();
     });
 
@@ -38,7 +36,9 @@ describe("offscreen", () => {
     };
 
     test("should close the current offscreen document", async () => {
+        setOffscreenContext();
         await expect(closeOffscreen()).resolves.toBeUndefined();
+        expect(harness.offscreen.context).toBeUndefined();
 
         expect(harness.configurable.chrome.offscreen.closeDocument.calls).toMatchObject([
             {args: [], callbackCalls: [[]], invocation: "callback"},
@@ -53,6 +53,7 @@ describe("offscreen", () => {
         };
 
         await expect(createOffscreen(parameters)).resolves.toBeUndefined();
+        await expect(getOffscreenPath()).resolves.toBe("/offscreen.html");
 
         expect(harness.configurable.chrome.offscreen.createDocument.calls).toMatchObject([
             {args: [parameters], callbackCalls: [[]], invocation: "callback"},
@@ -62,7 +63,7 @@ describe("offscreen", () => {
     test("should check whether an offscreen document exists", async () => {
         await expect(hasOffscreen()).resolves.toBe(false);
 
-        harness.configurable.chrome.offscreen.hasDocument.setResult(true);
+        await createOffscreen({url: "offscreen.html", reasons: ["DOM_PARSER"], justification: "Test lifecycle"});
 
         await expect(hasOffscreen()).resolves.toBe(true);
         expect(harness.configurable.chrome.offscreen.hasDocument.calls).toHaveLength(2);

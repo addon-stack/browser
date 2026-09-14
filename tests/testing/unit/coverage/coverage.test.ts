@@ -23,6 +23,8 @@ const directMethodNamespace = (harness: Harness, namespace: string): unknown => 
     switch (namespace) {
         case "runtime":
             return harness.runtime;
+        case "offscreen":
+            return harness.offscreen;
         case "permissions":
             return harness.permissions;
         case "tabs":

@@ -16,6 +16,8 @@ test("registers documents before scripts, separates contexts, and projects only 
     const content = harness.contexts.create({kind: "contentScript", documentId: main.documentId});
     const background = harness.contexts.create({kind: "background"});
     const offscreen = harness.contexts.create({kind: "offscreen"});
+    expect(offscreen.info).toMatchObject({tabId: -1, frameId: 0, windowId: -1});
+    expect(harness.contexts.documents.get(offscreen.info.documentId!)?.frameId).toBe(0);
     const popup = harness.contexts.create({kind: "extensionPage", contextType: "POPUP"});
     expect(content.info).toMatchObject({tabId: 7, frameId: 0, windowId: 1, documentUrl: "https://example.test/"});
     expect(background.info.url).toMatch(/background.js$/);
@@ -291,6 +293,8 @@ test("context validation rejects inconsistent frames and extension URLs without 
     expect(() => harness.contexts.create({kind: "background", documentId: ""})).toThrow("must not be empty");
     expect(() => harness.contexts.create({kind: "offscreen", url: "https://example.test/"})).toThrow("must belong to this extension");
     expect(() => harness.contexts.create({kind: "offscreen", tabId: 8})).toThrow("must not belong");
+    expect(() => harness.contexts.create({kind: "offscreen", frameId: -1})).toThrow("requires frameId 0");
+    expect(() => harness.contexts.create({kind: "offscreen", frameId: 2})).toThrow("requires frameId 0");
     expect(() => harness.contexts.create({kind: "background", contextType: "POPUP"})).toThrow("only valid for extension pages");
     expect(harness.contexts.documents.list()).toEqual([root]);
     expect(harness.contexts.list()).toEqual([]);

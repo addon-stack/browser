@@ -1,6 +1,7 @@
-import type {BrowserDelaysHarness, BrowserStorageHarness} from "./api";
+import type {BrowserDelaysHarness, BrowserOffscreenHarness, BrowserStorageHarness} from "./api";
 import {type ConfigurableBrowserControls, type ConfigurableNamespaces, createConfigurableNamespaces} from "./api/configurable";
 import {createBrowserDelaysHarness} from "./api/delays";
+import {createOffscreenHarness} from "./api/offscreen";
 import {createPermissionsHarness, type PermissionsHarness} from "./api/permissions";
 import {createRuntimeHarness, type RuntimeHarness} from "./api/runtime";
 import {createScriptingHarness, type ScriptingHarness} from "./api/scripting";
@@ -12,7 +13,7 @@ import {createListenerErrorCapture} from "./environment/listener-errors";
 import {sidebarDefaultForProfile} from "./environment/profiles";
 import type {BrowserContextsHarness, BrowserStorageOptions, ContextRegistryOptions} from "./model";
 import {createBrowserMemoryState} from "./model/browser-state";
-import type {BrowserHarnessCall, BrowserMethodCall} from "./primitives";
+import type {BrowserHarnessCall, BrowserMethod, BrowserMethodCall} from "./primitives";
 import {createLastErrorController} from "./primitives/last-error";
 import type {
     BrowserProfile,
@@ -62,6 +63,7 @@ export interface BrowserHarness {
     readonly windows: WindowsHarness;
     readonly scripting: ScriptingHarness;
     readonly storage: BrowserStorageHarness;
+    readonly offscreen: BrowserOffscreenHarness;
     readonly delays: BrowserDelaysHarness;
     readonly configurable: ConfigurableHarness;
     readonly capabilities: BrowserCapabilitiesHarness;
@@ -118,9 +120,19 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
     const nextSequence = (): number => ++sequence;
     const lastError = createLastErrorController();
     const state = createBrowserMemoryState({tabs: options.tabs, windows: options.windows});
-    const configChrome = createConfigurableNamespaces({facade: "chrome", lastError, nextSequence});
-    const configBrowser = createConfigurableNamespaces({facade: "browser", lastError, nextSequence});
     const runtime = createRuntimeHarness(options, lastError, nextSequence, state);
+    const offscreen = createOffscreenHarness(runtime.contextRegistry, () => `${runtime.urlScheme}://${runtime.id}/`, lastError, nextSequence);
+    runtime.onContextsReset(offscreen.reset);
+
+    const ownedMethods = new Map<string, BrowserMethod<(...args: never[]) => unknown, unknown>>(
+        (["createDocument", "closeDocument", "hasDocument"] as const).map(member => [
+            `offscreen.${member}`,
+            offscreen[member] as BrowserMethod<(...args: never[]) => unknown, unknown>,
+        ])
+    );
+
+    const configChrome = createConfigurableNamespaces({facade: "chrome", lastError, nextSequence, ownedMethods});
+    const configBrowser = createConfigurableNamespaces({facade: "browser", lastError, nextSequence, ownedMethods});
     state.onTabRemoved(runtime.removeTabContexts);
     const permissions = createPermissionsHarness(options.permissions, lastError, nextSequence);
     const tabs = createTabsHarness(state, lastError, nextSequence);
@@ -304,6 +316,10 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
 
     const callSources: NamedMethodCalls[] = [
         {namespace: "runtime", source: runtime as unknown as Record<string, unknown>},
+        {namespace: "offscreen", source: {
+            createDocument: offscreen.createDocument, closeDocument: offscreen.closeDocument, hasDocument: offscreen.hasDocument,
+            beforeCreate: offscreen.beforeCreate, beforeClose: offscreen.beforeClose,
+        }},
         {namespace: "permissions", source: permissions as unknown as Record<string, unknown>},
         {namespace: "tabs", source: tabs as unknown as Record<string, unknown>},
         {namespace: "windows", source: windows as unknown as Record<string, unknown>},
@@ -324,6 +340,7 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         windows,
         scripting,
         storage,
+        offscreen,
         delays,
         configurable,
         capabilities,
@@ -383,7 +400,10 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
             };
         },
         get calls() {
-            return [...callSources.flatMap(methodCalls), ...configChrome.calls, ...configBrowser.calls].sort(
+            // Shared compatibility aliases retain namespace history but must not triple-count root history.
+            const configurableCalls = [...configChrome.calls, ...configBrowser.calls].filter(call => !ownedMethods.has(call.api));
+
+            return [...callSources.flatMap(methodCalls), ...configurableCalls].sort(
                 (left, right) => left.sequence - right.sequence
             );
         },

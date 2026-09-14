@@ -236,7 +236,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
         "onNotificationsPermissionLevelChanged",
     ]),
 
-    ...entries("offscreen", "method-wrapper", "configurable", ["closeOffscreen", "createOffscreen", "hasOffscreen"]),
+    ...entries("offscreen", "method-wrapper", "stateful", ["closeOffscreen", "createOffscreen", "hasOffscreen"]),
     ...entries("offscreen", "method-wrapper", "behavioral", [
         "getOffscreenContext",
         "getOffscreenUrl",

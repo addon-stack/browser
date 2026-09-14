@@ -12,10 +12,12 @@ import {
     type BrowserDocument,
     type BrowserHarness,
     type BrowserMethod,
+    type BrowserOffscreenHarness,
     createBrowserHarness,
     createManifestFixture,
     createTabFixture,
     installBrowserGlobals,
+    type OffscreenTestApi,
 } from "@addon-core/browser/testing";
 
 const harness: BrowserHarness = createBrowserHarness({
@@ -55,6 +57,26 @@ const downloadValidationDelay: BrowserMethod<(milliseconds: number) => Promise<v
 harness.tabs.query.setResult([]);
 harness.configurable.browser.downloads.search.setResult([]);
 harness.runtime.closeMessageChannels();
+
+const offscreen: BrowserOffscreenHarness = harness.offscreen;
+const offscreenApi: OffscreenTestApi = harness.browser.offscreen;
+const offscreenExists: Promise<boolean> = offscreenApi.hasDocument();
+
+offscreenApi.hasDocument((exists: boolean) => {
+    void exists;
+});
+
+offscreen.beforeCreate.setImplementation(async parameters => {
+    const url: string = parameters.url;
+    void url;
+});
+
+offscreen.beforeClose.failNext(new Error("Closure failed"));
+const offscreenContext: BrowserContext | undefined = offscreen.context;
+const legacyCreate: typeof chrome.offscreen.createDocument = harness.configurable.browser.offscreen.createDocument.api;
+void offscreenExists;
+void offscreenContext;
+void legacyCreate;
 
 downloadValidationDelay.setImplementation(async milliseconds => {
     const duration: number = milliseconds;

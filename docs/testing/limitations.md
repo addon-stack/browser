@@ -16,7 +16,7 @@ Chrome, Firefox, Safari, Opera, or any other real browser.
 - `permissions.contains()` models pattern containment for explicitly granted origins, ignoring paths. It does not
   infer grants from the manifest or simulate prompts, restricted pages, file-access toggles or user site-access
   policy. Grant storage and removal remain exact-entry operations, without partial wildcard subtraction.
-- Complex APIs outside runtime, permissions, tabs, windows, storage, and the scripting content-script registry are configurable
+- Complex APIs outside runtime, permissions, tabs, windows, storage, offscreen, and the scripting content-script registry are configurable
   stubs. They do not simulate the browser unless the test supplies an implementation or result.
 - [Storage](storage.md) models a Chromium-oriented enumerable-data subset, not persistence, remote sync, policy loading,
   write-rate limits or context access permissions. Only sync has default size/count quotas. Session/managed byte usage
@@ -28,8 +28,12 @@ Chrome, Firefox, Safari, Opera, or any other real browser.
   content scripts, documents and frames, but does not load application code, route messages between them or simulate
   long-lived ports. Context-local `onMessage.emit()` is a separate manual event, not a routed request/response channel.
 - `runtime.getContexts()` reads registered extension contexts and excludes content scripts. Document/frame lifetimes
-  and cleanup are explicit; updating a tab URL does not simulate navigation. `offscreen.createDocument()`,
-  `hasDocument()` and `closeDocument()` remain configurable stubs and do not modify this registry yet.
+  and cleanup are explicit; updating a tab URL does not simulate navigation.
+- [Offscreen](offscreen.md) creation/closure shares that registry, with explicit delay/failure gates and reset cancellation.
+  It does not load HTML, create a DOM, enforce permissions/MV3 or API restrictions, model separate incognito profiles, or
+  perform audio-based automatic closure. All kit profiles expose the same adapter, including Firefox/Safari profiles;
+  native API availability is not implied. Disable methods through capabilities to test absence. Closing disposes
+  context-owned work but not unscoped root runtime message channels; context-addressed routing is not implemented yet.
 - `runtime.sendMessage()` resolves `undefined` when there are no message listeners. Chrome can instead report
   `Could not establish connection. Receiving end does not exist.` through callback-scoped `runtime.lastError` (or a
   rejected Promise).

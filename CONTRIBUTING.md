@@ -243,7 +243,7 @@ consumers continue to import only `@addon-core/browser/testing`.
 
 ### Browser match-pattern smoke
 
-Before releasing changes to the URL matcher, host-permission fake, runtime context registry or Storage model, run the real-browser
+Before releasing changes to the URL matcher, host-permission fake, runtime context registry, Storage or Offscreen model, run the real-browser
 smoke in addition to unit and clean-consumer tests. Obtain the full **Chrome for Testing** executable from the
 [official downloads](https://googlechromelabs.github.io/chrome-for-testing/) or use a Chromium build with extension
 support. No ChromeDriver, Playwright, or other automation package is needed. Do not use `chrome-headless-shell`.
@@ -262,8 +262,10 @@ A remaining timeout includes the selected binary/version, missing extension resu
 The smoke compares the built harness with real MV3 extension APIs, using a temporary browser profile and loopback
 HTTP server. It never uses your personal profile. It is separate from `npm test` so local unit tests need no browser.
 Besides URL queries and permissions, it compares `runtime.getContexts()` visibility and filtering for a background
-worker and extension tab, and checks that a real injected content script is excluded from that API. It does not test
-Offscreen lifecycle, message routing, or script execution inside the harness. It also compares Storage selectors,
+worker and extension tab, and checks that a real injected content script is excluded from that API. It also compares
+Offscreen create/close, duplicate/absent-operation errors and native context fields via callbacks and Promises. The
+version-dependent `hasDocument` method is feature-detected and an unavailable method is reported as not compared.
+It does not test message routing or script execution inside the harness. It also compares Storage selectors,
 serialization (including Date/RegExp/undefined), change payloads/no-op suppression and UTF-8 byte accounting.
 The clean-consumer check additionally installs published `@addon-core/storage@0.7.0` and exercises its unmodified
 providers through ESM/CJS kit imports and jsdom. See [Storage scope and consumer examples](docs/testing/storage.md).

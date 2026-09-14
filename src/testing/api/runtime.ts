@@ -76,6 +76,8 @@ export interface RuntimeHarness {
     readonly contextRegistry: BrowserContextsHarness;
     /** @internal Cascade removal from the shared tabs/windows state. */
     removeTabContexts(tabId: number): void;
+    /** @internal Cancel API-owned work before the shared registry restores fixtures. */
+    onContextsReset(listener: () => void): () => void;
     readonly manifest: chrome.runtime.Manifest;
     readonly id: string;
     readonly urlScheme: "chrome-extension" | "moz-extension" | "safari-web-extension";
@@ -494,6 +496,7 @@ export const createRuntimeHarness = (
         closeMessageChannels,
         contextRegistry: contextState.registry,
         removeTabContexts: contextState.removeTab,
+        onContextsReset: contextState.onReset,
         get contexts() {
             return contextState.runtimeContexts();
         },

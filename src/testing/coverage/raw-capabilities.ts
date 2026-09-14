@@ -272,11 +272,15 @@ export const RAW_CAPABILITY_COVERAGE: readonly RawCapabilityEntry[] = [
     ]),
     ...eventCapabilities("notifications", ["onButtonClicked", "onClicked", "onClosed", "onPermissionLevelChanged"]),
 
-    ...methodCapabilities("offscreen", "configurable", callbackInvocation, [
+    ...methodCapabilities("offscreen", "stateful", {chrome: "dual", browser: "dual"}, [
         "closeDocument",
         "createDocument",
         "hasDocument",
-    ]),
+    ], {
+        createDocument: ["same-extension url", "nonempty known reasons", "string justification", "single document; explicit beforeCreate gate"],
+        closeDocument: ["registered offscreen document and context cleanup; explicit beforeClose gate"],
+        hasDocument: ["shared registry; ambiguous multiple contexts fail"],
+    }),
 
     ...methodCapabilities("permissions", "configurable", callbackInvocation, [
         "addHostAccessRequest",

@@ -99,13 +99,13 @@ describe("configurable browser namespaces", () => {
     test("physically removes and restores method capabilities", () => {
         const configurable = createConfigurableNamespaces({facade: "chrome"});
 
-        configurable.setCapability("offscreen.hasDocument", false);
-        expect(configurable.hasCapability("offscreen.hasDocument")).toBe(false);
-        expect("hasDocument" in configurable.api.offscreen).toBe(false);
+        configurable.setCapability("alarms.getAll", false);
+        expect(configurable.hasCapability("alarms.getAll")).toBe(false);
+        expect("getAll" in configurable.api.alarms).toBe(false);
 
         configurable.reset();
-        expect(configurable.hasCapability("offscreen.hasDocument")).toBe(true);
-        expect(typeof configurable.api.offscreen.hasDocument).toBe("function");
+        expect(configurable.hasCapability("alarms.getAll")).toBe(true);
+        expect(typeof configurable.api.alarms.getAll).toBe("function");
     });
 
     test("does not silently answer an unconfigured method", () => {

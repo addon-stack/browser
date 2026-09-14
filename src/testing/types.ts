@@ -1,6 +1,8 @@
 import type {ConfigurableBrowserApi} from "./api/configurable";
 import type {BrowserEventApi} from "./primitives";
 
+export type OffscreenTestApi = Pick<typeof chrome.offscreen, "createDocument" | "closeDocument" | "hasDocument">;
+
 export type StorageAreaTestApi = Pick<chrome.storage.StorageArea, "get" | "getKeys" | "getBytesInUse" | "set" | "remove" | "clear"> & {
     onChanged: BrowserEventApi<[Record<string, chrome.storage.StorageChange>]>;
 };

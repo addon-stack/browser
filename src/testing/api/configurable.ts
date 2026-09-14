@@ -470,6 +470,8 @@ export interface ConfigurableNamespacesOptions {
     readonly facade: "chrome" | "browser";
     readonly lastError?: BrowserMethodLastErrorController;
     readonly nextSequence?: () => number;
+    /** @internal Shared controls supplied by the owning stateful adapter. */
+    readonly ownedMethods?: ReadonlyMap<string, BrowserMethod<(...args: never[]) => unknown, unknown>>;
 }
 
 export interface ConfigurableNamespaces {
@@ -608,7 +610,7 @@ const namespaceControl = (controls: Record<string, unknown>, api: object): Recor
     },
 });
 
-/** Creates all non-stateful raw namespaces used by the production entrypoint. */
+/** Creates non-stateful raw namespaces and retains aliases for supplied stateful controls. */
 export const createConfigurableNamespaces = (options: ConfigurableNamespacesOptions): ConfigurableNamespaces => {
     const apiNamespaces: Record<string, Record<string, unknown>> = {};
     const namespaceControls: Record<string, Record<string, unknown>> = {};
@@ -616,7 +618,7 @@ export const createConfigurableNamespaces = (options: ConfigurableNamespacesOpti
     const events = new Map<string, BrowserEventHarness<readonly unknown[], readonly unknown[]>>();
     const enabled = new Set<string>();
 
-    const entries = RAW_CAPABILITY_COVERAGE.filter(isConfigurableMember);
+    const entries = RAW_CAPABILITY_COVERAGE.filter(entry => isConfigurableMember(entry) || options.ownedMethods?.has(entry.path));
 
     for (const entry of entries) {
         const isFirefoxSidebar = entry.namespace === "browser.sidebarAction";
@@ -650,7 +652,7 @@ export const createConfigurableNamespaces = (options: ConfigurableNamespacesOpti
                 ? (result: unknown) => result as readonly unknown[]
                 : (result: unknown) => [result];
 
-        const method = createBrowserMethod<(...args: never[]) => unknown, unknown>({
+        const method = options.ownedMethods?.get(entry.path) ?? createBrowserMethod<(...args: never[]) => unknown, unknown>({
             callback: "last",
             callbackArgs,
             invocation,

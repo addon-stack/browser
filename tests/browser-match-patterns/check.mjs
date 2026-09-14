@@ -10,6 +10,7 @@ import {join} from "node:path";
 import {createBrowserHarness, createTabFixture} from "../../dist/testing/index.js";
 import {removeBrowserTemporaryDirectory} from "./cleanup.mjs";
 import {browserSmokeError, inspectBrowser} from "./launcher.mjs";
+import {offscreenProbe} from "./offscreen-probe.mjs";
 import {storageProbe} from "./storage-probe.mjs";
 
 // Reject unsupported binaries before opening a server, creating a profile or waiting for extension results.
@@ -76,6 +77,7 @@ async function probe(config) {
 
     try {
         report.storage = await storageProbe(chrome.storage);
+        report.offscreen = await offscreenProbe(chrome);
         const tab = await chrome.tabs.create({url: `${config.base}/page?q=a+b#part`, active: false});
         const deadline = Date.now() + 10000;
 
@@ -174,7 +176,7 @@ try {
                 manifest_version: 3,
                 name: `Match smoke ${profile.name}`,
                 version: "1.0.0",
-                permissions: ["tabs", "scripting", "storage"],
+                permissions: ["tabs", "scripting", "storage", "offscreen"],
                 host_permissions: profile.origins,
                 background: {service_worker: "worker.js"},
             })
@@ -182,10 +184,11 @@ try {
 
         await writeFile(
             join(directory, "worker.js"),
-            `const storageProbe = ${storageProbe.toString()}; chrome.runtime.onInstalled.addListener(() => (${probe.toString()})(${JSON.stringify({name: profile.name, base, patterns, requestedOrigins})}));`
+            `const storageProbe = ${storageProbe.toString()}; const offscreenProbe = ${offscreenProbe.toString()}; chrome.runtime.onInstalled.addListener(() => (${probe.toString()})(${JSON.stringify({name: profile.name, base, patterns, requestedOrigins})}));`
         );
 
         await writeFile(join(directory, "page.html"), "<!doctype html><title>Extension context smoke</title>");
+        await writeFile(join(directory, "offscreen.html"), "<!doctype html><title>Offscreen smoke</title>");
 
         extensions.push(directory);
     }
@@ -250,6 +253,32 @@ try {
             assert.deepEqual(actual, result.storage, `${profile.name}: storage serialization, changes, selectors and bytes`);
         } finally {
             clearTimeout(storageTimeout);
+        }
+
+        assertions++;
+
+        const offscreenHarness = createBrowserHarness();
+
+        // Availability is browser-version-dependent; never silently pretend an absent method was compared.
+        if (!result.offscreen.hasDocument) {
+            offscreenHarness.capabilities.set("offscreen.hasDocument", false);
+            console.log(`${profile.name}: offscreen.hasDocument unavailable in ${browserInfo.version}; lifecycle/getContexts still compared.`);
+        }
+
+        let offscreenTimeout;
+
+        try {
+            const actual = await Promise.race([
+                offscreenProbe(offscreenHarness.chrome),
+                new Promise((_, reject) => {
+                    offscreenTimeout = setTimeout(() => reject(new Error("Offscreen harness probe did not complete; check callback/Promise settlement.")), 5000);
+                }),
+            ]);
+
+            assert.deepEqual(actual, result.offscreen, `${profile.name}: offscreen lifecycle, contexts and callback/Promise errors`);
+        } finally {
+            clearTimeout(offscreenTimeout);
+            offscreenHarness.reset();
         }
 
         assertions++;

@@ -102,6 +102,7 @@ export const createContextRegistry = (
     const initialDocuments = cloneRecord(options.documents ?? []);
     const documents = new Map<string, BrowserDocument>();
     const contexts = new Map<string, {handle: BrowserContext; info: BrowserContextInfo; dispose(): void}>();
+    const resetListeners = new Set<() => void>();
     let documentCounter = 0;
     let contextCounter = 0;
     let replacing = false;
@@ -285,7 +286,13 @@ export const createContextRegistry = (
                 fail("a content script requires a registered document or a tabId and URL");
             }
 
-            pendingDocument = documentFor({...input, url: input.url ?? getUrl(input.kind === "offscreen" ? "offscreen.html" : "index.html")});
+            pendingDocument = documentFor({
+                ...input,
+                // An offscreen page has a top-level frame even though it has no tab or window.
+                frameId: input.frameId ?? (input.kind === "offscreen" ? 0 : undefined),
+                url: input.url ?? getUrl(input.kind === "offscreen" ? "offscreen.html" : "index.html"),
+            });
+
             document = pendingDocument;
         }
 
@@ -321,8 +328,8 @@ export const createContextRegistry = (
             fail("extension context URL must belong to this extension; use a native fixture for malformed-context tests");
         }
 
-        if (input.kind === "offscreen" && (info.tabId !== -1 || info.frameId !== -1 || info.windowId !== -1)) {
-            fail("an offscreen document must not belong to a tab, frame or window");
+        if (input.kind === "offscreen" && (info.tabId !== -1 || info.frameId !== 0 || info.windowId !== -1)) {
+            fail("an offscreen document must not belong to a tab or window and requires frameId 0");
         }
 
         if (pendingDocument) documents.set(pendingDocument.documentId, pendingDocument);
@@ -437,13 +444,28 @@ export const createContextRegistry = (
         reset() {
             assertWritable();
             replacing = true;
+            const failures: unknown[] = [];
 
             try {
-                clear();
+                for (const listener of [...resetListeners]) {
+                    try {
+                        listener();
+                    } catch (error) {
+                        failures.push(error);
+                    }
+                }
+
+                try {
+                    clear();
+                } catch (error) {
+                    failures.push(error);
+                }
             } finally {
                 replacing = false;
                 loadInitial();
             }
+
+            if (failures.length > 0) throw new AggregateError(failures, "Browser test context cleanup failed");
         },
     };
 
@@ -451,6 +473,13 @@ export const createContextRegistry = (
 
     return {
         registry,
+        onReset(listener: () => void): () => void {
+            resetListeners.add(listener);
+
+            return () => {
+                resetListeners.delete(listener);
+            };
+        },
         addRuntimeContext,
         runtimeContexts(filter: chrome.runtime.ContextFilter = {}): chrome.runtime.ExtensionContext[] {
             if (Object.hasOwn(filter, "kinds")) fail('unsupported runtime context filter "kinds"; use contexts.list()');

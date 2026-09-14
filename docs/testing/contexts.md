@@ -42,8 +42,9 @@ create a new one. Removing the main document removes all registered frames in th
 its known descendants. There is no implicit navigation simulation when changing `tabs.update().url`.
 
 New tab documents require a tab in the harness. Their window and incognito state come from that tab. Extension
-contexts require an extension URL; content-script URLs come from their host document. Offscreen documents have no
-tab/frame/window. The registry does not enforce Offscreen API singleton or creation rules yet.
+contexts require an extension URL; content-script URLs come from their host document. Offscreen documents have
+`tabId: -1`, `windowId: -1` and a top-level `frameId: 0`, as observed in the Chromium probe. The raw registry allows arbitrary fixtures; the [Offscreen adapter](offscreen.md) enforces a single
+document for API creation and reports ambiguous multi-context fixtures explicitly.
 
 New background contexts default to documentless workers with a `background.js` script URL. An explicit registered
 `documentId` can represent a background page. Extension pages default to `index.html`, offscreen to `offscreen.html`.
@@ -135,11 +136,12 @@ clears subscriptions, and cancels tracked operations. Old handles remain dispose
 `harness.contexts.get(id)`. Fixture callbacks/subscriptions are never automatically reinstated. If a cleanup throws,
 the other components still reset and an error is reported afterward.
 
-`harness.contexts.reset()` resets only the registry. Its initial tab fixtures must still exist; use `harness.reset()`
+`harness.contexts.reset()` restores the registry, cancels pending stateful Offscreen operations and resets their controls.
+Its initial tab fixtures must still exist; use `harness.reset()`
 after changing/removing tabs to restore the whole model. Each harness has separate counters, state and lifetimes.
 
-This phase supplies the shared model and native runtime queries. Offscreen creation/closure, routed messaging,
-context-specific API facades and script execution are subsequent features. The registry does not promise browser
+Offscreen creation and closure share this registry. Routed messaging, context-specific API facades and script
+execution are subsequent features. The registry does not promise browser
 lifecycle timing, worker suspension, permissions enforcement or concurrent execution of application modules in
-separate realms. The Chromium smoke compares runtime-query visibility/filtering; Firefox and Safari behavior is not
+separate realms. The Chromium smoke compares runtime-query visibility/filtering and basic Offscreen lifecycle; Firefox and Safari behavior is not
 inferred from that check.
