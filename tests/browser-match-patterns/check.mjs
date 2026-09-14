@@ -10,6 +10,8 @@ import {join} from "node:path";
 import {createBrowserHarness, createTabFixture} from "../../dist/testing/index.js";
 import {removeBrowserTemporaryDirectory} from "./cleanup.mjs";
 import {browserSmokeError, inspectBrowser} from "./launcher.mjs";
+import {checkMessageResponses} from "./messaging-assertions.mjs";
+import {installMessagingReceiver, messageResponsesProbe, messagingProbe} from "./messaging-probe.mjs";
 import {offscreenProbe} from "./offscreen-probe.mjs";
 import {storageProbe} from "./storage-probe.mjs";
 
@@ -67,7 +69,7 @@ const server = createServer(async (request, response) => {
         }
     } else {
         response.setHeader("Content-Type", "text/html");
-        response.end("<!doctype html><title>Match-pattern smoke</title>");
+        response.end(`<!doctype html><title>Match-pattern smoke</title>${request.url.startsWith("/page") ? '<iframe src="/frame"></iframe>' : ""}`);
     }
 });
 
@@ -101,10 +103,59 @@ async function probe(config) {
             report.permissions.push(await chrome.permissions.contains({origins: [origin]}));
         }
 
+        report.messageFrames = await chrome.scripting.executeScript({
+            target: {tabId: tab.id, allFrames: true},
+            func: () => ({url: globalThis.location.href}),
+        });
+
+        report.messageFrames.sort((a, b) => a.frameId - b.frameId);
+
+        for (const frame of report.messageFrames) {
+            await chrome.scripting.executeScript({target: {tabId: tab.id, frameIds: [frame.frameId]}, func: installMessagingReceiver, args: [frame.frameId === 0 ? "main" : "child"]});
+        }
+
+        const removeReceiver = installMessagingReceiver("worker", chrome);
+        report.messageWorker = (await chrome.runtime.getContexts({contextTypes: ["BACKGROUND"]}))[0];
+
+        try {
+            report.messaging = await messagingProbe(chrome, {
+                tabId: tab.id, frames: report.messageFrames,
+                createOffscreen: () => chrome.offscreen.createDocument({url: "offscreen.html", reasons: ["WORKERS"], justification: "Messaging smoke"}),
+            });
+        } finally {
+            removeReceiver();
+        }
+
         await chrome.scripting.executeScript({target: {tabId: tab.id}, func: () => chrome.runtime.id});
         report.contentContexts = (await chrome.runtime.getContexts({tabIds: [tab.id]})).length;
         const extensionUrl = chrome.runtime.getURL("page.html");
-        const extensionTab = await chrome.tabs.create({url: extensionUrl, active: false});
+        let markReady;
+
+        const pageReady = new Promise(resolve => {
+            markReady = resolve;
+        });
+
+        const readyListener = (message, sender, respond) => {
+            if (message?.probe !== "extension-page-ready" || sender.url !== extensionUrl) return;
+
+            respond("ready"); markReady(sender);
+        };
+
+        chrome.runtime.onMessage.addListener(readyListener);
+        let extensionTab;
+
+        try {
+            extensionTab = await chrome.tabs.create({url: extensionUrl, active: false});
+            const sender = await pageReady;
+            report.extensionMessages = await messageResponsesProbe(chrome, {namespace: "tabs", tabId: extensionTab.id, label: "extension-page"});
+            report.extensionTargeted = [];
+
+            for (const target of [{frameId: sender.frameId}, {documentId: sender.documentId}]) {
+                report.extensionTargeted.push(await messageResponsesProbe(chrome, {namespace: "tabs", tabId: extensionTab.id, label: "extension-page", ...target}));
+            }
+        } finally {
+            chrome.runtime.onMessage.removeListener(readyListener);
+        }
 
         while ((await chrome.tabs.get(extensionTab.id)).status !== "complete") {
             if (Date.now() > deadline) throw new Error("Extension context tab did not load");
@@ -184,11 +235,13 @@ try {
 
         await writeFile(
             join(directory, "worker.js"),
-            `const storageProbe = ${storageProbe.toString()}; const offscreenProbe = ${offscreenProbe.toString()}; chrome.runtime.onInstalled.addListener(() => (${probe.toString()})(${JSON.stringify({name: profile.name, base, patterns, requestedOrigins})}));`
+            `const storageProbe = ${storageProbe.toString()}; const offscreenProbe = ${offscreenProbe.toString()}; const installMessagingReceiver = ${installMessagingReceiver.toString()}; const messageResponsesProbe = ${messageResponsesProbe.toString()}; const messagingProbe = ${messagingProbe.toString()}; chrome.runtime.onInstalled.addListener(() => (${probe.toString()})(${JSON.stringify({name: profile.name, base, patterns, requestedOrigins})}));`
         );
 
-        await writeFile(join(directory, "page.html"), "<!doctype html><title>Extension context smoke</title>");
-        await writeFile(join(directory, "offscreen.html"), "<!doctype html><title>Offscreen smoke</title>");
+        await writeFile(join(directory, "page.html"), '<!doctype html><title>Extension context smoke</title><script src="page.js"></script>');
+        await writeFile(join(directory, "page.js"), `(${installMessagingReceiver.toString()})("extension-page"); void chrome.runtime.sendMessage({probe: "extension-page-ready"});`);
+        await writeFile(join(directory, "offscreen.html"), '<!doctype html><title>Offscreen smoke</title><script src="offscreen.js"></script>');
+        await writeFile(join(directory, "offscreen.js"), `(${installMessagingReceiver.toString()})("offscreen");`);
 
         extensions.push(directory);
     }
@@ -238,6 +291,14 @@ try {
     for (const profile of profiles) {
         const result = results.get(profile.name);
         assert.equal(result.error, undefined, result.error);
+        const promiseListeners = checkMessageResponses(result.messaging[0].responses, "offscreen");
+        assert.equal(checkMessageResponses(result.messaging[0].contentResponses, "main"), promiseListeners);
+        assert.equal(checkMessageResponses(result.extensionMessages, "extension-page"), promiseListeners);
+        assert.equal(result.extensionTargeted.length, 2);
+
+        for (const scenarios of result.extensionTargeted) assert.equal(checkMessageResponses(scenarios, "extension-page"), promiseListeners);
+
+        console.log(`${profile.name}: Promise listeners=${promiseListeners}; empty replies=null; silent callback=lastError; extension-tab delivery verified.`);
         // The browser-report timeout no longer protects us after `finished` resolves. Bound the fake's probe too:
         // a missing onChanged event must fail the smoke, not hang until the CI job timeout.
         let storageTimeout;
@@ -279,6 +340,93 @@ try {
         } finally {
             clearTimeout(offscreenTimeout);
             offscreenHarness.reset();
+        }
+
+        assertions++;
+
+        assert.equal(result.messageFrames.length, 2, "Messaging smoke must include a main document and an iframe");
+        assert.deepEqual(result.messaging.map(entry => entry.style), ["promise", "callback"]);
+
+        for (const entry of result.messaging) {
+            assert.equal(entry.runtime.label, "offscreen", "Runtime request must reach the offscreen listener");
+            assert.equal(entry.missingFrame, true, "Native missing-frame request must fail through the selected interface");
+            assert.equal(entry.closedChannel, true, "Native offscreen closure must reject the held request");
+            assert.equal(entry.frames.length, 2, "Both frames must answer");
+
+            for (const [index, replies] of entry.frames.entries()) for (const reply of [replies.byFrame, replies.byDocument]) {
+                assert.equal(reply.label, "worker", "A content-frame relay must reach the worker listener");
+                assert.equal(reply.sender.frameId, result.messageFrames[index].frameId);
+                assert.equal(reply.sender.documentId, result.messageFrames[index].documentId);
+            }
+        }
+
+        const messagingHarness = createBrowserHarness({
+            extensionId: new URL(result.messageWorker.documentUrl ?? result.messaging[0].runtime.sender.url).hostname,
+            tabs: [createTabFixture(result.tab), createTabFixture(result.extensionTab)],
+        });
+
+        messagingHarness.messaging.promiseListeners = promiseListeners;
+
+        const messageWorker = messagingHarness.contexts.create({
+            kind: "background", contextId: result.messageWorker.contextId, url: result.messaging[0].runtime.sender.url,
+        });
+
+        const messageApi = messagingHarness.messaging.forContext(messageWorker).chrome;
+        installMessagingReceiver("worker", messageApi);
+
+        for (const frame of result.messageFrames) {
+            const context = messagingHarness.contexts.create({
+                kind: "contentScript", tabId: result.tab.id, frameId: frame.frameId,
+                documentId: messagingHarness.contexts.documents.create({
+                    tabId: result.tab.id, frameId: frame.frameId, documentId: frame.documentId, url: frame.result.url,
+                }).documentId,
+            });
+
+            installMessagingReceiver(frame.frameId === 0 ? "main" : "child", messagingHarness.messaging.forContext(context).chrome);
+        }
+
+        let messagingTimeout;
+
+        const compareMessaging = async () => {
+            const actual = await messagingProbe(messageApi, {
+                tabId: result.tab.id, frames: result.messageFrames,
+                createOffscreen: async () => {
+                    await messageApi.offscreen.createDocument({url: "offscreen.html", reasons: ["WORKERS"], justification: "Messaging smoke"});
+                    installMessagingReceiver("offscreen", messagingHarness.messaging.forContext(messagingHarness.offscreen.context).chrome);
+                },
+            });
+
+            assert.deepEqual(actual, result.messaging, `${profile.name}: context messages, frame/document addressing, sender and closure`);
+
+            const extensionInfo = result.contexts.find(context => context.tabId === result.extensionTab.id);
+            assert.ok(extensionInfo, "Extension tab must have a registered document");
+
+            const extensionPage = messagingHarness.contexts.create({
+                kind: "extensionPage", tabId: result.extensionTab.id, frameId: extensionInfo.frameId, url: extensionInfo.documentUrl,
+            });
+
+            installMessagingReceiver("extension-page", messagingHarness.messaging.forContext(extensionPage).chrome);
+            const target = {namespace: "tabs", tabId: result.extensionTab.id, label: "extension-page"};
+            assert.deepEqual(await messageResponsesProbe(messageApi, target), result.extensionMessages, `${profile.name}: extension-tab replies`);
+            const targeted = [];
+
+            for (const options of [{frameId: extensionPage.info.frameId}, {documentId: extensionPage.info.documentId}]) {
+                targeted.push(await messageResponsesProbe(messageApi, {...target, ...options}));
+            }
+
+            assert.deepEqual(targeted, result.extensionTargeted, `${profile.name}: extension frame/document replies`);
+            assertions += 2;
+        };
+
+        try {
+            await Promise.race([
+                compareMessaging(),
+                new Promise((_, reject) => {
+                    messagingTimeout = setTimeout(() => reject(new Error("Messaging harness probe did not complete; check routed channel lifecycle.")), 5000);
+                }),
+            ]);
+        } finally {
+            clearTimeout(messagingTimeout); messagingHarness.reset();
         }
 
         assertions++;

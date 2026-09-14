@@ -78,6 +78,8 @@ export interface RuntimeHarness {
     removeTabContexts(tabId: number): void;
     /** @internal Cancel API-owned work before the shared registry restores fixtures. */
     onContextsReset(listener: () => void): () => void;
+    /** @internal Also close context-routed channels when the root control is used. */
+    onMessageChannelsClose(listener: () => void): () => void;
     readonly manifest: chrome.runtime.Manifest;
     readonly id: string;
     readonly urlScheme: "chrome-extension" | "moz-extension" | "safari-web-extension";
@@ -135,12 +137,15 @@ export const createRuntimeHarness = (
     }
 
     const messageChannels = new Set<MessageChannel>();
+    const channelCloseListeners = new Set<() => void>();
 
     const messageChannelClosedError = (): Error =>
         new Error('Browser method "runtime.sendMessage" message channel closed before a response was received.');
 
     const closeMessageChannels = (): void => {
         for (const channel of [...messageChannels]) channel.close();
+
+        for (const listener of [...channelCloseListeners]) listener();
     };
 
     const dispatchMessage = (message: unknown): Promise<unknown> =>
@@ -497,6 +502,13 @@ export const createRuntimeHarness = (
         contextRegistry: contextState.registry,
         removeTabContexts: contextState.removeTab,
         onContextsReset: contextState.onReset,
+        onMessageChannelsClose(listener) {
+            channelCloseListeners.add(listener);
+
+            return () => {
+                channelCloseListeners.delete(listener);
+            };
+        },
         get contexts() {
             return contextState.runtimeContexts();
         },

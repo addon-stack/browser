@@ -85,7 +85,8 @@ success. Tests that deliberately make irreversible global changes should run in 
 
 `harness.contexts` owns [contexts and documents](contexts.md). `harness.runtime`, `harness.permissions`, `harness.tabs`, `harness.windows`, `harness.storage`, `harness.offscreen`, and `harness.scripting` expose the stateful
 controls and their methods/events. A namespace can still contain configurable members: for example,
-`tabs.sendMessage` and `tabs.connect` record calls but do not invent tab-context message or port routing. Complex
+Root `tabs.sendMessage` and all `tabs.connect` calls record arguments without routing messages or ports. For tab/context
+delivery, opt into [context-bound messaging](messaging.md). Complex
 namespaces are explicit configurable stubs:
 
 ```ts
@@ -101,6 +102,10 @@ the currently installed profile; restoring an inner installation returns to the 
 The retained `configurable.*.offscreen` controls are aliases to the shared [stateful Offscreen adapter](offscreen.md),
 so either facade's alias configures the same method. Use `harness.offscreen.beforeCreate`/`beforeClose` to delay or fail
 an operation while preserving registry updates.
+
+`harness.messaging.forContext(context)` provides [context-bound message routing](messaging.md), including stateful
+`tabs.sendMessage` in that view. Pass `messageContext` to `installBrowserGlobals` to bind real package wrappers.
+This leaves unbound/root method behavior unchanged; the message context is separate from simulated DOM markers.
 
 `tabs.query` selects fixture URLs with a documented match-pattern subset. `permissions.contains` checks whether
 explicitly granted origins cover the requested patterns; manifest declarations do not grant access automatically.

@@ -243,7 +243,7 @@ consumers continue to import only `@addon-core/browser/testing`.
 
 ### Browser match-pattern smoke
 
-Before releasing changes to the URL matcher, host-permission fake, runtime context registry, Storage or Offscreen model, run the real-browser
+Before releasing changes to the URL matcher, host-permission fake, runtime context registry, Storage, Offscreen or contextual messaging model, run the real-browser
 smoke in addition to unit and clean-consumer tests. Obtain the full **Chrome for Testing** executable from the
 [official downloads](https://googlechromelabs.github.io/chrome-for-testing/) or use a Chromium build with extension
 support. No ChromeDriver, Playwright, or other automation package is needed. Do not use `chrome-headless-shell`.
@@ -265,7 +265,12 @@ Besides URL queries and permissions, it compares `runtime.getContexts()` visibil
 worker and extension tab, and checks that a real injected content script is excluded from that API. It also compares
 Offscreen create/close, duplicate/absent-operation errors and native context fields via callbacks and Promises. The
 version-dependent `hasDocument` method is feature-detected and an unavailable method is reported as not compared.
-It does not test message routing or script execution inside the harness. It also compares Storage selectors,
+It also compares contextual runtime/tab messages between worker, Offscreen, main content frame and iframe, including
+frame/document addressing, sender metadata, JSON payloads and held-channel closure through callback/Promise method
+calls. Extension-tab delivery uses a readiness handshake. Promise-listener success/rejection, empty responses and
+unanswered messages are measured separately; the detected `accept`/`ignore` behavior is printed and compared with the
+fake in that mode. Unknown outcomes fail the smoke. Both modes are independently covered by unit tests; this probe
+does not establish rollout availability for all users or isolated application execution. It also compares Storage selectors,
 serialization (including Date/RegExp/undefined), change payloads/no-op suppression and UTF-8 byte accounting.
 The clean-consumer check additionally installs published `@addon-core/storage@0.7.0` and exercises its unmodified
 providers through ESM/CJS kit imports and jsdom. See [Storage scope and consumer examples](docs/testing/storage.md).

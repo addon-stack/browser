@@ -40,7 +40,7 @@ type MessageArgs = Parameters<Parameters<typeof chrome.runtime.onMessage.addList
 
 export interface BrowserContext extends BrowserContextLifetime {
     readonly info: BrowserContextInfo;
-    /** Context-local manual subscriptions. Message routing is not enabled by registration. */
+    /** Context-local listeners for manual emit or explicitly bound messaging; registration does not change root routing. */
     readonly onMessage: BrowserEventHarness<MessageArgs>;
 }
 

@@ -46,6 +46,7 @@ they read are supplied by the test.
 - [Contexts and documents](testing/contexts.md) provide a shared registry, context-local subscriptions and cleanup.
 - [Storage](testing/storage.md) provides isolated areas, managed policy fixtures, change events and real `@addon-core/storage` examples.
 - [Offscreen](testing/offscreen.md) shares context state with runtime queries and supports controlled creation, closure and cleanup.
+- [Context messaging](testing/messaging.md) routes messages between registered extension contexts and content-script frames.
 - [Jest usage](testing/jest.md) shows how to combine the kit with Jest without making the kit depend on Jest.
 - [Limitations](testing/limitations.md) describes intentional differences from real browsers.
 

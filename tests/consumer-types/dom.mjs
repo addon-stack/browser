@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import * as production from "@addon-core/browser";
 import {getManifest, getUrl} from "@addon-core/browser";
-import {createBrowserHarness, installBrowserGlobals, installGlobals} from "@addon-core/browser/testing";
+import {createBrowserHarness, createTabFixture, installBrowserGlobals, installGlobals} from "@addon-core/browser/testing";
 import {JSDOM} from "jsdom";
+import checkMessaging from "./messaging.cjs";
 import checkOffscreen from "./offscreen.cjs";
 import checkStorage from "./storage.cjs";
 
@@ -19,6 +20,7 @@ const restore = installBrowserGlobals(harness, {environment: "preserve"});
 try {
     await checkStorage({createBrowserHarness, installBrowserGlobals}, "preserve");
     await checkOffscreen(production, {createBrowserHarness, installBrowserGlobals});
+    await checkMessaging(production, {createBrowserHarness, installBrowserGlobals, createTabFixture});
     [globalThis.window, globalThis.document, globalThis.location, globalThis.navigator].forEach((value, index) => assert.equal(value, before[index]));
     assert.equal(globalThis.document.querySelector("button").textContent, "Save");
     assert.equal(globalThis.location.href, "https://example.test/options");

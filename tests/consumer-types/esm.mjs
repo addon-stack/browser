@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import checkContexts from "./contexts.cjs";
+import checkMessaging from "./messaging.cjs";
 import checkOffscreen from "./offscreen.cjs";
 import checkStorage from "./storage.cjs";
 
@@ -12,6 +13,7 @@ assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "chrome"), beforeCh
 assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "browser"), beforeBrowser);
 
 await checkContexts(production, testing);
+await checkMessaging(production, testing);
 await checkOffscreen(production, testing);
 await checkStorage(testing);
 

@@ -19,6 +19,9 @@ export interface RawCapabilityEntry {
     readonly browserInvocation?: RawMethodInvocation;
     readonly failureChannel: RawFailureChannel;
     readonly supportedOptions?: readonly string[];
+    /** Overrides only on explicitly context-bound facades; `coverage` continues to describe the root facade. */
+    readonly contextCoverage?: RawCapabilityCoverage;
+    readonly contextInvocation?: RawMethodInvocation;
 }
 
 type InvocationPair = {
@@ -481,7 +484,15 @@ export const RAW_CAPABILITY_COVERAGE: readonly RawCapabilityEntry[] = [
         "setPanel",
         "setTitle",
     ]),
-] as const;
+].map(entry => {
+    if (entry.path === "runtime.sendMessage" || entry.path === "tabs.sendMessage") {
+        return {...entry, contextCoverage: "stateful", contextInvocation: "dual"} as const;
+    }
+
+    if (entry.path === "runtime.onMessage") return {...entry, contextCoverage: "event"} as const;
+
+    return entry;
+});
 
 export const getRawCapability = (path: string): RawCapabilityEntry | undefined =>
     RAW_CAPABILITY_COVERAGE.find(entry => entry.path === path);

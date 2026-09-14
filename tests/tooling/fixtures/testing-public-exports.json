@@ -24,6 +24,10 @@
     "hasValue": false
   },
   {
+    "name": "BrowserContextMessaging",
+    "hasValue": false
+  },
+  {
     "name": "BrowserContextOptions",
     "hasValue": false
   },
@@ -77,6 +81,18 @@
   },
   {
     "name": "BrowserHarnessOptions",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserIgnoredMessageRejection",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserMessageChannelInfo",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserMessagingHarness",
     "hasValue": false
   },
   {

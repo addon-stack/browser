@@ -24,25 +24,33 @@ Chrome, Firefox, Safari, Opera, or any other real browser.
   listener failures separately from successful writes. Reset cannot cancel consumer code or detached async work.
   The `firefox` profile also uses this Chromium-oriented codec (`Date`/`RegExp` without enumerable properties become
   `{}`), so it must not be used to establish Firefox-specific serialization behavior without a real Firefox probe.
-- `tabs.sendMessage()` and `tabs.connect()` are configurable stubs. The [context registry](contexts.md) can represent
-  content scripts, documents and frames, but does not load application code, route messages between them or simulate
-  long-lived ports. Context-local `onMessage.emit()` is a separate manual event, not a routed request/response channel.
+- Root `tabs.sendMessage()` and all `tabs.connect()` calls remain configurable stubs. Explicit [context-bound
+  messaging](messaging.md) routes runtime/tab requests to registered listeners with per-context ownership. It does not
+  load application code, isolate JavaScript realms or implement long-lived ports. Raw `onMessage.emit()` stays manual.
+- Contextual messages/responses use JSON serialization in **every** profile, including Firefox/Safari, not structured
+  clone. `messaging.promiseListeners` explicitly selects `accept` (default) or `ignore`; it is not inferred from a browser
+  profile/version. Ignored Promise failures are observable in `ignoredPromiseRejections`, not used as replies. A listener
+  that never responds produces `undefined` for a Promise caller but an unanswered-port `lastError` for a callback caller.
+  Explicit `sendResponse()`/`sendResponse(undefined)` instead produce `null`. No receiver rejects in contextual mode,
+  unlike the legacy root behavior below. Globals are
+  not async-local: concurrent/nested sends must use explicit bound APIs to retain the sender across awaits.
 - `runtime.getContexts()` reads registered extension contexts and excludes content scripts. Document/frame lifetimes
   and cleanup are explicit; updating a tab URL does not simulate navigation.
 - [Offscreen](offscreen.md) creation/closure shares that registry, with explicit delay/failure gates and reset cancellation.
   It does not load HTML, create a DOM, enforce permissions/MV3 or API restrictions, model separate incognito profiles, or
   perform audio-based automatic closure. All kit profiles expose the same adapter, including Firefox/Safari profiles;
   native API availability is not implied. Disable methods through capabilities to test absence. Closing disposes
-  context-owned work but not unscoped root runtime message channels; context-addressed routing is not implemented yet.
-- `runtime.sendMessage()` resolves `undefined` when there are no message listeners. Chrome can instead report
+  context-owned work and routed responses but not unscoped root runtime message channels.
+- Unbound/root `runtime.sendMessage()` resolves `undefined` when there are no message listeners. Chrome can instead report
   `Could not establish connection. Receiving end does not exist.` through callback-scoped `runtime.lastError` (or a
   rejected Promise).
 - A synchronous `runtime.onMessage` listener return is not a response: every value except literal `true` is ignored.
   Return a Promise/thenable or call `sendResponse()` to answer; literal `true` only keeps the response channel open.
-- A held-open message channel has no automatic browser-lifecycle timeout. It remains pending until `sendResponse()` or
+- A held-open root message channel has no automatic browser-lifecycle timeout. It remains pending until `sendResponse()` or
   `harness.runtime.closeMessageChannels()`; explicit closure rejects with the exact message
   `Browser method "runtime.sendMessage" message channel closed before a response was received.`; `harness.reset()` also
-  closes pending message channels.
+  closes pending message channels. Contextual channels additionally follow sender/receiver disposal, with the API-named
+  error and explicit controls documented in [messaging](messaging.md#pending-channels-and-teardown).
 - Browser profiles model routing and common compatibility shapes, not complete vendor parity. In the Firefox profile,
   production wrappers normally use `harness.browser`; configuring the separate `harness.chrome` facade does not change
   that routing.
@@ -76,4 +84,4 @@ Raw `createBrowserEvent().emit()` waits for Promises and arbitrary thenables and
 never enabled by default.
 
 Use real-browser integration tests for permissions prompts, full vendor URL-pattern semantics, service-worker suspension,
-cross-context messaging, content-script injection, browser UI, security boundaries, and browser-specific timing.
+cross-context execution/transport compatibility, content-script injection, browser UI, security boundaries, and browser-specific timing.

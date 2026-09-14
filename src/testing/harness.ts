@@ -1,6 +1,7 @@
-import type {BrowserDelaysHarness, BrowserOffscreenHarness, BrowserStorageHarness} from "./api";
+import type {BrowserDelaysHarness, BrowserMessagingHarness, BrowserOffscreenHarness, BrowserStorageHarness} from "./api";
 import {type ConfigurableBrowserControls, type ConfigurableNamespaces, createConfigurableNamespaces} from "./api/configurable";
 import {createBrowserDelaysHarness} from "./api/delays";
+import {createMessagingHarness} from "./api/messaging";
 import {createOffscreenHarness} from "./api/offscreen";
 import {createPermissionsHarness, type PermissionsHarness} from "./api/permissions";
 import {createRuntimeHarness, type RuntimeHarness} from "./api/runtime";
@@ -64,6 +65,7 @@ export interface BrowserHarness {
     readonly scripting: ScriptingHarness;
     readonly storage: BrowserStorageHarness;
     readonly offscreen: BrowserOffscreenHarness;
+    readonly messaging: BrowserMessagingHarness;
     readonly delays: BrowserDelaysHarness;
     readonly configurable: ConfigurableHarness;
     readonly capabilities: BrowserCapabilitiesHarness;
@@ -189,6 +191,10 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
     };
 
     mergeStateful();
+
+    const messaging = createMessagingHarness(runtime.contextRegistry, {chrome, browser}, state, lastError, () => runtime.id, nextSequence);
+    runtime.onContextsReset(messaging.reset);
+    runtime.onMessageChannelsClose(() => messaging.closeChannels());
 
     for (const [namespace, chromeNamespace, browserNamespace] of [
         ["runtime", runtime.chromeApi, runtime.browserApi],
@@ -341,6 +347,7 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         scripting,
         storage,
         offscreen,
+        messaging,
         delays,
         configurable,
         capabilities,
@@ -403,7 +410,7 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
             // Shared compatibility aliases retain namespace history but must not triple-count root history.
             const configurableCalls = [...configChrome.calls, ...configBrowser.calls].filter(call => !ownedMethods.has(call.api));
 
-            return [...callSources.flatMap(methodCalls), ...configurableCalls].sort(
+            return [...callSources.flatMap(methodCalls), ...configurableCalls, ...messaging.calls].sort(
                 (left, right) => left.sequence - right.sequence
             );
         },

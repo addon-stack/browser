@@ -1,6 +1,8 @@
 import type {BrowserMethodCallback, BrowserMethodObservedInvocation} from "./method";
 
 export interface BrowserHarnessCall {
+    /** Present for calls made through a context-bound messaging facade. */
+    contextId?: string;
     api: string;
     args: readonly unknown[];
     callback?: BrowserMethodCallback;

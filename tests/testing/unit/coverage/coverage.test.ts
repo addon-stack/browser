@@ -231,4 +231,27 @@ describe("testing coverage matrices", () => {
 
         expect(mismatches).toEqual([]);
     });
+
+    test("verifies contextual overrides separately without overstating root tabs.sendMessage coverage", () => {
+        const harness = createBrowserHarness({contexts: [{kind: "background", contextId: "worker"}]});
+        const view = harness.messaging.forContext("worker");
+        const entries = RAW_CAPABILITY_COVERAGE.filter(entry => entry.contextCoverage);
+        expect(entries.map(entry => entry.path).sort()).toEqual(["runtime.onMessage", "runtime.sendMessage", "tabs.sendMessage"]);
+
+        for (const entry of entries) {
+            const control = memberOf(memberOf(view, entry.namespace), entry.member);
+
+            if (entry.kind === "method") {
+                expect(isBrowserMethodControl(control)).toBe(true);
+                expect((control as AnyBrowserMethod).hasDefaultImplementation).toBe(entry.contextCoverage === "stateful");
+                expect(entry.contextInvocation).toBe("dual");
+            } else expect(isBrowserEventControl(control)).toBe(true);
+
+            for (const facade of [view.chrome, view.browser]) {
+                expect(memberOf(memberOf(facade, entry.namespace), entry.member)).toBe(memberOf(control, "api"));
+            }
+        }
+
+        expect(harness.tabs.sendMessage.hasDefaultImplementation).toBe(false);
+    });
 });

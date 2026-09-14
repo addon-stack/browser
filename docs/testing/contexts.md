@@ -2,7 +2,8 @@
 
 `harness.contexts` is an in-memory registry owned by one harness. It models background contexts, extension pages,
 offscreen documents and content scripts. Documents and frames exist independently of a registered content script.
-Registration does not load code, change globals, create a DOM, or enable inter-context message delivery.
+Registration does not load code, change globals or create a DOM. Explicitly bound [messaging facades](messaging.md)
+route messages to registered context-local listeners; root messaging remains a separate compatibility mode.
 
 ## Registering documents and contexts
 
@@ -101,8 +102,9 @@ await content.onMessage.emit({type: "refresh"}, {id: harness.runtime.id}, () => 
 unsubscribe();
 ```
 
-This is raw event dispatch: `emit()` waits for listener promises but does not return a message response. It is not
-connected to `runtime.sendMessage()` or `tabs.sendMessage()` yet. There are no implicit subscriptions to other contexts.
+This is raw event dispatch: `emit()` waits for listener promises but does not return a message response.
+Context-bound `runtime.sendMessage()` and `tabs.sendMessage()` deliver to these same listeners through the separate
+request/response dispatcher. There are no implicit subscriptions to other contexts or to root runtime events.
 
 Use `onDispose` for synchronous cleanup and `track` to bind an asynchronous operation's observed lifetime:
 
@@ -140,8 +142,8 @@ the other components still reset and an error is reported afterward.
 Its initial tab fixtures must still exist; use `harness.reset()`
 after changing/removing tabs to restore the whole model. Each harness has separate counters, state and lifetimes.
 
-Offscreen creation and closure share this registry. Routed messaging, context-specific API facades and script
-execution are subsequent features. The registry does not promise browser
+Offscreen and context-bound messaging share this registry and its disposal mechanism. Script execution is a
+subsequent feature. The registry does not promise browser
 lifecycle timing, worker suspension, permissions enforcement or concurrent execution of application modules in
 separate realms. The Chromium smoke compares runtime-query visibility/filtering and basic Offscreen lifecycle; Firefox and Safari behavior is not
 inferred from that check.

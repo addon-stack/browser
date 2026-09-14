@@ -127,6 +127,13 @@ export const installBrowserGlobals = (
     const context = options.context ?? "extensionPage";
     const preserve = options.environment === "preserve";
 
+    if (options.messageContext !== undefined && (profile === "custom" ||
+        (options.globals && ["chrome", "browser"].some(key => Object.hasOwn(options.globals!, key))))) {
+        throw new Error("messageContext cannot be combined with custom API globals; install the bound facades explicitly instead.");
+    }
+
+    const messaging = options.messageContext === undefined ? undefined : harness.messaging.forContext(options.messageContext);
+
     if (preserve && options.context !== undefined) {
         throw new Error('environment: "preserve" cannot be combined with a simulated context');
     }
@@ -149,7 +156,8 @@ export const installBrowserGlobals = (
             harness.setProfileCapability("runtime.getBrowserInfo", profile === "firefox");
         }
 
-        const values: TestGlobalValues = profile === "custom" ? {} : profileGlobals(harness, profile);
+        const target = messaging ? {chrome: messaging.chrome, browser: messaging.browser, getOperaSidebarAction: () => harness.getOperaSidebarAction()} : harness;
+        const values: TestGlobalValues = profile === "custom" ? {} : profileGlobals(target, profile);
 
         if (preserve) delete values.navigator;
         else Object.assign(values, createContextGlobals(context));

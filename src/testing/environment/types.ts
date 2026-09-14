@@ -1,3 +1,4 @@
+import type {BrowserContext} from "../model";
 import type {BrowserProfile, BrowserTestApi, ExtensionContextKind} from "../types";
 
 export interface NavigatorTestValue extends Partial<Navigator> {
@@ -39,6 +40,8 @@ export interface InstallBrowserGlobalsOptions {
     environment?: "preserve" | "simulate";
     profile?: BrowserProfile;
     context?: ExtensionContextKind;
+    /** Bind messaging APIs to this registered context; independent of simulated DOM context markers. */
+    messageContext?: BrowserContext | string;
     captureListenerErrors?: boolean;
     /** Required to express non-standard namespace combinations with the custom profile. */
     globals?: TestGlobalValues;

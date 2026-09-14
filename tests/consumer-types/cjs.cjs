@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
 const checkContexts = require("./contexts.cjs");
+const checkMessaging = require("./messaging.cjs");
 const checkOffscreen = require("./offscreen.cjs");
 const checkStorage = require("./storage.cjs");
 
@@ -13,6 +14,7 @@ assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "browser"), beforeB
 
 async function checkConsumer() {
     await checkContexts(production, testing);
+    await checkMessaging(production, testing);
     await checkOffscreen(production, testing);
     await checkStorage(testing);
 

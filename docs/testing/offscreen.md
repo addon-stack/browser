@@ -114,9 +114,10 @@ operations and manual `context.onMessage.emit()` calls reject, and synchronous `
 are aggregated after removal; even a failing cleanup does not resurrect the document or prevent a later creation.
 Unrelated background/page contexts are not removed.
 
-There is no routed messaging yet. Root `runtime.onMessage` channels are not associated with individual contexts;
-closing Offscreen must not close all such channels indiscriminately. Use `harness.runtime.closeMessageChannels()` for
-those unscoped channels, and `context.track()` for context-owned work. Context-addressed delivery is a later feature.
+[Context-bound messaging](messaging.md) associates pending responses with the offscreen context, so closure invalidates
+those responses automatically. A request may still receive an answer from another live recipient. Legacy root
+`runtime.onMessage` channels remain unscoped and are not closed indiscriminately with Offscreen. Use
+`harness.runtime.closeMessageChannels()` for explicit closure of both root and routed channels.
 
 `harness.reset()` cancels pending stateful Offscreen calls, clears gates/configuration/call history and restores initial
 context/document fixtures. `harness.contexts.reset()` and `harness.runtime.reset()` also cancel Offscreen operations
@@ -170,6 +171,7 @@ not reproduce browser lifecycle timing. Native constraints are described in the 
 
 The existing real-Chromium smoke runs the same probe against the built kit and a disposable MV3 extension. It compares
 create/close, repeated/absent-operation errors, native context fields and callback/Promise paths. `hasDocument` is
-feature-detected; its absence is reported, not counted as tested behavior. It does not validate Firefox/Safari, DOM
-execution, permissions enforcement or message delivery. Fresh-tarball checks additionally run the real production
+feature-detected; its absence is reported, not counted as tested behavior. A separate [messaging probe](messaging.md)
+compares worker/Offscreen delivery and held-channel closure. These probes do not validate Firefox/Safari, modeled DOM
+execution or permissions enforcement. Fresh-tarball checks additionally run the real production
 helpers through ESM/CJS, TypeScript and jsdom. See the [contributor procedure](../../CONTRIBUTING.md#browser-match-pattern-smoke).
