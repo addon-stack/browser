@@ -1,9 +1,15 @@
+import type {BrowserContextsHarness, BrowserScriptTarget} from "../model";
 import {type BrowserMethod, createBrowserMethod} from "../primitives";
 import {cloneRecord} from "../primitives/clone";
 import type {RuntimeLastErrorController} from "../primitives/last-error";
 import type {ScriptingTestApi} from "../types";
+import {type BrowserScriptExecutor, createScriptExecutionHarness} from "./script-execution";
 
 export interface ScriptingHarness {
+    selectTargets(target: chrome.scripting.InjectionTarget): readonly BrowserScriptTarget[];
+    setExecutor(executor: BrowserScriptExecutor | undefined): void;
+    readonly pendingExecutions: number;
+    cancelExecutions(): void;
     readonly api: ScriptingTestApi;
     readonly executeScript: BrowserMethod<
         typeof chrome.scripting.executeScript,
@@ -26,15 +32,32 @@ export interface ScriptingHarness {
 export const createScriptingHarness = (
     initialScripts: readonly chrome.scripting.RegisteredContentScript[] | undefined,
     lastError: RuntimeLastErrorController,
+    contexts: BrowserContextsHarness,
+    hasTab: (tabId: number) => boolean,
     nextSequence?: () => number
 ): ScriptingHarness => {
     const initial = (initialScripts ?? []).map(script => cloneRecord(script));
     let scripts = new Map(initial.map(script => [script.id, script]));
+    const execution = createScriptExecutionHarness(contexts, hasTab);
 
     const executeScript = createBrowserMethod<
         typeof chrome.scripting.executeScript,
         chrome.scripting.InjectionResult<unknown>[]
-    >({callback: "last", invocation: "dual", lastError, name: "scripting.executeScript", nextSequence});
+    >({
+        callback: "last", invocation: "dual", lastError, name: "scripting.executeScript", nextSequence,
+        // The adapter returns unknown results; the original generic overload ties the result to the injected func.
+        implementation: ((injection: chrome.scripting.ScriptInjection<unknown[], unknown>, callback?: (results?: chrome.scripting.InjectionResult<unknown>[]) => void) => {
+            const operation = execution.execute(injection);
+
+            if (!callback) return operation;
+
+            operation.then(results => {
+                callback(results);
+            }, error => {
+                lastError.runWithLastError(error, callback);
+            });
+        }) as typeof chrome.scripting.executeScript,
+    });
 
     const insertCSS = createBrowserMethod<typeof chrome.scripting.insertCSS, void>({
         callback: "last",
@@ -179,6 +202,12 @@ export const createScriptingHarness = (
     ];
 
     return {
+        selectTargets: execution.selectTargets,
+        setExecutor: execution.setExecutor,
+        cancelExecutions: execution.cancelExecutions,
+        get pendingExecutions() {
+            return execution.pendingExecutions;
+        },
         api,
         executeScript,
         getRegisteredContentScripts,
@@ -191,6 +220,7 @@ export const createScriptingHarness = (
             return [...scripts.values()].map(script => cloneRecord(script));
         },
         reset(): void {
+            execution.reset();
             scripts = new Map(initial.map(script => [script.id, cloneRecord(script)]));
 
             methods.forEach(method => {

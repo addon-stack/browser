@@ -5,6 +5,7 @@ import {createBrowserHarness, createTabFixture, installBrowserGlobals, installGl
 import {JSDOM} from "jsdom";
 import checkMessaging from "./messaging.cjs";
 import checkOffscreen from "./offscreen.cjs";
+import checkScripting from "./scripting.cjs";
 import checkStorage from "./storage.cjs";
 
 const dom = new JSDOM('<button id="save">Save</button>', {url: "https://example.test/options"});
@@ -20,6 +21,7 @@ const restore = installBrowserGlobals(harness, {environment: "preserve"});
 try {
     await checkStorage({createBrowserHarness, installBrowserGlobals}, "preserve");
     await checkOffscreen(production, {createBrowserHarness, installBrowserGlobals});
+    await checkScripting(production, {createBrowserHarness, installBrowserGlobals, createTabFixture});
     await checkMessaging(production, {createBrowserHarness, installBrowserGlobals, createTabFixture});
     [globalThis.window, globalThis.document, globalThis.location, globalThis.navigator].forEach((value, index) => assert.equal(value, before[index]));
     assert.equal(globalThis.document.querySelector("button").textContent, "Save");

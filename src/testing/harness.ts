@@ -139,7 +139,8 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
     const permissions = createPermissionsHarness(options.permissions, lastError, nextSequence);
     const tabs = createTabsHarness(state, lastError, nextSequence);
     const windows = createWindowsHarness(state, tabs, lastError, nextSequence);
-    const scripting = createScriptingHarness(options.registeredContentScripts, lastError, nextSequence);
+    const scripting = createScriptingHarness(options.registeredContentScripts, lastError, runtime.contextRegistry, id => state.tabs.has(id), nextSequence);
+    runtime.onContextsReset(scripting.reset);
     const storage = createStorageHarness(options.storage, lastError, nextSequence);
     const listenerCapture = createListenerErrorCapture();
 

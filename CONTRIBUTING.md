@@ -243,7 +243,7 @@ consumers continue to import only `@addon-core/browser/testing`.
 
 ### Browser match-pattern smoke
 
-Before releasing changes to the URL matcher, host-permission fake, runtime context registry, Storage, Offscreen or contextual messaging model, run the real-browser
+Before releasing changes to the URL matcher, host-permission fake, runtime context registry, Storage, Offscreen, scripting targets or contextual messaging model, run the real-browser
 smoke in addition to unit and clean-consumer tests. Obtain the full **Chrome for Testing** executable from the
 [official downloads](https://googlechromelabs.github.io/chrome-for-testing/) or use a Chromium build with extension
 support. No ChromeDriver, Playwright, or other automation package is needed. Do not use `chrome-headless-shell`.
@@ -272,6 +272,11 @@ unanswered messages are measured separately; the detected `accept`/`ignore` beha
 fake in that mode. Unknown outcomes fail the smoke. Both modes are independently covered by unit tests; this probe
 does not establish rollout availability for all users or isolated application execution. It also compares Storage selectors,
 serialization (including Date/RegExp/undefined), change payloads/no-op suppression and UTF-8 byte accounting.
+Scripting comparisons cover main/all/frame/document selectors, duplicate frame IDs, result identifiers/order and
+invalid targets via callbacks and Promises. The fake executor returns metadata; these checks do not validate an
+isolated JavaScript executor. See [scripting boundaries](docs/testing/scripting.md).
+Separate native checks pin child throws/rejections and body/cycle/BigInt results for both invocation styles;
+these are not claims that the general configurable executor has Chrome's failure/serialization behavior.
 The clean-consumer check additionally installs published `@addon-core/storage@0.7.0` and exercises its unmodified
 providers through ESM/CJS kit imports and jsdom. See [Storage scope and consumer examples](docs/testing/storage.md).
 If the browser is unavailable locally, report the smoke as **not run**, not as passed.

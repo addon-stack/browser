@@ -16,8 +16,14 @@ Chrome, Firefox, Safari, Opera, or any other real browser.
 - `permissions.contains()` models pattern containment for explicitly granted origins, ignoring paths. It does not
   infer grants from the manifest or simulate prompts, restricted pages, file-access toggles or user site-access
   policy. Grant storage and removal remain exact-entry operations, without partial wildcard subtraction.
-- Complex APIs outside runtime, permissions, tabs, windows, storage, offscreen, and the scripting content-script registry are configurable
+- Complex APIs outside runtime, permissions, tabs, windows, storage, offscreen, and the modeled scripting APIs are configurable
   stubs. They do not simulate the browser unless the test supplies an implementation or result.
+- [Scripting](scripting.md) models document selection and an explicit executor adapter, not JavaScript execution.
+  It does not enforce host permissions, simulate DOM/execution worlds, load files or provide a Node sandbox.
+  Target-context removal conservatively cancels the entire request; result copying is not browser serialization parity.
+  Ready-made method results bypass target validation and lifetime tracking. CSS APIs remain configurable.
+  Its strict adapter-failure policy differs from measured Chrome child-script exceptions; see the
+  [native outcomes in the scripting contract](scripting.md#errors-pending-work-and-reset).
 - [Storage](storage.md) models a Chromium-oriented enumerable-data subset, not persistence, remote sync, policy loading,
   write-rate limits or context access permissions. Only sync has default size/count quotas. Session/managed byte usage
   stays configurable. Default callbacks and change dispatch start synchronously; `flushChanges()` observes automatic

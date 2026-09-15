@@ -323,7 +323,10 @@ export const RAW_CAPABILITY_COVERAGE: readonly RawCapabilityEntry[] = [
         "onUserScriptMessage",
     ]),
 
-    ...methodCapabilities("scripting", "configurable", callbackInvocation, ["executeScript", "insertCSS", "removeCSS"]),
+    ...methodCapabilities("scripting", "configurable", callbackInvocation, ["insertCSS", "removeCSS"]),
+    ...methodCapabilities("scripting", "stateful", callbackInvocation, ["executeScript"], {
+        executeScript: ["registered documents; explicit executor or configured result", "tabId", "frameIds", "documentIds", "allFrames", "world/injectImmediately: executor metadata"],
+    }),
     ...methodCapabilities("scripting", "stateful", callbackInvocation, [
         "getRegisteredContentScripts",
         "registerContentScripts",

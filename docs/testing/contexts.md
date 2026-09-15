@@ -138,12 +138,13 @@ clears subscriptions, and cancels tracked operations. Old handles remain dispose
 `harness.contexts.get(id)`. Fixture callbacks/subscriptions are never automatically reinstated. If a cleanup throws,
 the other components still reset and an error is reported afterward.
 
-`harness.contexts.reset()` restores the registry, cancels pending stateful Offscreen operations and resets their controls.
+`harness.contexts.reset()` restores the registry, cancels pending stateful Offscreen and scripting operations and resets their controls/executor.
 Its initial tab fixtures must still exist; use `harness.reset()`
 after changing/removing tabs to restore the whole model. Each harness has separate counters, state and lifetimes.
 
-Offscreen and context-bound messaging share this registry and its disposal mechanism. Script execution is a
-subsequent feature. The registry does not promise browser
+Offscreen, context-bound messaging and [scripting targets/executors](scripting.md) share this registry and its disposal
+mechanism. `documents.onRemoved(documentId, cleanup)` observes one document lifetime and returns an unsubscribe;
+reusing an ID does not reuse its subscriptions. The registry does not promise browser
 lifecycle timing, worker suspension, permissions enforcement or concurrent execution of application modules in
 separate realms. The Chromium smoke compares runtime-query visibility/filtering and basic Offscreen lifecycle; Firefox and Safari behavior is not
 inferred from that check.

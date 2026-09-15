@@ -289,8 +289,9 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
         "onUserScriptMessage",
     ]),
 
-    ...entries("scripting", "method-wrapper", "configurable", ["executeScript", "insertCss", "removeCss"]),
+    ...entries("scripting", "method-wrapper", "configurable", ["insertCss", "removeCss"]),
     ...entries("scripting", "method-wrapper", "stateful", [
+        "executeScript",
         "getRegisteredContentScripts",
         "registerContentScripts",
         "unregisterContentScripts",

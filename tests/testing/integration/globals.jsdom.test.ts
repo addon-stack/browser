@@ -1,6 +1,28 @@
 /** @jest-environment jsdom */
 import {getManifest, getUrl, onMessage, sendMessage} from "../../../src/runtime";
-import {createBrowserHarness, installBrowserGlobals} from "../../../src/testing/index";
+import {executeScript} from "../../../src/scripting";
+import {createBrowserHarness, createTabFixture, installBrowserGlobals} from "../../../src/testing/index";
+
+test("scripting adapter works in Jest jsdom without executing code against the host DOM", async () => {
+    const harness = createBrowserHarness({tabs: [createTabFixture({id: 7})]});
+    harness.contexts.documents.create({tabId: 7, url: "https://injected.test/"});
+    const before = [window, document, location, navigator];
+    harness.scripting.setExecutor(({target}) => ({url: target.url}));
+    const restore = installBrowserGlobals(harness, {environment: "preserve"});
+
+    try {
+        const results = await executeScript({target: {tabId: 7}, func: () => {
+            document.title = "must not run";
+        }});
+
+        expect(results[0].result).toEqual({url: "https://injected.test/"});
+        expect(document.title).not.toBe("must not run");
+        [window, document, location, navigator].forEach((value, index) => expect(value).toBe(before[index]));
+    } finally {
+        harness.reset();
+        restore();
+    }
+});
 
 const environment = () => Object.fromEntries(["window", "document", "location", "navigator"].map(key =>
     [key, Object.getOwnPropertyDescriptor(globalThis, key)]

@@ -52,6 +52,8 @@ export interface BrowserDocumentsHarness {
     create(options: BrowserDocumentOptions): BrowserDocument;
     get(documentId: string): BrowserDocument | undefined;
     list(): readonly BrowserDocument[];
+    /** Subscribe to this document's removal, not a future document reusing its ID. */
+    onRemoved(documentId: string, cleanup: () => void): () => void;
     /** Removes this document, its child frames and all their contexts. */
     remove(documentId: string): void;
 }
@@ -103,6 +105,7 @@ export const createContextRegistry = (
     const documents = new Map<string, BrowserDocument>();
     const contexts = new Map<string, {handle: BrowserContext; info: BrowserContextInfo; dispose(): void}>();
     const resetListeners = new Set<() => void>();
+    const documentCleanups = new Map<string, Set<() => void>>();
     let documentCounter = 0;
     let contextCounter = 0;
     let replacing = false;
@@ -232,9 +235,32 @@ export const createContextRegistry = (
             }
         } while (ids.size > previousSize);
 
-        for (const id of ids) documents.delete(id);
+        const cleanups = [...ids].flatMap(id => {
+            documents.delete(id);
+            const callbacks = [...(documentCleanups.get(id) ?? [])];
+            documentCleanups.delete(id);
 
-        removeContexts([...contexts].filter(([, {info}]) => info.documentId && ids.has(info.documentId)).map(([id]) => id));
+            return callbacks;
+        });
+
+        const errors: unknown[] = [];
+
+        // Detach the old contexts before removal callbacks can register replacement documents/contexts.
+        try {
+            removeContexts([...contexts].filter(([, {info}]) => info.documentId && ids.has(info.documentId)).map(([id]) => id));
+        } catch (error) {
+            errors.push(error);
+        }
+
+        for (const cleanup of cleanups) {
+            try {
+                cleanup();
+            } catch (error) {
+                errors.push(error);
+            }
+        }
+
+        if (errors.length) throw new AggregateError(errors, "Browser test document cleanup failed");
     };
 
     const documentControls: BrowserDocumentsHarness = {
@@ -252,6 +278,21 @@ export const createContextRegistry = (
         },
         list() {
             return [...documents.values()].map(snapshotDocument);
+        },
+        onRemoved(id, cleanup) {
+            assertWritable();
+
+            if (!documents.has(id)) fail(`document "${id}" does not exist`);
+
+            const callbacks = documentCleanups.get(id) ?? new Set<() => void>();
+            documentCleanups.set(id, callbacks);
+            callbacks.add(cleanup);
+
+            return () => {
+                callbacks.delete(cleanup);
+
+                if (!callbacks.size && documentCleanups.get(id) === callbacks) documentCleanups.delete(id);
+            };
         },
         remove(id) {
             removeDocuments(new Set([id]));
@@ -415,8 +456,21 @@ export const createContextRegistry = (
     };
 
     const clear = (): void => {
-        documents.clear();
-        removeContexts([...contexts.keys()]);
+        const errors: unknown[] = [];
+
+        try {
+            removeDocuments(new Set(documents.keys()));
+        } catch (error) {
+            errors.push(error);
+        }
+
+        try {
+            removeContexts([...contexts.keys()]);
+        } catch (error) {
+            errors.push(error);
+        }
+
+        if (errors.length) throw new AggregateError(errors, "Browser test context cleanup failed");
     };
 
     const loadInitial = (): void => {
@@ -517,10 +571,21 @@ export const createContextRegistry = (
         },
         removeTab(tabId: number): void {
             const ids = new Set([...documents.values()].filter(value => value.tabId === tabId).map(value => value.documentId));
+            const errors: unknown[] = [];
 
-            for (const id of ids) documents.delete(id);
+            try {
+                removeDocuments(ids);
+            } catch (error) {
+                errors.push(error);
+            }
 
-            removeContexts([...contexts].filter(([, {info}]) => info.tabId === tabId || (info.documentId && ids.has(info.documentId))).map(([id]) => id));
+            try {
+                removeContexts([...contexts].filter(([, {info}]) => info.tabId === tabId).map(([id]) => id));
+            } catch (error) {
+                errors.push(error);
+            }
+
+            if (errors.length) throw new AggregateError(errors, "Browser test tab context cleanup failed");
         },
     };
 };

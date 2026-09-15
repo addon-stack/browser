@@ -330,7 +330,7 @@ test("cleanup failure does not skip other contexts, and late rejected operations
     expect(harness.contexts.list()).toEqual([]);
     expect(two.disposed).toBe(true);
     await expect(one.track(Promise.reject(new Error("already closed source")))).rejects.toThrow("disposed");
-    await expect(harness.chrome.scripting.executeScript({target: {tabId: 7}, func: () => 1})).rejects.toThrow("without a configured result");
+    await expect(harness.chrome.scripting.executeScript({target: {tabId: 7}, func: () => 1})).rejects.toThrow("no executor configured");
 });
 
 test.each(["tabs", "windows", "setTabs", "setWindows"])("%s removal finishes despite a context cleanup failure", async mode => {

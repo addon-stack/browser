@@ -132,6 +132,22 @@
     "hasValue": false
   },
   {
+    "name": "BrowserScriptExecution",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserScriptExecutor",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserScriptSource",
+    "hasValue": false
+  },
+  {
+    "name": "BrowserScriptTarget",
+    "hasValue": false
+  },
+  {
     "name": "BrowserStorageHarness",
     "hasValue": false
   },
@@ -305,6 +321,10 @@
   },
   {
     "name": "RuntimeTestApi",
+    "hasValue": false
+  },
+  {
+    "name": "ScriptingHarness",
     "hasValue": false
   },
   {

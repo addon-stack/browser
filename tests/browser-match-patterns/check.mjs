@@ -13,6 +13,8 @@ import {browserSmokeError, inspectBrowser} from "./launcher.mjs";
 import {checkMessageResponses} from "./messaging-assertions.mjs";
 import {installMessagingReceiver, messageResponsesProbe, messagingProbe} from "./messaging-probe.mjs";
 import {offscreenProbe} from "./offscreen-probe.mjs";
+import {checkScriptingOutcomes} from "./scripting-assertions.mjs";
+import {scriptingOutcomesProbe, scriptingTargetsProbe} from "./scripting-probe.mjs";
 import {storageProbe} from "./storage-probe.mjs";
 
 // Reject unsupported binaries before opening a server, creating a profile or waiting for extension results.
@@ -109,6 +111,8 @@ async function probe(config) {
         });
 
         report.messageFrames.sort((a, b) => a.frameId - b.frameId);
+        report.scriptingTargets = await scriptingTargetsProbe(chrome, tab.id, report.messageFrames);
+        report.scriptingOutcomes = await scriptingOutcomesProbe(chrome, tab.id);
 
         for (const frame of report.messageFrames) {
             await chrome.scripting.executeScript({target: {tabId: tab.id, frameIds: [frame.frameId]}, func: installMessagingReceiver, args: [frame.frameId === 0 ? "main" : "child"]});
@@ -235,7 +239,7 @@ try {
 
         await writeFile(
             join(directory, "worker.js"),
-            `const storageProbe = ${storageProbe.toString()}; const offscreenProbe = ${offscreenProbe.toString()}; const installMessagingReceiver = ${installMessagingReceiver.toString()}; const messageResponsesProbe = ${messageResponsesProbe.toString()}; const messagingProbe = ${messagingProbe.toString()}; chrome.runtime.onInstalled.addListener(() => (${probe.toString()})(${JSON.stringify({name: profile.name, base, patterns, requestedOrigins})}));`
+            `const storageProbe = ${storageProbe.toString()}; const offscreenProbe = ${offscreenProbe.toString()}; const scriptingTargetsProbe = ${scriptingTargetsProbe.toString()}; const scriptingOutcomesProbe = ${scriptingOutcomesProbe.toString()}; const installMessagingReceiver = ${installMessagingReceiver.toString()}; const messageResponsesProbe = ${messageResponsesProbe.toString()}; const messagingProbe = ${messagingProbe.toString()}; chrome.runtime.onInstalled.addListener(() => (${probe.toString()})(${JSON.stringify({name: profile.name, base, patterns, requestedOrigins})}));`
         );
 
         await writeFile(join(directory, "page.html"), '<!doctype html><title>Extension context smoke</title><script src="page.js"></script>');
@@ -291,6 +295,36 @@ try {
     for (const profile of profiles) {
         const result = results.get(profile.name);
         assert.equal(result.error, undefined, result.error);
+        checkScriptingOutcomes(result.scriptingOutcomes);
+        console.log(`${profile.name}: 10 native scripting outcomes verified (child throw/reject, body, cycle, BigInt).`);
+
+        const scriptingHarness = createBrowserHarness({
+            tabs: [createTabFixture(result.tab)],
+            documents: result.messageFrames.map(frame => ({
+                tabId: result.tab.id, frameId: frame.frameId, documentId: frame.documentId, url: frame.result.url,
+            })),
+        });
+
+        // Deliberately do not evaluate source in Node. Compare only selection/result envelopes with native execution.
+        scriptingHarness.scripting.setExecutor(({target, script}) => ({url: target.url, input: script.args[0]}));
+        let scriptingTimeout;
+
+        try {
+            const actual = await Promise.race([
+                scriptingTargetsProbe(scriptingHarness.chrome, result.tab.id, result.messageFrames),
+                new Promise((_, reject) => {
+                    scriptingTimeout = setTimeout(() => reject(new Error("Scripting target harness probe did not complete")), 5000);
+                }),
+            ]);
+
+            assert.equal(actual.length, 14);
+            assert.deepEqual(actual, result.scriptingTargets, `${profile.name}: script targets, identifiers, main-first results and target errors`);
+            assertions += actual.length;
+        } finally {
+            clearTimeout(scriptingTimeout);
+            scriptingHarness.reset();
+        }
+
         const promiseListeners = checkMessageResponses(result.messaging[0].responses, "offscreen");
         assert.equal(checkMessageResponses(result.messaging[0].contentResponses, "main"), promiseListeners);
         assert.equal(checkMessageResponses(result.extensionMessages, "extension-page"), promiseListeners);

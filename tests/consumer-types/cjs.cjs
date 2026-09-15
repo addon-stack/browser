@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const checkContexts = require("./contexts.cjs");
 const checkMessaging = require("./messaging.cjs");
 const checkOffscreen = require("./offscreen.cjs");
+const checkScripting = require("./scripting.cjs");
 const checkStorage = require("./storage.cjs");
 
 const beforeChrome = Object.getOwnPropertyDescriptor(globalThis, "chrome");
@@ -16,6 +17,7 @@ async function checkConsumer() {
     await checkContexts(production, testing);
     await checkMessaging(production, testing);
     await checkOffscreen(production, testing);
+    await checkScripting(production, testing);
     await checkStorage(testing);
 
     const harness = testing.createBrowserHarness({

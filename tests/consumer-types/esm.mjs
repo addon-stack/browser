@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import checkContexts from "./contexts.cjs";
 import checkMessaging from "./messaging.cjs";
 import checkOffscreen from "./offscreen.cjs";
+import checkScripting from "./scripting.cjs";
 import checkStorage from "./storage.cjs";
 
 const beforeChrome = Object.getOwnPropertyDescriptor(globalThis, "chrome");
@@ -15,6 +16,7 @@ assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "browser"), beforeB
 await checkContexts(production, testing);
 await checkMessaging(production, testing);
 await checkOffscreen(production, testing);
+await checkScripting(production, testing);
 await checkStorage(testing);
 
 const harness = testing.createBrowserHarness({
