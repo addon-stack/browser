@@ -4,6 +4,7 @@ import {createRequire} from "node:module";
 import {dirname, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import ts from "typescript";
+import {assertPortableTestingGraph} from "./testing-boundary.mjs";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const sourceEntry = resolve(projectRoot, "src/index.ts");
@@ -137,6 +138,23 @@ const listRuntimeSources = directory =>
     });
 
 const testingRuntimeSources = listRuntimeSources(testingSourceDirectory);
+assertPortableTestingGraph(resolve(testingSourceDirectory, "index.ts"));
+
+for (const extension of ["js", "cjs"]) {
+    const portable = readFileSync(resolve(projectRoot, `dist/testing/index.${extension}`), "utf8");
+    assert.doesNotMatch(portable, /node:|createNodeScriptExecutor/, "Node executor leaked into portable bundle");
+    const nodeBundle = readFileSync(resolve(projectRoot, `dist/testing/node/index.${extension}`), "utf8");
+    // tsup may remove the node: prefix; both spellings must still be external builtin imports.
+    assert.match(nodeBundle, /(?:from\s*|require\()["'](?:node:)?vm["']/);
+    assert.equal(existsSync(resolve(projectRoot, `dist/testing/node/index.${extension}.map`)), false);
+}
+
+const nodeDeclaration = readFileSync(resolve(projectRoot, "dist/testing/node/index.d.ts"), "utf8");
+assert.match(nodeDeclaration, /^\/\/\/ <reference path="\.\.\/\.\.\/api\.d\.ts" \/>/m);
+const nodeEsm = await import(new URL("../dist/testing/node/index.js", import.meta.url));
+const nodeCjs = require(resolve(projectRoot, "dist/testing/node/index.cjs"));
+assert.deepEqual(Object.keys(nodeEsm), ["createNodeScriptExecutor"]);
+assert.deepEqual(Object.keys(nodeCjs), ["createNodeScriptExecutor"]);
 
 for (const {file, source} of testingRuntimeSources) {
     assert.doesNotMatch(

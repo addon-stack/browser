@@ -47,6 +47,11 @@
       "types": "./dist/testing/index.d.ts",
       "import": "./dist/testing/index.js",
       "require": "./dist/testing/index.cjs"
+    },
+    "./testing/node": {
+      "types": "./dist/testing/node/index.d.ts",
+      "import": "./dist/testing/node/index.js",
+      "require": "./dist/testing/node/index.cjs"
     }
   },
   "files": [

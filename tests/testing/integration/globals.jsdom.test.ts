@@ -2,6 +2,36 @@
 import {getManifest, getUrl, onMessage, sendMessage} from "../../../src/runtime";
 import {executeScript} from "../../../src/scripting";
 import {createBrowserHarness, createTabFixture, installBrowserGlobals} from "../../../src/testing/index";
+import {createNodeScriptExecutor} from "../../../src/testing/node";
+
+test("explicit Node executor projects jsdom data without sharing the host DOM", async () => {
+    const harness = createBrowserHarness({tabs: [createTabFixture({id: 7})]});
+    harness.contexts.documents.create({tabId: 7, url: "https://injected.test/"});
+    const originalTitle = document.title;
+    const before = environment();
+    document.title = "Host title";
+    const restore = installBrowserGlobals(harness, {environment: "preserve"});
+
+    try {
+        harness.scripting.setExecutor(createNodeScriptExecutor({globals: () => ({document: {title: document.title}})}));
+
+        const results = await executeScript<Promise<string>>({target: {tabId: 7}, func: async () => {
+            const title = document.title;
+            document.title = "Guest mutation";
+
+            return title;
+        }});
+
+        expect(results[0].result).toBe("Host title");
+        expect(document.title).toBe("Host title");
+        expect(environment()).toEqual(before);
+        expect(() => createNodeScriptExecutor({globals: {document}})).toThrow("DOM or class instances");
+    } finally {
+        harness.reset();
+        restore();
+        document.title = originalTitle;
+    }
+});
 
 test("scripting adapter works in Jest jsdom without executing code against the host DOM", async () => {
     const harness = createBrowserHarness({tabs: [createTabFixture({id: 7})]});

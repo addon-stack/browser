@@ -85,9 +85,9 @@ can access its own closure: this is not a security sandbox or proof of isolation
 
 For `files`, the executor receives paths in order, once per target; the kit neither resolves nor loads those paths.
 The adapter must explicitly support this form or throw. `world` and `injectImmediately` are validated metadata,
-not separate JavaScript realms or a simulated page-loading scheduler. No Node/`vm` executor, DOM, file loader,
-execution-world persistence, permission enforcement or automatic registered-content-script execution is included.
-An isolated Node executor is a later, separate stage.
+not separate JavaScript realms or a simulated page-loading scheduler. The portable entrypoint includes no evaluator,
+DOM, file loader, execution-world persistence, permission enforcement or automatic content-script execution.
+An explicit [Node executor](node.md) is available separately from `@addon-core/browser/testing/node`.
 
 ## Errors, pending work and reset
 
@@ -106,8 +106,11 @@ This describes **adapter failures**, not native exceptions in injected code. Mea
 result survives, the child result is `null`, and neither `error` nor `runtime.lastError` is present. Chrome returns
 `{}` for `document.body`, `{self: null}` for a self-referencing object, and `null` for BigInt. The general kit's JSON
 boundary also produces `{}` for a plain jsdom body, but intentionally rejects cycles/BigInt. These differences
-are not proof of Firefox/Safari behavior. The browser smoke locks in these five native outcomes separately from
-target-routing comparisons. An isolated executor must distinguish injected-code errors from infrastructure failures.
+are not proof of Firefox/Safari behavior. Chrome also returns explicit `result: null` for void/undefined and only own
+enumerable fields for Date/RegExp (bare instances and Invalid Date become `{}`). The browser smoke locks in these outcomes separately from
+target-routing comparisons and compares them with the opt-in Node executor, which distinguishes injected-code errors
+from infrastructure failures. Installing that executor is an explicit choice of its documented result codec and
+exception policy; it does not change the generic adapter contract above.
 
 Removing a target document, its parent frame or its tab/window cancels the request. Removing any context associated
 with a target **at dispatch time** also cancels it, even if another context still shares that document. Removing an
@@ -159,7 +162,8 @@ explicitly; keep DOM execution tests separate until a suitable executor is suppl
 The [Chrome scripting reference](https://developer.chrome.com/docs/extensions/reference/api/scripting) defines
 main-frame defaults, selectors, per-frame results, function serialization and Promise handling. The real-browser
 smoke compares selectors, frame/document IDs, main-first ordering, duplicate-frame selection and two invalid-target
-cases through callback and Promise APIs. It uses actual Chrome execution and a metadata-only fake executor, so it
-does **not** validate a custom evaluator, closure isolation, DOM behavior or every browser error. See
+cases through callback and Promise APIs. Target comparisons use actual Chrome execution and a metadata-only fake
+executor. Separate outcome comparisons execute the same source in the Node executor; neither check validates a
+complete DOM, all execution-world behavior or every browser error. Closure isolation is checked in Node unit tests. See
 [running the smoke](match-patterns.md). Firefox/Safari profile unit tests exercise compatibility facades, not those
 browsers' runtimes.

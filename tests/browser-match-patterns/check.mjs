@@ -8,6 +8,7 @@ import {createServer} from "node:http";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {createBrowserHarness, createTabFixture} from "../../dist/testing/index.js";
+import {createNodeScriptExecutor} from "../../dist/testing/node/index.js";
 import {removeBrowserTemporaryDirectory} from "./cleanup.mjs";
 import {browserSmokeError, inspectBrowser} from "./launcher.mjs";
 import {checkMessageResponses} from "./messaging-assertions.mjs";
@@ -296,7 +297,7 @@ try {
         const result = results.get(profile.name);
         assert.equal(result.error, undefined, result.error);
         checkScriptingOutcomes(result.scriptingOutcomes);
-        console.log(`${profile.name}: 10 native scripting outcomes verified (child throw/reject, body, cycle, BigInt).`);
+        console.log(`${profile.name}: ${result.scriptingOutcomes.length} native scripting outcomes verified (child throw/reject, body, cycle, BigInt, void/undefined, Date/RegExp).`);
 
         const scriptingHarness = createBrowserHarness({
             tabs: [createTabFixture(result.tab)],
@@ -320,6 +321,26 @@ try {
             assert.equal(actual.length, 14);
             assert.deepEqual(actual, result.scriptingTargets, `${profile.name}: script targets, identifiers, main-first results and target errors`);
             assertions += actual.length;
+            clearTimeout(scriptingTimeout);
+
+            // Now evaluate the same function source in Node. document.body is an explicit data fixture, not a DOM.
+            scriptingHarness.scripting.setExecutor(createNodeScriptExecutor({
+                globals: target => ({
+                    location: {href: target.url, pathname: new URL(target.url).pathname},
+                    document: {body: {}},
+                }),
+            }));
+
+            const nodeOutcomes = await Promise.race([
+                scriptingOutcomesProbe(scriptingHarness.chrome, result.tab.id),
+                new Promise((_, reject) => {
+                    scriptingTimeout = setTimeout(() => reject(new Error("Node scripting outcome probe did not complete")), 5000);
+                }),
+            ]);
+
+            checkScriptingOutcomes(nodeOutcomes);
+            assert.deepEqual(nodeOutcomes, result.scriptingOutcomes, `${profile.name}: Node/Chrome script exceptions and result serialization`);
+            assertions += nodeOutcomes.length;
         } finally {
             clearTimeout(scriptingTimeout);
             scriptingHarness.reset();

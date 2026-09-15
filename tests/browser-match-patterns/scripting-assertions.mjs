@@ -4,9 +4,11 @@ export function checkScriptingOutcomes(entries) {
     const expected = [
         ["throw-child", ["main-ok", null]], ["reject-child", ["main-ok", null]],
         ["body", [{}, {}]], ["cycle", [{self: null}, {self: null}]], ["bigint", [null, null]],
+        ["void", [null, null]], ["undefined", [null, null]], ["date", [{}, {}]], ["regexp", [{}, {}]],
+        ["branded-properties", Array(2).fill({date: {note: "date"}, regexp: {note: "regexp"}, invalidDate: {}})],
     ];
 
-    assert.equal(entries.length, 10);
+    assert.equal(entries.length, expected.length * 2);
 
     for (const [styleIndex, style] of ["promise", "callback"].entries()) {
         for (const [index, [scenario, values]] of expected.entries()) {

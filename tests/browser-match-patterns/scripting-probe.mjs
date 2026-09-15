@@ -72,6 +72,15 @@ export async function scriptingOutcomesProbe(api, tabId) {
             return value;
         }],
         ["bigint", () => 1n],
+        ["void", () => {}],
+        ["undefined", () => undefined],
+        ["date", () => new Date("2020-01-02T03:04:05.000Z")],
+        ["regexp", () => /probe/gi],
+        ["branded-properties", () => ({
+            date: Object.assign(new Date("2020-01-02T03:04:05.000Z"), {note: "date"}),
+            regexp: Object.assign(/probe/gi, {note: "regexp"}),
+            invalidDate: new Date(NaN),
+        })],
     ];
 
     const entries = [];

@@ -19,11 +19,16 @@ Chrome, Firefox, Safari, Opera, or any other real browser.
 - Complex APIs outside runtime, permissions, tabs, windows, storage, offscreen, and the modeled scripting APIs are configurable
   stubs. They do not simulate the browser unless the test supplies an implementation or result.
 - [Scripting](scripting.md) models document selection and an explicit executor adapter, not JavaScript execution.
-  It does not enforce host permissions, simulate DOM/execution worlds, load files or provide a Node sandbox.
+  It does not enforce host permissions, simulate DOM/execution worlds, load files or enable JavaScript execution implicitly.
   Target-context removal conservatively cancels the entire request; result copying is not browser serialization parity.
   Ready-made method results bypass target validation and lifetime tracking. CSS APIs remain configurable.
   Its strict adapter-failure policy differs from measured Chrome child-script exceptions; see the
   [native outcomes in the scripting contract](scripting.md#errors-pending-work-and-reset).
+- The explicit [Node executor](node.md) runs trusted functions in fresh VM realms for every target/call. It has no DOM,
+  persistent execution worlds or file loader. Its Chrome-measured script exceptions become null per target, while
+  infrastructure failures reject. Its bounded result codec is profile-independent, not Firefox/Safari parity.
+  `node:vm` is not a security boundary. Optional VM timeout uses wall-clock time and only covers synchronous evaluation;
+  neither that option nor AbortSignal forcibly stops arbitrary async code.
 - [Storage](storage.md) models a Chromium-oriented enumerable-data subset, not persistence, remote sync, policy loading,
   write-rate limits or context access permissions. Only sync has default size/count quotas. Session/managed byte usage
   stays configurable. Default callbacks and change dispatch start synchronously; `flushChanges()` observes automatic

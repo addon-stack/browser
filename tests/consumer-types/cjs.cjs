@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const checkContexts = require("./contexts.cjs");
 const checkMessaging = require("./messaging.cjs");
+const checkNodeScripting = require("./node-scripting.cjs");
 const checkOffscreen = require("./offscreen.cjs");
 const checkScripting = require("./scripting.cjs");
 const checkStorage = require("./storage.cjs");
@@ -9,6 +10,7 @@ const beforeChrome = Object.getOwnPropertyDescriptor(globalThis, "chrome");
 const beforeBrowser = Object.getOwnPropertyDescriptor(globalThis, "browser");
 const production = require("@addon-core/browser");
 const testing = require("@addon-core/browser/testing");
+const nodeTesting = require("@addon-core/browser/testing/node");
 
 assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "chrome"), beforeChrome);
 assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "browser"), beforeBrowser);
@@ -18,6 +20,7 @@ async function checkConsumer() {
     await checkMessaging(production, testing);
     await checkOffscreen(production, testing);
     await checkScripting(production, testing);
+    await checkNodeScripting(production, testing, nodeTesting);
     await checkStorage(testing);
 
     const harness = testing.createBrowserHarness({

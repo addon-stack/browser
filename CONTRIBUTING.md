@@ -201,6 +201,7 @@ src/testing/
 ├── model/                # tabs/windows state, contexts, documents and lifetimes
 ├── api/                  # WebExtension API implementations and configurable controls
 ├── matching/             # shared URL-pattern matching
+├── node/                 # separate testing/node entrypoint; never re-exported by the portable root
 └── coverage/             # public-export and raw-capability metadata, not coverage reports
 
 tests/
@@ -227,6 +228,11 @@ to each directory, not to the root barrel. Internal source modules never import 
 exports, import boundaries and runtime cycles are checked by `tests/tooling/testing-layout.test.mjs`. Its explicit
 `tests/tooling/fixtures/testing-public-exports.json` baseline also guards the package's value and type export names;
 update it only for an intentional public API change, never just to accommodate a refactor.
+
+`node/index.ts` is the deliberate exception to root re-exports: it owns `@addon-core/browser/testing/node` and has a
+separate `testing-node-exports.json` baseline. The recursive source-graph guard also follows type imports, re-exports,
+dynamic imports and require calls. No dependency reachable from `src/testing/index.ts` may import a `node:` or bare
+Node builtin; computed module specifiers fail closed. Build and clean-consumer checks cover all three entrypoints.
 
 `npm run typecheck` runs both `tsconfig.json` and `tsconfig.tests.json`. Jest uses the latter for TypeScript tests;
 the build keeps the source config. Clean-consumer fixtures retain their separate config and installed-package
@@ -273,10 +279,11 @@ fake in that mode. Unknown outcomes fail the smoke. Both modes are independently
 does not establish rollout availability for all users or isolated application execution. It also compares Storage selectors,
 serialization (including Date/RegExp/undefined), change payloads/no-op suppression and UTF-8 byte accounting.
 Scripting comparisons cover main/all/frame/document selectors, duplicate frame IDs, result identifiers/order and
-invalid targets via callbacks and Promises. The fake executor returns metadata; these checks do not validate an
-isolated JavaScript executor. See [scripting boundaries](docs/testing/scripting.md).
-Separate native checks pin child throws/rejections and body/cycle/BigInt results for both invocation styles;
-these are not claims that the general configurable executor has Chrome's failure/serialization behavior.
+invalid targets via callbacks and Promises using a metadata-only fake executor. Separate comparisons actually execute
+the same source through `testing/node` and Chrome for child throws/rejections, body/cycle/BigInt, void/undefined and
+Date/RegExp (including own fields and Invalid Date) results. Node's body
+is an explicit data fixture, not a DOM implementation. These are not claims that the general configurable executor
+has Chrome's failure/serialization behavior. See [scripting boundaries](docs/testing/scripting.md) and [Node scope](docs/testing/node.md).
 The clean-consumer check additionally installs published `@addon-core/storage@0.7.0` and exercises its unmodified
 providers through ESM/CJS kit imports and jsdom. See [Storage scope and consumer examples](docs/testing/storage.md).
 If the browser is unavailable locally, report the smoke as **not run**, not as passed.

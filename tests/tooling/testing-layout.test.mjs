@@ -1,8 +1,10 @@
 import {existsSync, readdirSync, readFileSync} from "node:fs";
+import {isBuiltin} from "node:module";
 import {dirname, relative, resolve, sep} from "node:path";
 import {fileURLToPath} from "node:url";
 import {describe, expect, test} from "@jest/globals";
 import ts from "typescript";
+import {assertPortableTestingGraph} from "../../scripts/testing-boundary.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const sourceDirectory = resolve(root, "src/testing");
@@ -17,6 +19,8 @@ const filesIn = directory => readdirSync(directory, {withFileTypes: true}).flatM
 const sourceFiles = filesIn(sourceDirectory).filter(file => file.endsWith(".ts"));
 const projectPath = file => relative(root, file).split(sep).join("/");
 const moduleDirectories = [...new Set(sourceFiles.map(file => dirname(file)))].filter(directory => directory !== sourceDirectory);
+const nodeDirectory = resolve(sourceDirectory, "node");
+const portableDirectories = moduleDirectories.filter(directory => directory !== nodeDirectory);
 
 const config = file => {
     const input = ts.readConfigFile(resolve(root, file), ts.sys.readFile);
@@ -36,6 +40,9 @@ const dependencies = sourceFiles.flatMap(file => {
         if ((!ts.isImportDeclaration(statement) && !ts.isExportDeclaration(statement)) || !statement.moduleSpecifier) return [];
 
         const specifier = statement.moduleSpecifier.text;
+
+        if (isBuiltin(specifier)) return [{from: projectPath(file), to: specifier, typeOnly: false}];
+
         const resolved = ts.resolveModuleName(specifier, file, compilerOptions, ts.sys).resolvedModule;
 
         if (!resolved) throw new Error(`Unresolved testing dependency: ${projectPath(file)} -> ${specifier}`);
@@ -71,6 +78,7 @@ describe("test-kit source and test layout", () => {
 
         const target = symbol => symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
         const publicExports = exportsOf(resolve(sourceDirectory, "index.ts"));
+        const nodeExports = exportsOf(resolve(nodeDirectory, "index.ts"));
 
         for (const index of indexes) {
             const source = program.getSourceFile(index);
@@ -87,7 +95,8 @@ describe("test-kit source and test layout", () => {
             }
 
             for (const symbol of exportsOf(index)) {
-                const exported = publicExports.find(candidate => candidate.name === symbol.name);
+                const entryExports = index.startsWith(`${nodeDirectory}${sep}`) ? nodeExports : publicExports;
+                const exported = entryExports.find(candidate => candidate.name === symbol.name);
                 expect(exported).toBeDefined();
                 expect(target(exported)).toBe(target(symbol));
             }
@@ -101,7 +110,7 @@ describe("test-kit source and test layout", () => {
         const source = program.getSourceFile(entry);
 
         const expectedModules = [
-            ...moduleDirectories.map(directory => `./${relative(sourceDirectory, directory).split(sep).join("/")}`),
+            ...portableDirectories.map(directory => `./${relative(sourceDirectory, directory).split(sep).join("/")}`),
             "./fixtures", "./harness", "./types",
         ];
 
@@ -121,6 +130,34 @@ describe("test-kit source and test layout", () => {
 
         const baseline = JSON.parse(readFileSync(resolve(root, "tests/tooling/fixtures/testing-public-exports.json"), "utf8"));
         expect(exports).toEqual(baseline);
+    });
+
+    test("portable entrypoint graph has no Node dependencies, including transitive/type-only/dynamic imports", () => {
+        const visited = assertPortableTestingGraph(resolve(sourceDirectory, "index.ts"));
+        expect([...visited].some(file => file.startsWith(nodeDirectory + sep))).toBe(false);
+    });
+
+    test.each([
+        'import "node:vm";', 'export * from "node:vm";', 'import type {Context} from "node:vm";',
+        'const vm = require("vm");', 'void import("node:vm");', 'type T = import("node:vm").Context;',
+        'import vm = require("node:vm");', "void import(variable);",
+    ])("Node boundary fails closed through a shared module: %s", dependency => {
+        const sources = new Map([["entry.ts", 'export * from "./shared";'], ["shared.ts", dependency]]);
+        expect(() => assertPortableTestingGraph("entry.ts", {read: file => sources.get(file), resolve: () => "shared.ts"})).toThrow();
+    });
+
+    test("Node entrypoint has its own explicit public-export baseline", () => {
+        const program = ts.createProgram([resolve(nodeDirectory, "index.ts")], compilerOptions);
+        const checker = program.getTypeChecker();
+        const source = program.getSourceFile(resolve(nodeDirectory, "index.ts"));
+
+        const exports = checker.getExportsOfModule(checker.getSymbolAtLocation(source)).map(symbol => {
+            const target = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+
+            return {name: symbol.name, hasValue: Boolean(target.flags & ts.SymbolFlags.Value)};
+        }).sort((a, b) => a.name.localeCompare(b.name, "en"));
+
+        expect(exports).toEqual(JSON.parse(readFileSync(resolve(root, "tests/tooling/fixtures/testing-node-exports.json"), "utf8")));
     });
 
     test("allows direct implementation imports but never imports a module's own barrel", () => {

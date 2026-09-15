@@ -49,18 +49,27 @@ try {
         require: "./dist/testing/index.cjs",
     });
 
+    assert.deepEqual(installedPackage.exports?.["./testing/node"], {
+        types: "./dist/testing/node/index.d.ts",
+        import: "./dist/testing/node/index.js",
+        require: "./dist/testing/node/index.cjs",
+    });
+
     const declarations = readFileSync(join(installedPackageDirectory, installedPackage.types), "utf8");
     const testingDeclarations = readFileSync(join(installedPackageDirectory, "dist/testing/index.d.ts"), "utf8");
+    const nodeDeclarations = readFileSync(join(installedPackageDirectory, "dist/testing/node/index.d.ts"), "utf8");
 
     assert.match(declarations, /^\/\/\/ <reference types="chrome" \/>/);
     assert.match(testingDeclarations, /^\/\/\/ <reference types="chrome" \/>/);
     assert.match(testingDeclarations, /^\/\/\/ <reference path="\.\.\/api\.d\.ts" \/>/m);
+    assert.match(nodeDeclarations, /^\/\/\/ <reference path="\.\.\/\.\.\/api\.d\.ts" \/>/m);
+    assert.doesNotMatch(testingDeclarations, /NodeScriptExecutor|node:vm/);
 
-    for (const file of ["dist/testing/index.js", "dist/testing/index.cjs"]) {
+    for (const file of ["dist/testing/index.js", "dist/testing/index.cjs", "dist/testing/node/index.js", "dist/testing/node/index.cjs"]) {
         assert.equal(existsSync(join(installedPackageDirectory, file)), true, `${file} is missing from the tarball`);
     }
 
-    for (const file of ["dist/testing/index.js.map", "dist/testing/index.cjs.map"]) {
+    for (const file of ["dist/testing/index.js.map", "dist/testing/index.cjs.map", "dist/testing/node/index.js.map", "dist/testing/node/index.cjs.map"]) {
         assert.equal(existsSync(join(installedPackageDirectory, file)), false, `${file} must not be in the tarball`);
     }
 

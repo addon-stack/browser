@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import * as production from "@addon-core/browser";
 import {getManifest, getUrl} from "@addon-core/browser";
 import {createBrowserHarness, createTabFixture, installBrowserGlobals, installGlobals} from "@addon-core/browser/testing";
+import * as nodeTesting from "@addon-core/browser/testing/node";
 import {JSDOM} from "jsdom";
 import checkMessaging from "./messaging.cjs";
+import checkNodeScripting from "./node-scripting.cjs";
 import checkOffscreen from "./offscreen.cjs";
 import checkScripting from "./scripting.cjs";
 import checkStorage from "./storage.cjs";
@@ -22,6 +24,7 @@ try {
     await checkStorage({createBrowserHarness, installBrowserGlobals}, "preserve");
     await checkOffscreen(production, {createBrowserHarness, installBrowserGlobals});
     await checkScripting(production, {createBrowserHarness, installBrowserGlobals, createTabFixture});
+    await checkNodeScripting(production, {createBrowserHarness, installBrowserGlobals, createTabFixture}, nodeTesting);
     await checkMessaging(production, {createBrowserHarness, installBrowserGlobals, createTabFixture});
     [globalThis.window, globalThis.document, globalThis.location, globalThis.navigator].forEach((value, index) => assert.equal(value, before[index]));
     assert.equal(globalThis.document.querySelector("button").textContent, "Save");

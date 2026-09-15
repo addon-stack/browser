@@ -108,7 +108,10 @@ The script uses a temporary MV3 extension/profile and loopback HTTP server, comp
 harness, and removes its temporary files. It needs no automation package and is separate from the normal unit tests.
 The same script also compares [scripting target selection](scripting.md#evidence-and-boundaries) via callback/Promise
 calls: main/all/frame/document selectors, duplicate frame IDs, result identifiers/order and invalid targets. Native
-Chrome executes the probe function; the kit uses a metadata-only executor. This does not validate JavaScript isolation.
+Chrome executes the target probe function; the kit uses a metadata-only executor. Separate outcome comparisons run
+the same source through [testing/node](node.md) and Chrome: child throws/rejections, body/cycle/BigInt, void/undefined,
+and Date/RegExp values (including own fields and Invalid Date). The
+Node body is an explicit data fixture, not a DOM; realm isolation has separate Node unit tests.
 
 The same script also checks the [context registry's runtime query projection](contexts.md#runtime-queries-and-fixtures),
 including extension-page visibility and exclusion of content scripts from `runtime.getContexts()`.
