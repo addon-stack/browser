@@ -29,6 +29,7 @@ describe("testing fixtures", () => {
         expect(first).toMatchObject({
             id: 7,
             index: 0,
+            lastAccessed: 0,
             windowId: 1,
             active: false,
             highlighted: true,

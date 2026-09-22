@@ -39,7 +39,7 @@ try {
     const installedPackageDirectory = join(consumerDirectory, "node_modules/@addon-core/browser");
     const installedPackage = JSON.parse(readFileSync(join(installedPackageDirectory, "package.json"), "utf8"));
 
-    assert.equal(installedPackage.dependencies?.["@types/chrome"], "^0.2.2");
+    assert.equal(installedPackage.dependencies?.["@types/chrome"], "^0.3.0");
     assert.equal(installedPackage.peerDependencies?.["@types/chrome"], undefined);
     assert.equal(installedPackage.types, "dist/index.d.ts");
 

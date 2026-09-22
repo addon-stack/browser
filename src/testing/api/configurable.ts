@@ -447,7 +447,11 @@ export interface ConfigurableBrowserControls {
     readonly extension: BrowserNamespaceHarness<ExtensionConfigurableApi>;
     readonly history: BrowserNamespaceHarness<HistoryConfigurableApi>;
     readonly i18n: BrowserNamespaceHarness<I18nConfigurableApi>;
-    readonly identity: BrowserNamespaceHarness<IdentityConfigurableApi>;
+    readonly identity: Omit<BrowserNamespaceHarness<IdentityConfigurableApi>, "getAuthToken"> & {
+        // This hybrid method accepts an object result, independently of the order
+        // of upstream overloads. Use setImplementation for legacy callback tuples.
+        readonly getAuthToken: BrowserMethod<typeof chrome.identity.getAuthToken, chrome.identity.GetAuthTokenResult>;
+    };
     readonly idle: BrowserNamespaceHarness<IdleConfigurableApi>;
     readonly management: BrowserNamespaceHarness<ManagementConfigurableApi>;
     readonly notifications: BrowserNamespaceHarness<NotificationsConfigurableApi>;

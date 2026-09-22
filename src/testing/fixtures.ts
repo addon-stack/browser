@@ -41,6 +41,7 @@ export function createTabFixture(overrides: FixtureOverrides<chrome.tabs.Tab> = 
         {
             id: 1,
             index: 0,
+            lastAccessed: 0,
             windowId: 1,
             active: true,
             selected: true,
