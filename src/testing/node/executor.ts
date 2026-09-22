@@ -1,6 +1,7 @@
 import {createContext, Script} from "node:vm";
 import type {BrowserScriptExecutor} from "../api";
 import type {BrowserScriptTarget} from "../model";
+import {coverageError, missingCoverageHelper, nodeError} from "./diagnostics";
 import {GUEST_DRIVER} from "./guest-source";
 
 export interface NodeScriptException {
@@ -17,18 +18,6 @@ export interface NodeScriptExecutorOptions {
     /** Observe injected-code exceptions, which otherwise become null results (measured Chrome behavior). */
     readonly onScriptError?: (exception: NodeScriptException) => void;
 }
-
-const nodeError = (message: string, cause?: unknown): Error => new Error(`Node script executor: ${message}`, {cause});
-
-const missingCoverageHelper = (source: string, name: string, message: string): string | undefined => {
-    if (name !== "ReferenceError") return undefined;
-
-    const helper = /^(cov_[\w$]+) is not defined$/.exec(message)?.[1];
-
-    // Match an actual missing-helper failure, not a harmless mention in a string/comment or a locally bound function.
-    return helper && [...source.matchAll(/\bcov_[\w$]+\s*\(\s*\)/g)].some(call => call[0].replace(/\s/g, "") === `${helper}()`)
-        ? helper : undefined;
-};
 
 const serializeData = (value: unknown): string => {
     const ancestors = new Set<object>();
@@ -153,7 +142,7 @@ export const createNodeScriptExecutor = (options: NodeScriptExecutorOptions = {}
                         const coverageHelper = missingCoverageHelper(script.source, outcome.name, outcome.message);
 
                         if (coverageHelper) {
-                            throw nodeError(`Istanbul coverage instrumentation references missing helper "${coverageHelper}" in injected func. Exclude the injected function module from instrumentation or provide uninstrumented source; coverage counters cannot access the test's closure.`);
+                            throw coverageError(coverageHelper);
                         }
 
                         onScriptError?.({target, name: outcome.name, message: outcome.message});

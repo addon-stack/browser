@@ -63,7 +63,7 @@ try {
     assert.match(testingDeclarations, /^\/\/\/ <reference types="chrome" \/>/);
     assert.match(testingDeclarations, /^\/\/\/ <reference path="\.\.\/api\.d\.ts" \/>/m);
     assert.match(nodeDeclarations, /^\/\/\/ <reference path="\.\.\/\.\.\/api\.d\.ts" \/>/m);
-    assert.doesNotMatch(testingDeclarations, /NodeScriptExecutor|node:vm/);
+    assert.doesNotMatch(testingDeclarations, /NodeScriptExecutor|NodeScriptRuntime|node:vm/);
 
     for (const file of ["dist/testing/index.js", "dist/testing/index.cjs", "dist/testing/node/index.js", "dist/testing/node/index.cjs"]) {
         assert.equal(existsSync(join(installedPackageDirectory, file)), true, `${file} is missing from the tarball`);

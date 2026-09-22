@@ -142,7 +142,7 @@ assertPortableTestingGraph(resolve(testingSourceDirectory, "index.ts"));
 
 for (const extension of ["js", "cjs"]) {
     const portable = readFileSync(resolve(projectRoot, `dist/testing/index.${extension}`), "utf8");
-    assert.doesNotMatch(portable, /node:|createNodeScriptExecutor/, "Node executor leaked into portable bundle");
+    assert.doesNotMatch(portable, /node:|createNodeScriptExecutor|createNodeScriptRuntime/, "Node executor leaked into portable bundle");
     const nodeBundle = readFileSync(resolve(projectRoot, `dist/testing/node/index.${extension}`), "utf8");
     // tsup may remove the node: prefix; both spellings must still be external builtin imports.
     assert.match(nodeBundle, /(?:from\s*|require\()["'](?:node:)?vm["']/);
@@ -153,8 +153,8 @@ const nodeDeclaration = readFileSync(resolve(projectRoot, "dist/testing/node/ind
 assert.match(nodeDeclaration, /^\/\/\/ <reference path="\.\.\/\.\.\/api\.d\.ts" \/>/m);
 const nodeEsm = await import(new URL("../dist/testing/node/index.js", import.meta.url));
 const nodeCjs = require(resolve(projectRoot, "dist/testing/node/index.cjs"));
-assert.deepEqual(Object.keys(nodeEsm), ["createNodeScriptExecutor"]);
-assert.deepEqual(Object.keys(nodeCjs), ["createNodeScriptExecutor"]);
+assert.deepEqual(Object.keys(nodeEsm).sort(), ["createNodeScriptExecutor", "createNodeScriptRuntime"]);
+assert.deepEqual(Object.keys(nodeCjs).sort(), ["createNodeScriptExecutor", "createNodeScriptRuntime"]);
 
 for (const {file, source} of testingRuntimeSources) {
     assert.doesNotMatch(

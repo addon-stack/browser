@@ -4,11 +4,31 @@
     "hasValue": true
   },
   {
+    "name": "createNodeScriptRuntime",
+    "hasValue": true
+  },
+  {
+    "name": "NodeScriptBootstrap",
+    "hasValue": false
+  },
+  {
     "name": "NodeScriptException",
     "hasValue": false
   },
   {
     "name": "NodeScriptExecutorOptions",
+    "hasValue": false
+  },
+  {
+    "name": "NodeScriptRealm",
+    "hasValue": false
+  },
+  {
+    "name": "NodeScriptRuntime",
+    "hasValue": false
+  },
+  {
+    "name": "NodeScriptRuntimeOptions",
     "hasValue": false
   }
 ]

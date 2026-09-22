@@ -88,6 +88,9 @@ The adapter must explicitly support this form or throw. `world` and `injectImmed
 not separate JavaScript realms or a simulated page-loading scheduler. The portable entrypoint includes no evaluator,
 DOM, file loader, execution-world persistence, permission enforcement or automatic content-script execution.
 An explicit [Node executor](node.md) is available separately from `@addon-core/browser/testing/node`.
+The alternative [persistent Node runtime](node-runtime.md) uses the same adapter contract with classic-script bootstrap
+and document/world state. Bind it to `harness.contexts.documents` for automatic realm cleanup on removal/reset, or use
+standalone mode with explicit disposal. Reset never reinstalls the executor or replays bootstrap.
 
 ## Errors, pending work and reset
 

@@ -284,6 +284,14 @@ the same source through `testing/node` and Chrome for child throws/rejections, b
 Date/RegExp (including own fields and Invalid Date) results. Node's body
 is an explicit data fixture, not a DOM implementation. These are not claims that the general configurable executor
 has Chrome's failure/serialization behavior. See [scripting boundaries](docs/testing/scripting.md) and [Node scope](docs/testing/node.md).
+The [persistent Node runtime](docs/testing/node-runtime.md) is compared separately for successive-injection state and
+frame/world isolation through both invocation styles. Its bootstrap/microtask tests run without host timer mocks;
+optional public document binding follows removal/reset without internal reset hooks. Clean ESM/CJS consumers verify
+the factory from the packed `testing/node` entrypoint, including deferred replies, lifetime reuse and disposal.
+For changes affecting persistent application managers, optionally run
+`npm run test:relay-consumer -- /path/to/addon-bone` with that checkout's development dependencies installed. This
+read-only check bundles the real Relay manager/adapter; it does not migrate or modify the consumer's tests. It is not
+part of standalone CI and does not cover guest retry timers. See [runtime modes](docs/testing/node-runtime.md).
 The clean-consumer check additionally installs published `@addon-core/storage@0.7.0` and exercises its unmodified
 providers through ESM/CJS kit imports and jsdom. See [Storage scope and consumer examples](docs/testing/storage.md).
 If the browser is unavailable locally, report the smoke as **not run**, not as passed.

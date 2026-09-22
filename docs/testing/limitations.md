@@ -29,6 +29,15 @@ Chrome, Firefox, Safari, Opera, or any other real browser.
   infrastructure failures reject. Its bounded result codec is profile-independent, not Firefox/Safari parity.
   `node:vm` is not a security boundary. Optional VM timeout uses wall-clock time and only covers synchronous evaluation;
   neither that option nor AbortSignal forcibly stops arbitrary async code.
+- The separate [persistent Node runtime](node-runtime.md) preserves document/world state with explicit classic-script
+  bootstrap. Optional `documents` binding cleans both worlds and failure records on document removal/reset and rejects
+  unknown IDs; standalone mode still requires disposal before reusing IDs. Reset does not reinstall the executor or
+  replay bootstrap. It has no browser API bridge, DOM, file loader or timers. Bootstrap completion is not an
+  async readiness contract. Its opt-in timeout also covers its own drained guest microtasks, not host work or an overall deadline.
+  VM failures block that document/world pair until a successful explicit `evaluate()`; no silent empty-realm recovery occurs.
+  Bootstrap bundles must not use `eval`/`new Function` because string code generation is disabled.
+  VM termination during guest microtasks can crash Node with active async hooks; use supervised processes for
+  intentional infinite-loop tests, as described in the runtime's timeout caveat.
 - [Storage](storage.md) models a Chromium-oriented enumerable-data subset, not persistence, remote sync, policy loading,
   write-rate limits or context access permissions. Only sync has default size/count quotas. Session/managed byte usage
   stays configurable. Default callbacks and change dispatch start synchronously; `flushChanges()` observes automatic

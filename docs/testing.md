@@ -49,6 +49,7 @@ they read are supplied by the test.
 - [Context messaging](testing/messaging.md) routes messages between registered extension contexts and content-script frames.
 - [Scripting targets and executors](testing/scripting.md) selects registered documents and uses an explicitly supplied executor; no code runs implicitly.
 - [Node execution](testing/node.md) provides an opt-in `testing/node` executor with fresh VM realms and data-only globals.
+- [Persistent Node runtime](testing/node-runtime.md) adds classic-script bootstrap, document/world state and optional document lifecycle binding.
 - [Jest usage](testing/jest.md) shows how to combine the kit with Jest without making the kit depend on Jest.
 - [Limitations](testing/limitations.md) describes intentional differences from real browsers.
 

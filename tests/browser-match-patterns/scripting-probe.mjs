@@ -106,3 +106,44 @@ export async function scriptingOutcomesProbe(api, tabId) {
 
     return entries;
 }
+
+// Same source runs in native Chrome worlds and the explicit persistent Node runtime.
+export async function scriptingPersistenceProbe(api, tabId) {
+    const entries = [];
+
+    const call = (injection, style) => style === "promise" ? api.scripting.executeScript(injection) : new Promise((resolve, reject) => {
+        api.scripting.executeScript(injection, results => {
+            if (api.runtime.lastError) reject(new Error(api.runtime.lastError.message));
+            else resolve(results);
+        });
+    });
+
+    for (const style of ["promise", "callback"]) {
+        const key = `__addon_core_persistence_probe_${style}`;
+
+        for (const world of ["ISOLATED", "MAIN"]) {
+            const injections = [
+                {target: {tabId, allFrames: true}, func: name => globalThis[name] = (globalThis[name] ?? 0) + 1},
+                {target: {tabId}, func: async name => {
+                    await Promise.resolve();
+
+                    return ++globalThis[name];
+                }},
+                {target: {tabId, allFrames: true}, func: name => globalThis[name]},
+            ];
+
+            for (const [step, injection] of injections.entries()) {
+                const results = await call({...injection, world, args: [key]}, style);
+                entries.push({style, world, step, results: [...results].sort((a, b) => a.frameId - b.frameId)});
+            }
+        }
+
+        for (const world of ["ISOLATED", "MAIN"]) {
+            await call({target: {tabId, allFrames: true}, world, args: [key], func: name => {
+                delete globalThis[name];
+            }}, style);
+        }
+    }
+
+    return entries;
+}

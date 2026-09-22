@@ -4,6 +4,10 @@
 serialized `func` source in `node:vm`; it is a separate ESM/CJS/types entrypoint, never imported by the portable
 `@addon-core/browser/testing` entrypoint. No dependency on Jest or another runner is required.
 
+For guest-owned managers that must survive several injections, use the separate
+[`createNodeScriptRuntime()`](node-runtime.md). It adds explicit classic-script bootstrap and persistent state without
+changing the fresh-realm executor described on this page.
+
 Importing either subpath does not install globals or enable execution. Register documents and install the executor
 explicitly. The [scripting harness](scripting.md) still owns target selection, result envelopes and cancellation.
 

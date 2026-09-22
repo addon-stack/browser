@@ -8,14 +8,14 @@ import {createServer} from "node:http";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {createBrowserHarness, createTabFixture} from "../../dist/testing/index.js";
-import {createNodeScriptExecutor} from "../../dist/testing/node/index.js";
+import {createNodeScriptExecutor, createNodeScriptRuntime} from "../../dist/testing/node/index.js";
 import {removeBrowserTemporaryDirectory} from "./cleanup.mjs";
 import {browserSmokeError, inspectBrowser} from "./launcher.mjs";
 import {checkMessageResponses} from "./messaging-assertions.mjs";
 import {installMessagingReceiver, messageResponsesProbe, messagingProbe} from "./messaging-probe.mjs";
 import {offscreenProbe} from "./offscreen-probe.mjs";
 import {checkScriptingOutcomes} from "./scripting-assertions.mjs";
-import {scriptingOutcomesProbe, scriptingTargetsProbe} from "./scripting-probe.mjs";
+import {scriptingOutcomesProbe, scriptingPersistenceProbe, scriptingTargetsProbe} from "./scripting-probe.mjs";
 import {storageProbe} from "./storage-probe.mjs";
 
 // Reject unsupported binaries before opening a server, creating a profile or waiting for extension results.
@@ -114,6 +114,7 @@ async function probe(config) {
         report.messageFrames.sort((a, b) => a.frameId - b.frameId);
         report.scriptingTargets = await scriptingTargetsProbe(chrome, tab.id, report.messageFrames);
         report.scriptingOutcomes = await scriptingOutcomesProbe(chrome, tab.id);
+        report.scriptingPersistence = await scriptingPersistenceProbe(chrome, tab.id);
 
         for (const frame of report.messageFrames) {
             await chrome.scripting.executeScript({target: {tabId: tab.id, frameIds: [frame.frameId]}, func: installMessagingReceiver, args: [frame.frameId === 0 ? "main" : "child"]});
@@ -240,7 +241,7 @@ try {
 
         await writeFile(
             join(directory, "worker.js"),
-            `const storageProbe = ${storageProbe.toString()}; const offscreenProbe = ${offscreenProbe.toString()}; const scriptingTargetsProbe = ${scriptingTargetsProbe.toString()}; const scriptingOutcomesProbe = ${scriptingOutcomesProbe.toString()}; const installMessagingReceiver = ${installMessagingReceiver.toString()}; const messageResponsesProbe = ${messageResponsesProbe.toString()}; const messagingProbe = ${messagingProbe.toString()}; chrome.runtime.onInstalled.addListener(() => (${probe.toString()})(${JSON.stringify({name: profile.name, base, patterns, requestedOrigins})}));`
+            `const storageProbe = ${storageProbe.toString()}; const offscreenProbe = ${offscreenProbe.toString()}; const scriptingTargetsProbe = ${scriptingTargetsProbe.toString()}; const scriptingOutcomesProbe = ${scriptingOutcomesProbe.toString()}; const scriptingPersistenceProbe = ${scriptingPersistenceProbe.toString()}; const installMessagingReceiver = ${installMessagingReceiver.toString()}; const messageResponsesProbe = ${messageResponsesProbe.toString()}; const messagingProbe = ${messagingProbe.toString()}; chrome.runtime.onInstalled.addListener(() => (${probe.toString()})(${JSON.stringify({name: profile.name, base, patterns, requestedOrigins})}));`
         );
 
         await writeFile(join(directory, "page.html"), '<!doctype html><title>Extension context smoke</title><script src="page.js"></script>');
@@ -309,6 +310,7 @@ try {
         // Deliberately do not evaluate source in Node. Compare only selection/result envelopes with native execution.
         scriptingHarness.scripting.setExecutor(({target, script}) => ({url: target.url, input: script.args[0]}));
         let scriptingTimeout;
+        const scriptRuntime = createNodeScriptRuntime();
 
         try {
             const actual = await Promise.race([
@@ -341,8 +343,28 @@ try {
             checkScriptingOutcomes(nodeOutcomes);
             assert.deepEqual(nodeOutcomes, result.scriptingOutcomes, `${profile.name}: Node/Chrome script exceptions and result serialization`);
             assertions += nodeOutcomes.length;
+            clearTimeout(scriptingTimeout);
+
+            scriptingHarness.scripting.setExecutor(scriptRuntime.executor);
+
+            const persistence = await Promise.race([
+                scriptingPersistenceProbe(scriptingHarness.chrome, result.tab.id),
+                new Promise((_, reject) => {
+                    scriptingTimeout = setTimeout(() => reject(new Error("Persistent Node runtime probe did not complete")), 5000);
+                }),
+            ]);
+
+            assert.equal(persistence.length, 12);
+
+            for (const entry of persistence) {
+                assert.deepEqual(entry.results.map(item => item.result), entry.step === 0 ? [1, 1] : entry.step === 1 ? [2] : [2, 1]);
+            }
+
+            assert.deepEqual(persistence, result.scriptingPersistence, `${profile.name}: persistent state, frame and world isolation`);
+            assertions += persistence.length;
         } finally {
             clearTimeout(scriptingTimeout);
+            scriptRuntime.dispose();
             scriptingHarness.reset();
         }
 

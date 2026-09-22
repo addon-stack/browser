@@ -73,6 +73,7 @@
     "test:ci": "npm test -- --ci --passWithNoTests --coverage",
     "test:browser-match-patterns": "node ./tests/browser-match-patterns/check.mjs",
     "test:consumer-types": "npm run build && node ./tests/consumer-types/check.mjs",
+    "test:relay-consumer": "npm run build && node ./tests/relay-consumer/check.mjs",
     "test:related": "npm test -- --bail --passWithNoTests",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json --noEmit",
     "release": "release-it",
