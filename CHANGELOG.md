@@ -1,5 +1,66 @@
 # Changelog
 
+## 🚀 Release `@addon-core/browser` v0.9.0 (2026-09-23)
+
+
+### ✨ Features
+
+* **testing:** add context-bound messaging ([9b6bb9a](https://github.com/addon-stack/browser/commit/9b6bb9a4043d42d7c75a936058076701c532fde3))
+
+
+* **testing:** add extension contexts and preserve host globals ([357dfc4](https://github.com/addon-stack/browser/commit/357dfc47244075d2a654d83e2d07dea9a4db5a2e))
+
+  Add harness-owned contexts, documents and lifecycle cleanup with runtime queries.
+  Preserve host DOM globals and restore nested profiles after cleanup failures.
+
+  Organize implementation modules behind public directory indexes.
+  Move kit suites under tests and guard export and dependency boundaries.
+  Add packaged consumer, jsdom and Chromium context checks.
+
+* **testing:** add guest virtual clocks to Node script runtime ([551052d](https://github.com/addon-stack/browser/commit/551052d0748475fdb01380bf995f9769da395e20))
+
+  Model guest timers, virtual dates and deterministic retries with lifecycle cleanup.
+  Verify consumer scenarios and native timer ordering.
+  Select smoke page contexts by their ready-document identity.
+
+* **testing:** add isolated Node script executor ([8b56018](https://github.com/addon-stack/browser/commit/8b56018319f3dd441ac8c62bbbea80ff40b3fdd8))
+
+
+* **testing:** add persistent document-bound Node script runtime ([d0a328a](https://github.com/addon-stack/browser/commit/d0a328a4fbdf3cb3630fe80423183621e2243449))
+
+
+* **testing:** add scripting targets and executor contract ([4bee76c](https://github.com/addon-stack/browser/commit/4bee76cf2f909e534c4bff0015c2889a8f301d6d))
+
+
+* **testing:** add stateful offscreen lifecycle ([aee516f](https://github.com/addon-stack/browser/commit/aee516fa7d9e5f2ecac5c00c5a1bab786923b7b9))
+
+
+* **testing:** add stateful storage areas and consumer coverage ([52401f1](https://github.com/addon-stack/browser/commit/52401f14697f60d86c0b626c9004b94264614dac))
+
+
+
+
+### 🐛 Bug Fixed
+
+* **types:** support the upstream browser global alias ([31feb63](https://github.com/addon-stack/browser/commit/31feb63f488153e5e6403a681856921a1dea6e09))
+
+
+
+
+### 📝 Documentation
+
+* **testing:** describe contexts and global restoration ([6f8711d](https://github.com/addon-stack/browser/commit/6f8711d57adee4b1eefedd94b448f19c2127fc65))
+
+  Document environment preservation, context lifetimes and terminal cleanup failures.
+  Explain public module indexes, test layout and browser verification boundaries.
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 12
+
 ## 🚀 Release `@addon-core/browser` v0.8.0 (2026-09-03)
 
 

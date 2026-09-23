@@ -1,6 +1,6 @@
 {
   "name": "@addon-core/browser",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "TypeScript wrapper for Web Extension APIs",
   "keywords": [
     "browser",
