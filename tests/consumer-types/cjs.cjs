@@ -1,14 +1,28 @@
 const assert = require("node:assert/strict");
+const checkContexts = require("./contexts.cjs");
+const checkMessaging = require("./messaging.cjs");
+const checkNodeScripting = require("./node-scripting.cjs");
+const checkOffscreen = require("./offscreen.cjs");
+const checkScripting = require("./scripting.cjs");
+const checkStorage = require("./storage.cjs");
 
 const beforeChrome = Object.getOwnPropertyDescriptor(globalThis, "chrome");
 const beforeBrowser = Object.getOwnPropertyDescriptor(globalThis, "browser");
 const production = require("@addon-core/browser");
 const testing = require("@addon-core/browser/testing");
+const nodeTesting = require("@addon-core/browser/testing/node");
 
 assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "chrome"), beforeChrome);
 assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "browser"), beforeBrowser);
 
 async function checkConsumer() {
+    await checkContexts(production, testing);
+    await checkMessaging(production, testing);
+    await checkOffscreen(production, testing);
+    await checkScripting(production, testing);
+    await checkNodeScripting(production, testing, nodeTesting);
+    await checkStorage(testing);
+
     const harness = testing.createBrowserHarness({
         manifest: testing.createManifestFixture({name: "CJS consumer"}),
         tabs: [testing.createTabFixture({id: 7, url: "http://127.0.0.1:62778/top.html#part"})],
@@ -63,7 +77,14 @@ async function checkConsumer() {
     assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "browser"), beforeBrowser);
 }
 
-checkConsumer().catch(error => {
+// A pending Promise alone does not keep CJS Node alive. Unfinished consumer work must not silently pass.
+let completed = false;
+process.once("beforeExit", () => assert.equal(completed, true, "CJS consumer did not complete"));
+
+checkConsumer().then(() => {
+    completed = true;
+}, error => {
+    completed = true;
     console.error(error);
     process.exitCode = 1;
 });

@@ -7,7 +7,7 @@ addon
 *.log
 /.vscode/
 /docs/.vitepress/cache
-coverage
+/coverage/
 dist
 package
 node_modules

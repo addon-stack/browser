@@ -7,12 +7,20 @@ import {
     queryTabs,
 } from "@addon-core/browser";
 import {
+    type BrowserContext,
+    type BrowserContextInfo,
+    type BrowserContextMessaging,
+    type BrowserDocument,
     type BrowserHarness,
+    type BrowserIgnoredMessageRejection,
+    type BrowserMessageChannelInfo,
     type BrowserMethod,
+    type BrowserOffscreenHarness,
     createBrowserHarness,
     createManifestFixture,
     createTabFixture,
     installBrowserGlobals,
+    type OffscreenTestApi,
 } from "@addon-core/browser/testing";
 
 const harness: BrowserHarness = createBrowserHarness({
@@ -21,6 +29,31 @@ const harness: BrowserHarness = createBrowserHarness({
 });
 
 const restore = installBrowserGlobals(harness, {profile: "firefox"});
+const document: BrowserDocument = harness.contexts.documents.create({tabId: 7, url: "https://example.test/"});
+const context: BrowserContext = harness.contexts.create({kind: "contentScript", documentId: document.documentId});
+const contexts: readonly BrowserContextInfo[] = harness.contexts.list({kinds: ["contentScript"], tabIds: [7]});
+const messaging: BrowserContextMessaging = harness.messaging.forContext(context);
+const channels: readonly BrowserMessageChannelInfo[] = harness.messaging.pendingChannels;
+const ignoredRejections: readonly BrowserIgnoredMessageRejection[] = harness.messaging.ignoredPromiseRejections;
+harness.messaging.promiseListeners = "ignore";
+harness.messaging.promiseListeners = "accept";
+void ignoredRejections;
+const messageResponse: Promise<unknown> = messaging.browser.runtime.sendMessage({type: "ping"});
+
+messaging.chrome.tabs.sendMessage(7, {}, {frameId: 0}, response => {
+    void response;
+});
+
+installBrowserGlobals(harness, {environment: "preserve", messageContext: context})();
+messaging.runtime.sendMessage.setImplementation(async message => message);
+messaging.tabs.sendMessage.failNext(new Error("test error"));
+void channels;
+void messageResponse;
+const tracked: Promise<number> = context.track(Promise.resolve(1));
+const cleanup: () => void = context.onDispose(() => undefined);
+void contexts;
+void tracked;
+cleanup();
 const manifestName: string = getManifest().name;
 const queryResult: Promise<chrome.tabs.Tab[]> = queryTabs({active: true});
 
@@ -45,6 +78,26 @@ harness.tabs.query.setResult([]);
 harness.configurable.browser.downloads.search.setResult([]);
 harness.runtime.closeMessageChannels();
 
+const offscreen: BrowserOffscreenHarness = harness.offscreen;
+const offscreenApi: OffscreenTestApi = harness.browser.offscreen;
+const offscreenExists: Promise<boolean> = offscreenApi.hasDocument();
+
+offscreenApi.hasDocument((exists: boolean) => {
+    void exists;
+});
+
+offscreen.beforeCreate.setImplementation(async parameters => {
+    const url: string = parameters.url;
+    void url;
+});
+
+offscreen.beforeClose.failNext(new Error("Closure failed"));
+const offscreenContext: BrowserContext | undefined = offscreen.context;
+const legacyCreate: typeof chrome.offscreen.createDocument = harness.configurable.browser.offscreen.createDocument.api;
+void offscreenExists;
+void offscreenContext;
+void legacyCreate;
+
 downloadValidationDelay.setImplementation(async milliseconds => {
     const duration: number = milliseconds;
     void duration;
@@ -60,6 +113,7 @@ void hasHostAccess;
 void alarmCreated;
 unsubscribeAlarm();
 restore();
+installBrowserGlobals(harness, {environment: "preserve"})();
 
 onTabUpdated((tabId, changeInfo, tab) => {
     const id: number = tabId;

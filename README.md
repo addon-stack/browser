@@ -36,6 +36,19 @@ pnpm add @addon-core/browser
 - Firefox — partial support via compatible helpers (e.g., `sidebarAction`, `runtime.getBrowserInfo`)
 - Apple Safari — limited WebExtensions support; many Chromium-specific APIs are not available, so some helpers won’t work.
 
+## TypeScript compatibility
+
+The package depends on `@types/chrome@^0.3.0`, which owns the global `browser` alias
+(`typeof chrome`). Our declarations extend that shared API shape with Firefox-only
+`sidebarAction` and `runtime.getBrowserInfo`, plus the existing legacy APIs. They do
+not redeclare the `browser` value. The previous type names
+`browser.runtime.BrowserInfo` and `browser.sidebarAction.ImageDataType` remain available.
+
+These declarations are a cross-browser superset, not a guarantee of runtime availability:
+Chrome's `browser` alias does not provide Firefox-only APIs. Keep feature detection
+when calling vendor-specific APIs directly. Applications with an explicit dependency on
+older `@types/chrome` should update it to the same range to avoid mixing global declarations.
+
 ## Supported Chrome APIs
 
 - [action](docs/action.md) — MV2/MV3 compatible; under the hood uses `chrome.action` (MV3) or `chrome.browserAction` (MV2) automatically.

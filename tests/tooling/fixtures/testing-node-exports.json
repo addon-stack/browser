@@ -1,0 +1,46 @@
+[
+  {
+    "name": "createNodeScriptExecutor",
+    "hasValue": true
+  },
+  {
+    "name": "createNodeScriptRuntime",
+    "hasValue": true
+  },
+  {
+    "name": "NodeScriptBootstrap",
+    "hasValue": false
+  },
+  {
+    "name": "NodeScriptClock",
+    "hasValue": false
+  },
+  {
+    "name": "NodeScriptClockOptions",
+    "hasValue": false
+  },
+  {
+    "name": "NodeScriptClockRunOptions",
+    "hasValue": false
+  },
+  {
+    "name": "NodeScriptException",
+    "hasValue": false
+  },
+  {
+    "name": "NodeScriptExecutorOptions",
+    "hasValue": false
+  },
+  {
+    "name": "NodeScriptRealm",
+    "hasValue": false
+  },
+  {
+    "name": "NodeScriptRuntime",
+    "hasValue": false
+  },
+  {
+    "name": "NodeScriptRuntimeOptions",
+    "hasValue": false
+  }
+]

@@ -1,6 +1,15 @@
-import type {ConfigurableBrowserApi} from "./configurable";
-import type {BrowserEventHarness} from "./event";
-import type {BrowserMethod, BrowserMethodCall, BrowserMethodCallback, BrowserMethodObservedInvocation} from "./method";
+import type {ConfigurableBrowserApi} from "./api/configurable";
+import type {BrowserEventApi} from "./primitives";
+
+export type OffscreenTestApi = Pick<typeof chrome.offscreen, "createDocument" | "closeDocument" | "hasDocument">;
+
+export type StorageAreaTestApi = Pick<chrome.storage.StorageArea, "get" | "getKeys" | "getBytesInUse" | "set" | "remove" | "clear"> & {
+    onChanged: BrowserEventApi<[Record<string, chrome.storage.StorageChange>]>;
+};
+
+export type StorageTestApi = Record<chrome.storage.AreaName, StorageAreaTestApi> & {
+    onChanged: BrowserEventApi<[Record<string, chrome.storage.StorageChange>, chrome.storage.AreaName]>;
+};
 
 export type RuntimeTestApi = Pick<
     typeof chrome.runtime,
@@ -149,6 +158,7 @@ export type BrowserTestApi = Omit<
     "permissions" | "runtime" | "scripting" | "sidePanel" | "tabs" | "windows"
 > & {
     runtime: RuntimeTestApi & ConfigurableBrowserApi["runtime"];
+    storage: StorageTestApi;
     permissions: PermissionsTestApi & ConfigurableBrowserApi["permissions"];
     tabs: TabsTestApi & ConfigurableBrowserApi["tabs"];
     windows: WindowsTestApi & ConfigurableBrowserApi["windows"];
@@ -162,21 +172,3 @@ export type BrowserProfile = "chrome" | "firefox" | "opera" | "safari" | "custom
 export type ExtensionContextKind = "extensionPage" | "serviceWorker" | "backgroundPage" | "contentScript" | "none";
 
 export type SidebarFlavor = "sidePanel" | "firefoxSidebarAction" | "operaSidebarAction" | "none";
-
-export interface BrowserHarnessCall {
-    api: string;
-    args: readonly unknown[];
-    callback?: BrowserMethodCallback;
-    invocation: BrowserMethodObservedInvocation;
-    sequence: number;
-}
-
-export interface RuntimeLastErrorController {
-    readonly current: chrome.runtime.LastError | undefined;
-    runWithLastError<T>(error: unknown, callback: () => T): T;
-}
-
-export type AnyBrowserMethod = BrowserMethod<(...args: never[]) => unknown, unknown>;
-export type AnyBrowserEvent = BrowserEventHarness<readonly unknown[]>;
-
-export type {BrowserEventHarness, BrowserMethod, BrowserMethodCall, BrowserMethodObservedInvocation};

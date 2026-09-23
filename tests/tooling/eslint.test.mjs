@@ -147,6 +147,10 @@ describe("ESLint project configuration", () => {
         expect(await checker.isPathIgnored(filePath)).toBe(true);
     });
 
+    test.each(["src/testing/coverage/public-exports.ts", "src/testing/coverage/raw-capabilities.ts", "tests/testing/unit/coverage/coverage.test.ts"])("does not ignore coverage-matrix source or tests: %s", async filePath => {
+        expect(await checker.isPathIgnored(filePath)).toBe(false);
+    });
+
     test.each(["src/module-name.ts", "src/api.d.ts", "src/module-name.test.ts", "src/Example.test.ts", "src/Example.integration.test.ts", "tests/module-name.spec.mjs", "tsup.config.ts"])("accepts ordinary/test filename %s", async filePath => {
         expect(await messagesFor("export {};\n", filePath)).toEqual([]);
     });
