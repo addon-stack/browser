@@ -14,7 +14,7 @@ const controlStatements = ["if", "for", "while", "do", "switch"];
 export default tseslint.config(
     {
         ignores: [
-            "**/node_modules/**", "**/.git/**", "**/dist/**", "**/coverage/**", "**/addon/**",
+            "**/node_modules/**", "**/.git/**", "**/dist/**", "coverage/**", "**/addon/**",
             "**/package/**", "**/.cache/**", "**/.output/**", "**/.idea/**", "**/.vscode/**",
             ".husky/_/**", "**/.DS_Store", "**/.env*", "**/.npmrc", "**/*.log", "**/*.tgz",
             "**/*.tsbuildinfo", "package-lock.json", "docs/.vitepress/cache/**",
@@ -107,7 +107,7 @@ export default tseslint.config(
         },
     },
     {
-        files: ["src/**/*.{js,jsx,ts,tsx}"],
+        files: ["src/**/*.{js,jsx,ts,tsx}", "tests/testing/**/*.{js,ts,tsx}"],
         languageOptions: {globals: {...globals.browser, ...globals.webextensions}},
     },
     {

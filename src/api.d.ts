@@ -1,10 +1,9 @@
-declare namespace browser {
-    export namespace runtime {
-        /** The ID of the extension/app. */
-        export const id: string;
-    }
-
+// @types/chrome owns the global browser value (typeof chrome). Extend its shared
+// API shape instead of redeclaring that value. Firefox-only members below still
+// require runtime feature detection; this is a cross-browser type superset.
+declare namespace chrome {
     /**
+     * Firefox only; not provided by Chrome's browser alias.
      * @see: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction
      */
     namespace sidebarAction {
@@ -99,10 +98,22 @@ declare namespace browser {
         }
 
         /**
-         * Returns information about the current browser.
+         * Firefox only. Returns information about the current browser.
          * @returns Promise, resolved with an object containing browser info.
          */
         function getBrowserInfo(): Promise<BrowserInfo>;
+    }
+}
+
+// Keep the previous public type names without declaring any browser values.
+// A type-only namespace can coexist with the upstream browser variable.
+declare namespace browser {
+    namespace runtime {
+        type BrowserInfo = chrome.runtime.BrowserInfo;
+    }
+
+    namespace sidebarAction {
+        type ImageDataType = chrome.sidebarAction.ImageDataType;
     }
 }
 

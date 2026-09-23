@@ -43,6 +43,14 @@ they read are supplied by the test.
 - [Harness and globals](testing/harness.md) provide browser profiles, state, capabilities, reset, and exact global
   restoration.
 - [URL patterns and host permissions](testing/match-patterns.md) cover wildcard tab queries and granted-origin checks.
+- [Contexts and documents](testing/contexts.md) provide a shared registry, context-local subscriptions and cleanup.
+- [Storage](testing/storage.md) provides isolated areas, managed policy fixtures, change events and real `@addon-core/storage` examples.
+- [Offscreen](testing/offscreen.md) shares context state with runtime queries and supports controlled creation, closure and cleanup.
+- [Context messaging](testing/messaging.md) routes messages between registered extension contexts and content-script frames.
+- [Scripting targets and executors](testing/scripting.md) selects registered documents and uses an explicitly supplied executor; no code runs implicitly.
+- [Node execution](testing/node.md) provides an opt-in `testing/node` executor with fresh VM realms and data-only globals.
+- [Persistent Node runtime](testing/node-runtime.md) adds classic-script bootstrap, document/world state and optional document lifecycle binding.
+- [Guest virtual clocks](testing/node-clock.md) explicitly controls VM timers and time sources without patching host globals.
 - [Jest usage](testing/jest.md) shows how to combine the kit with Jest without making the kit depend on Jest.
 - [Limitations](testing/limitations.md) describes intentional differences from real browsers.
 
@@ -60,3 +68,5 @@ browser compatibility, manifest behavior, security boundaries, lifecycle timing,
 Every harness owns independent state. Call `harness.reset()` between tests when reusing one harness, or create a fresh
 harness per test. Always call the restore function returned by `installBrowserGlobals()` in `finally`; it is safe to
 call more than once and restores the original property descriptors.
+Restore nested installations in reverse order. Use `environment: "preserve"` in jsdom or when the test already owns
+`window`, `document`, `location`, or `navigator`; see [preserving an existing environment](testing/harness.md#preserving-an-existing-environment).

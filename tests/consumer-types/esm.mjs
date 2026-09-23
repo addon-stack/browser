@@ -1,12 +1,26 @@
 import assert from "node:assert/strict";
+import checkContexts from "./contexts.cjs";
+import checkMessaging from "./messaging.cjs";
+import checkNodeScripting from "./node-scripting.cjs";
+import checkOffscreen from "./offscreen.cjs";
+import checkScripting from "./scripting.cjs";
+import checkStorage from "./storage.cjs";
 
 const beforeChrome = Object.getOwnPropertyDescriptor(globalThis, "chrome");
 const beforeBrowser = Object.getOwnPropertyDescriptor(globalThis, "browser");
 const production = await import("@addon-core/browser");
 const testing = await import("@addon-core/browser/testing");
+const nodeTesting = await import("@addon-core/browser/testing/node");
 
 assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "chrome"), beforeChrome);
 assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "browser"), beforeBrowser);
+
+await checkContexts(production, testing);
+await checkMessaging(production, testing);
+await checkOffscreen(production, testing);
+await checkScripting(production, testing);
+await checkNodeScripting(production, testing, nodeTesting);
+await checkStorage(testing);
 
 const harness = testing.createBrowserHarness({
     manifest: testing.createManifestFixture({name: "ESM consumer"}),

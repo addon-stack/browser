@@ -38,7 +38,7 @@ npm ci
 - `npm run lint` — check code, formatting, and filenames with ESLint; does not edit files
 - `npm run fix` — apply available ESLint fixes and report remaining violations
 - `npm run lint:staged` — fix/check staged files and automatically stage successful fixes (also run by pre-commit)
-- `npm run typecheck` — type-check with tsc
+- `npm run typecheck` — type-check package source and TypeScript tests with tsc
 - `npm test` / `npm run test:ci` — tests (Jest)
 - `npm run test:browser-match-patterns -- /absolute/path/to/browser` — real-browser match-pattern smoke (build first)
 
@@ -179,16 +179,78 @@ Framework: **Jest** (`npm test`). Recommendations:
 - Mock `chrome.*` APIs (simple stubs/mocks are fine).
 - Test error paths (`runtime.lastError`).
 - For events, verify that the returned function actually removes the listener.
-- Structure: co-locate tests with the module or use a `__tests__` folder.
+- Test-kit checks belong in `tests/testing/unit/` and `tests/testing/integration/`, not in `src/testing/`.
+  Existing production-wrapper tests remain colocated in `src/`; they are outside this layout migration.
 
 In CI use `npm run test:ci`. All test scripts (`npm test`, `npm run test:ci`, and `npm run test:related`) share the same Jest ESM launcher, including Node's `--experimental-vm-modules` flag. No manual `NODE_OPTIONS` setup is needed locally or in CI.
 
 Import Jest helpers explicitly in test files, for example `import {describe, expect, jest, test} from "@jest/globals"`. In ESM, the `jest` object is not a global. These imports belong only in test suites; the published `@addon-core/browser/testing` runtime remains runner-independent.
 
+### Test-kit layout and dependency boundaries
+
+`src/testing/` contains the shipped implementation, not its test suites:
+
+```text
+src/testing/
+├── index.ts              # stable public entrypoint
+├── harness.ts            # assembly and lifecycle coordination
+├── fixtures.ts           # deterministic data factories
+├── types.ts              # public browser facade types
+├── primitives/           # methods, events, lastError, calls and cloning
+├── environment/          # descriptors, browser profiles and console capture
+├── model/                # tabs/windows state, contexts, documents and lifetimes
+├── api/                  # WebExtension API implementations and configurable controls
+├── matching/             # shared URL-pattern matching
+├── node/                 # separate testing/node entrypoint; never re-exported by the portable root
+└── coverage/             # public-export and raw-capability metadata, not coverage reports
+
+tests/
+├── testing/
+│   ├── unit/             # component tests grouped by the corresponding source responsibility
+│   └── integration/      # combined components, real wrappers and jsdom (no real browser)
+├── consumer-types/       # fresh tarball: TypeScript, ESM, CJS and jsdom
+├── browser-match-patterns/ # real-browser comparisons with a temporary Chromium profile
+└── tooling/              # lint/hooks, layout and dependency-boundary guards
+```
+
+Primitives do not depend on API implementations or harness assembly. The shared model may use primitives and
+fixtures, but must not import runtime, Offscreen or scripting implementations. API implementations reuse the model;
+`harness.ts` connects the components. Each implementation directory has an `index.ts` that explicitly selects only
+its public functions and types. Cross-directory imports of public members use that local entrypoint, for example
+`../primitives`. Internal helpers such as `createContextRegistry` or `createRuntimeHarness` are imported directly
+from their implementation files and are not re-exported by directory indexes. The internal-only `matching/index.ts`
+has no public exports. Files within one directory import sibling files directly, never their own barrel, to avoid
+circular dependencies. Unit tests may import internal implementation files; integration tests use the public testing
+entrypoint to verify the consumer-facing API. Test directories do not need barrel files: Jest discovers the suites.
+
+The root `src/testing/index.ts` combines the public module entrypoints with `export *`. The export selection belongs
+to each directory, not to the root barrel. Internal source modules never import the root public barrel. Directory
+exports, import boundaries and runtime cycles are checked by `tests/tooling/testing-layout.test.mjs`. Its explicit
+`tests/tooling/fixtures/testing-public-exports.json` baseline also guards the package's value and type export names;
+update it only for an intentional public API change, never just to accommodate a refactor.
+
+`node/index.ts` is the deliberate exception to root re-exports: it owns `@addon-core/browser/testing/node` and has a
+separate `testing-node-exports.json` baseline. The recursive source-graph guard also follows type imports, re-exports,
+dynamic imports and require calls. No dependency reachable from `src/testing/index.ts` may import a `node:` or bare
+Node builtin; computed module specifiers fail closed. Build and clean-consumer checks cover all three entrypoints.
+
+`npm run typecheck` runs both `tsconfig.json` and `tsconfig.tests.json`. Jest uses the latter for TypeScript tests;
+the build keeps the source config. Clean-consumer fixtures retain their separate config and installed-package
+resolution. The layout test ensures every TS file in `tests/testing/` remains covered by test typechecking.
+
+```sh
+npm test -- --runInBand tests/testing
+npm run typecheck
+```
+
+Keep generated coverage reports in the root `coverage/`. Do not ignore all directories named `coverage`: the source
+matrices and their tests must remain tracked and linted. These internal folders do not introduce npm subpath exports;
+consumers continue to import only `@addon-core/browser/testing`.
+
 ### Browser match-pattern smoke
 
-Before releasing changes to the URL matcher or host-permission fake, run the real-browser smoke in addition to unit
-and clean-consumer tests. Obtain the full **Chrome for Testing** executable from the
+Before releasing changes to the URL matcher, host-permission fake, runtime context registry, Storage, Offscreen, scripting targets or contextual messaging model, run the real-browser
+smoke in addition to unit and clean-consumer tests. Obtain the full **Chrome for Testing** executable from the
 [official downloads](https://googlechromelabs.github.io/chrome-for-testing/) or use a Chromium build with extension
 support. No ChromeDriver, Playwright, or other automation package is needed. Do not use `chrome-headless-shell`.
 
@@ -205,6 +267,38 @@ A remaining timeout includes the selected binary/version, missing extension resu
 
 The smoke compares the built harness with real MV3 extension APIs, using a temporary browser profile and loopback
 HTTP server. It never uses your personal profile. It is separate from `npm test` so local unit tests need no browser.
+Besides URL queries and permissions, it compares `runtime.getContexts()` visibility and filtering for a background
+worker and extension tab, and checks that a real injected content script is excluded from that API. It also compares
+Offscreen create/close, duplicate/absent-operation errors and native context fields via callbacks and Promises. The
+version-dependent `hasDocument` method is feature-detected and an unavailable method is reported as not compared.
+It also compares contextual runtime/tab messages between worker, Offscreen, main content frame and iframe, including
+frame/document addressing, sender metadata, JSON payloads and held-channel closure through callback/Promise method
+calls. Extension-tab delivery uses a readiness handshake. The context snapshot must contain exactly one `TAB` context
+matching that page's tab, frame, document ID and exact URL; missing or ambiguous matches report the full snapshot
+without falling back to the first context in the tab. Promise-listener success/rejection, empty responses and
+unanswered messages are measured separately; the detected `accept`/`ignore` behavior is printed and compared with the
+fake in that mode. Unknown outcomes fail the smoke. Both modes are independently covered by unit tests; this probe
+does not establish rollout availability for all users or isolated application execution. It also compares Storage selectors,
+serialization (including Date/RegExp/undefined), change payloads/no-op suppression and UTF-8 byte accounting.
+Scripting comparisons cover main/all/frame/document selectors, duplicate frame IDs, result identifiers/order and
+invalid targets via callbacks and Promises using a metadata-only fake executor. Separate comparisons actually execute
+the same source through `testing/node` and Chrome for child throws/rejections, body/cycle/BigInt, void/undefined and
+Date/RegExp (including own fields and Invalid Date) results. Node's body
+is an explicit data fixture, not a DOM implementation. These are not claims that the general configurable executor
+has Chrome's failure/serialization behavior. See [scripting boundaries](docs/testing/scripting.md) and [Node scope](docs/testing/node.md).
+The [persistent Node runtime](docs/testing/node-runtime.md) is compared separately for successive-injection state and
+frame/world isolation through both invocation styles. Its bootstrap/microtask tests run without host timer mocks;
+optional public document binding follows removal/reset without internal reset hooks. Clean ESM/CJS consumers verify
+the factory from the packed `testing/node` entrypoint, including deferred replies, lifetime reuse and disposal.
+For changes affecting persistent application managers, optionally run
+`npm run test:relay-consumer -- /path/to/addon-bone` with that checkout's development dependencies installed. This
+read-only check bundles the real Relay manager/adapter; it does not migrate or modify the consumer's tests. It is not
+part of standalone CI. [Guest clocks](docs/testing/node-clock.md) have independent inline retry acceptance at
+2699/2700 ms; the optional Relay check additionally tracks the consumer's missing-manager bug (#109). The native
+smoke compares a zero-delay timer/microtask ordering sequence with the guest runtime, not wall-clock timing parity.
+See [runtime modes](docs/testing/node-runtime.md).
+The clean-consumer check additionally installs published `@addon-core/storage@0.7.0` and exercises its unmodified
+providers through ESM/CJS kit imports and jsdom. See [Storage scope and consumer examples](docs/testing/storage.md).
 If the browser is unavailable locally, report the smoke as **not run**, not as passed.
 
 `.github/workflows/ci.yml` runs this command in one dedicated Ubuntu 22.04/Node 22 job using stable Chrome for Testing

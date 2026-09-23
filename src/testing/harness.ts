@@ -1,35 +1,37 @@
-import {createBrowserMemoryState} from "./browser-state";
-import {
-    type ConfigurableBrowserControls,
-    type ConfigurableNamespaces,
-    createConfigurableNamespaces,
-} from "./configurable";
-import {type BrowserDelaysHarness, createBrowserDelaysHarness} from "./delays";
-import {createLastErrorController} from "./internal";
-import {createListenerErrorCapture, type ListenerErrorBuffer} from "./listener-errors";
-import type {BrowserMethodCall} from "./method";
-import {createPermissionsHarness, type PermissionsHarness} from "./permissions";
-import {createRuntimeHarness, type RuntimeHarness} from "./runtime";
-import {createScriptingHarness, type ScriptingHarness} from "./scripting";
-import {createTabsHarness, type TabsHarness} from "./tabs";
+import type {BrowserDelaysHarness, BrowserMessagingHarness, BrowserOffscreenHarness, BrowserStorageHarness} from "./api";
+import {type ConfigurableBrowserControls, type ConfigurableNamespaces, createConfigurableNamespaces} from "./api/configurable";
+import {createBrowserDelaysHarness} from "./api/delays";
+import {createMessagingHarness} from "./api/messaging";
+import {createOffscreenHarness} from "./api/offscreen";
+import {createPermissionsHarness, type PermissionsHarness} from "./api/permissions";
+import {createRuntimeHarness, type RuntimeHarness} from "./api/runtime";
+import {createScriptingHarness, type ScriptingHarness} from "./api/scripting";
+import {createStorageHarness} from "./api/storage";
+import {createTabsHarness, type TabsHarness} from "./api/tabs";
+import {createWindowsHarness, type WindowsHarness} from "./api/windows";
+import type {ListenerErrorBuffer} from "./environment";
+import {createListenerErrorCapture} from "./environment/listener-errors";
+import {sidebarDefaultForProfile} from "./environment/profiles";
+import type {BrowserContextsHarness, BrowserStorageOptions, ContextRegistryOptions} from "./model";
+import {createBrowserMemoryState} from "./model/browser-state";
+import type {BrowserHarnessCall, BrowserMethod, BrowserMethodCall} from "./primitives";
+import {createLastErrorController} from "./primitives/last-error";
 import type {
-    BrowserHarnessCall,
     BrowserProfile,
     BrowserTestApi,
     OperaSidebarActionTestApi,
     SidebarFlavor,
 } from "./types";
-import {createWindowsHarness, type WindowsHarness} from "./windows";
 
-export interface BrowserHarnessOptions {
+export interface BrowserHarnessOptions extends ContextRegistryOptions {
     extensionId?: string;
     manifest?: chrome.runtime.Manifest;
     permissions?: chrome.permissions.Permissions;
-    contexts?: readonly chrome.runtime.ExtensionContext[];
     messageSender?: chrome.runtime.MessageSender;
     tabs?: readonly chrome.tabs.Tab[];
     windows?: readonly chrome.windows.Window[];
     registeredContentScripts?: readonly chrome.scripting.RegisteredContentScript[];
+    storage?: BrowserStorageOptions;
 }
 
 export interface BrowserCapabilitiesHarness {
@@ -56,10 +58,14 @@ export interface BrowserHarness {
     readonly chrome: BrowserTestApi;
     readonly browser: BrowserTestApi;
     readonly runtime: RuntimeHarness;
+    readonly contexts: BrowserContextsHarness;
     readonly permissions: PermissionsHarness;
     readonly tabs: TabsHarness;
     readonly windows: WindowsHarness;
     readonly scripting: ScriptingHarness;
+    readonly storage: BrowserStorageHarness;
+    readonly offscreen: BrowserOffscreenHarness;
+    readonly messaging: BrowserMessagingHarness;
     readonly delays: BrowserDelaysHarness;
     readonly configurable: ConfigurableHarness;
     readonly capabilities: BrowserCapabilitiesHarness;
@@ -67,6 +73,8 @@ export interface BrowserHarness {
     readonly listenerErrors: ListenerErrorBuffer;
     readonly calls: readonly BrowserHarnessCall[];
     reset(): void;
+    /** @internal Snapshot installation-owned profile settings for rollback and nested restoration. */
+    captureProfileState(): () => void;
     /** @internal Used by the profile installer. */
     setActiveProfile(profile: BrowserProfile): void;
     /** @internal Used by the profile installer without overriding an explicit flavor. */
@@ -109,28 +117,31 @@ const cloneFacade = (api: BrowserTestApi): BrowserTestApi => {
     return copy;
 };
 
-const sidebarDefaultForProfile = (profile: BrowserProfile): SidebarFlavor => {
-    if (profile === "firefox") return "firefoxSidebarAction";
-
-    if (profile === "opera") return "operaSidebarAction";
-
-    if (profile === "chrome") return "sidePanel";
-
-    return "none";
-};
-
 export const createBrowserHarness = (options: BrowserHarnessOptions = {}): BrowserHarness => {
     let sequence = 0;
     const nextSequence = (): number => ++sequence;
     const lastError = createLastErrorController();
     const state = createBrowserMemoryState({tabs: options.tabs, windows: options.windows});
-    const configChrome = createConfigurableNamespaces({facade: "chrome", lastError, nextSequence});
-    const configBrowser = createConfigurableNamespaces({facade: "browser", lastError, nextSequence});
-    const runtime = createRuntimeHarness(options, lastError, nextSequence);
+    const runtime = createRuntimeHarness(options, lastError, nextSequence, state);
+    const offscreen = createOffscreenHarness(runtime.contextRegistry, () => `${runtime.urlScheme}://${runtime.id}/`, lastError, nextSequence);
+    runtime.onContextsReset(offscreen.reset);
+
+    const ownedMethods = new Map<string, BrowserMethod<(...args: never[]) => unknown, unknown>>(
+        (["createDocument", "closeDocument", "hasDocument"] as const).map(member => [
+            `offscreen.${member}`,
+            offscreen[member] as BrowserMethod<(...args: never[]) => unknown, unknown>,
+        ])
+    );
+
+    const configChrome = createConfigurableNamespaces({facade: "chrome", lastError, nextSequence, ownedMethods});
+    const configBrowser = createConfigurableNamespaces({facade: "browser", lastError, nextSequence, ownedMethods});
+    state.onTabRemoved(runtime.removeTabContexts);
     const permissions = createPermissionsHarness(options.permissions, lastError, nextSequence);
     const tabs = createTabsHarness(state, lastError, nextSequence);
     const windows = createWindowsHarness(state, tabs, lastError, nextSequence);
-    const scripting = createScriptingHarness(options.registeredContentScripts, lastError, nextSequence);
+    const scripting = createScriptingHarness(options.registeredContentScripts, lastError, runtime.contextRegistry, id => state.tabs.has(id), nextSequence);
+    runtime.onContextsReset(scripting.reset);
+    const storage = createStorageHarness(options.storage, lastError, nextSequence);
     const listenerCapture = createListenerErrorCapture();
 
     const mergeDescriptors = (target: object, source: object): void => {
@@ -139,6 +150,15 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
 
     const chrome = configChrome.api as unknown as BrowserTestApi;
     const browser = configBrowser.api as unknown as BrowserTestApi;
+
+    const storageFacades = (): BrowserTestApi["storage"] => ({
+        ...storage.api,
+        local: {...storage.api.local}, sync: {...storage.api.sync},
+        session: {...storage.api.session}, managed: {...storage.api.managed},
+    });
+
+    chrome.storage = storageFacades();
+    browser.storage = storageFacades();
     const delays = createBrowserDelaysHarness([chrome.downloads, browser.downloads], nextSequence);
     const sidePanelChromeApi = configChrome.api.sidePanel;
     const sidePanelBrowserApi = configBrowser.api.sidePanel;
@@ -161,9 +181,21 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         mergeDescriptors(browser.windows, windows.api);
         mergeDescriptors(chrome.scripting, scripting.api);
         mergeDescriptors(browser.scripting, scripting.api);
+
+        for (const facade of [chrome, browser]) {
+            facade.storage.onChanged = storage.api.onChanged;
+
+            for (const area of ["local", "sync", "session", "managed"] as const) {
+                mergeDescriptors(facade.storage[area], storage.api[area]);
+            }
+        }
     };
 
     mergeStateful();
+
+    const messaging = createMessagingHarness(runtime.contextRegistry, {chrome, browser}, state, lastError, () => runtime.id, nextSequence);
+    runtime.onContextsReset(messaging.reset);
+    runtime.onMessageChannelsClose(() => messaging.closeChannels());
 
     for (const [namespace, chromeNamespace, browserNamespace] of [
         ["runtime", runtime.chromeApi, runtime.browserApi],
@@ -171,6 +203,11 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         ["tabs", tabs.api, tabs.api],
         ["windows", windows.api, windows.api],
         ["scripting", scripting.api, scripting.api],
+        ["storage.local", storage.api.local, storage.api.local],
+        ["storage.sync", storage.api.sync, storage.api.sync],
+        ["storage.session", storage.api.session, storage.api.session],
+        ["storage.managed", storage.api.managed, storage.api.managed],
+        ["storage", {onChanged: storage.api.onChanged}, {onChanged: storage.api.onChanged}],
     ] as const) {
         for (const [member, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(chromeNamespace))) {
             ownedChrome[`${namespace}.${member}`] = descriptor;
@@ -205,9 +242,10 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
     const setOwnedCapability = (path: string, enabled: boolean): boolean => {
         if (!(path in ownedChrome) && !(path in ownedBrowser)) return false;
 
-        const [namespace, member] = path.split(".");
-        const chromeNamespace = (chrome as unknown as Record<string, Record<string, unknown>>)[namespace];
-        const browserNamespace = (browser as unknown as Record<string, Record<string, unknown>>)[namespace];
+        const segments = path.split(".");
+        const member = segments.pop()!;
+        const chromeNamespace = segments.reduce<object>((value, key) => Reflect.get(value, key), chrome);
+        const browserNamespace = segments.reduce<object>((value, key) => Reflect.get(value, key), browser);
 
         if (enabled) {
             if (path in ownedChrome) Object.defineProperty(chromeNamespace, member, ownedChrome[path]);
@@ -240,20 +278,16 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
 
     const capabilities: BrowserCapabilitiesHarness = {
         has(path): boolean {
-            const [namespace, member] = path.split(".");
+            const segments = path.split(".");
+            const member = segments.pop()!;
 
-            const chromeNamespace = (chrome as unknown as Record<string, Record<string, unknown> | undefined>)[
-                namespace
-            ];
+            return [chrome, browser].some(facade => {
+                const parent = segments.reduce<unknown>((value, key) =>
+                    value && typeof value === "object" ? Reflect.get(value, key) : undefined, facade
+                );
 
-            const browserNamespace = (browser as unknown as Record<string, Record<string, unknown> | undefined>)[
-                namespace
-            ];
-
-            return (
-                Boolean(chromeNamespace && member in chromeNamespace) ||
-                Boolean(browserNamespace && member in browserNamespace)
-            );
+                return parent !== null && typeof parent === "object" && member in parent;
+            });
         },
         set(path, enabled): void {
             applyCapability(path, enabled);
@@ -289,28 +323,95 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
 
     const callSources: NamedMethodCalls[] = [
         {namespace: "runtime", source: runtime as unknown as Record<string, unknown>},
+        {namespace: "offscreen", source: {
+            createDocument: offscreen.createDocument, closeDocument: offscreen.closeDocument, hasDocument: offscreen.hasDocument,
+            beforeCreate: offscreen.beforeCreate, beforeClose: offscreen.beforeClose,
+        }},
         {namespace: "permissions", source: permissions as unknown as Record<string, unknown>},
         {namespace: "tabs", source: tabs as unknown as Record<string, unknown>},
         {namespace: "windows", source: windows as unknown as Record<string, unknown>},
         {namespace: "scripting", source: scripting as unknown as Record<string, unknown>},
         {namespace: "delays", source: delays as unknown as Record<string, unknown>},
+        ...(["local", "sync", "session", "managed"] as const).map(area => ({
+            namespace: `storage.${area}`, source: storage[area] as unknown as Record<string, unknown>,
+        })),
     ];
 
     return {
         chrome,
         browser,
         runtime,
+        contexts: runtime.contextRegistry,
         permissions,
         tabs,
         windows,
         scripting,
+        storage,
+        offscreen,
+        messaging,
         delays,
         configurable,
         capabilities,
         sidebar,
         listenerErrors: listenerCapture,
+        captureProfileState() {
+            const previousProfile = activeProfile;
+            const previousScheme = runtime.urlScheme;
+            const previousFlavor = sidebarFlavor;
+            const previousExplicit = sidebarExplicit;
+            const previousBrowserInfoExplicit = explicitCapabilities.has("runtime.getBrowserInfo");
+            const restoreForward = listenerCapture.captureForward();
+
+            const descriptors = [{name: "chrome", api: chrome}, {name: "browser", api: browser}].flatMap(({name, api}) => [
+                {path: `${name}.sidePanel`, key: "sidePanel", target: api},
+                {path: `${name}.sidebarAction`, key: "sidebarAction", target: api},
+                {path: `${name}.runtime.getBrowserInfo`, key: "getBrowserInfo", target: api.runtime},
+            ]).map(entry => ({...entry, descriptor: Object.getOwnPropertyDescriptor(entry.target, entry.key)}));
+
+            return () => {
+                activeProfile = previousProfile;
+                sidebarFlavor = previousFlavor;
+                sidebarExplicit = previousExplicit;
+
+                if (previousBrowserInfoExplicit) explicitCapabilities.add("runtime.getBrowserInfo");
+                else explicitCapabilities.delete("runtime.getBrowserInfo");
+
+                const cleanups = [
+                    () => runtime.setUrlScheme(previousScheme),
+                    restoreForward,
+                    ...descriptors.map(({path, key, target, descriptor}) => () => {
+                        let restored: boolean;
+
+                        try {
+                            restored = descriptor
+                                ? Reflect.defineProperty(target, key, descriptor)
+                                : Reflect.deleteProperty(target, key);
+                        } catch (cause) {
+                            throw new Error(`Unable to restore harness ${path}`, {cause});
+                        }
+
+                        if (!restored) throw new Error(`Unable to restore harness ${path}`);
+                    }),
+                ];
+
+                const failures: unknown[] = [];
+
+                for (const cleanup of cleanups) {
+                    try {
+                        cleanup();
+                    } catch (error) {
+                        failures.push(error);
+                    }
+                }
+
+                if (failures.length > 0) throw new AggregateError(failures, "Unable to restore browser harness profile");
+            };
+        },
         get calls() {
-            return [...callSources.flatMap(methodCalls), ...configChrome.calls, ...configBrowser.calls].sort(
+            // Shared compatibility aliases retain namespace history but must not triple-count root history.
+            const configurableCalls = [...configChrome.calls, ...configBrowser.calls].filter(call => !ownedMethods.has(call.api));
+
+            return [...callSources.flatMap(methodCalls), ...configurableCalls, ...messaging.calls].sort(
                 (left, right) => left.sequence - right.sequence
             );
         },
@@ -334,7 +435,13 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         reset(): void {
             sequence = 0;
             state.reset();
-            runtime.reset();
+            const cleanupErrors: unknown[] = [];
+
+            try {
+                runtime.reset();
+            } catch (error) {
+                cleanupErrors.push(error);
+            }
 
             if (activeProfile === "firefox") runtime.setUrlScheme("moz-extension");
             else if (activeProfile === "safari") runtime.setUrlScheme("safari-web-extension");
@@ -343,6 +450,7 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
             tabs.reset();
             windows.reset();
             scripting.reset();
+            storage.reset();
             configChrome.reset();
             configBrowser.reset();
             delays.reset();
@@ -359,6 +467,8 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
             sidebarExplicit = false;
             sidebarFlavor = sidebarDefaultForProfile(activeProfile);
             applySidebarFlavor();
+
+            if (cleanupErrors.length > 0) throw new AggregateError(cleanupErrors, "Browser harness context cleanup failed");
         },
         setActiveProfile(profile) {
             activeProfile = profile;
@@ -378,5 +488,3 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         },
     };
 };
-
-export {sidebarDefaultForProfile};

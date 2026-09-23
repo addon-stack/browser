@@ -31,7 +31,7 @@ try {
 Profiles are `chrome`, `firefox`, `opera`, `safari`, and `custom`. Contexts are `extensionPage`, `serviceWorker`,
 `backgroundPage`, `contentScript`, and `none`. A profile installs a coherent set of `chrome`, `browser`, `opr`,
 `safari`, `navigator`, `window`, and `location` markers and temporarily removes conflicting markers.
-The `contentScript` context uses the deterministic host-page URL `https://example.test/content/page.html`, while
+The default `environment: "simulate"` mode creates execution-context markers, not a DOM. The `contentScript` context uses the deterministic host-page URL `https://example.test/content/page.html`, while
 extension pages use an extension-style `/index.html` path.
 
 The Chrome and browser facades are different objects backed by the same harness state. In a Firefox profile,
@@ -39,11 +39,54 @@ production wrappers normally route to `harness.browser` because `browser.runtime
 available for explicit compatibility tests, but ordinary wrapper calls do not reach it. Sidebar helpers and browser
 detection also inspect globals directly.
 
+## Preserving an existing environment
+
+Use `environment: "preserve"` when Node, Jest/jsdom or the application fixture already supplies the host environment:
+
+```ts
+const restore = installBrowserGlobals(harness, {
+    profile: "chrome",
+    environment: "preserve",
+});
+
+try {
+    // The real document, URL, navigator.locks, prototypes and event listeners remain intact.
+    // Browser API wrappers use this harness.
+} finally {
+    restore();
+}
+```
+
+This mode never reads, replaces or removes `window`, `document`, `location` or `navigator`. Missing globals stay
+missing. It rejects a simultaneous `context` option or overrides of those four globals, including explicit
+`undefined`. Use `environment: "simulate"` (the default) for synthetic context markers instead. The simulated mode
+does not create or remove a DOM `document`; supplying a DOM remains the test environment's responsibility.
+
+Profiles still select browser APIs and vendor markers. Browser detection can also inspect the preserved user agent,
+so an API profile alone does not guarantee a particular `guessBrowser()` result in this mode.
+
+Both installers use descriptor-based transactions. A failed installation rolls back prior successful changes.
+`installBrowserGlobals()` also restores installation-owned harness settings: active profile, URL scheme, sidebar,
+the `runtime.getBrowserInfo` capability and console forwarding. It does not reset fixtures or call history.
+
+Nested installations must be restored in reverse order, even when using different harnesses. An out-of-order restore
+throws before changing anything; restore the inner installation first and then retry.
+
+Once an in-order restore starts, it attempts all saved global descriptors and installation-owned harness settings,
+even if an individual step fails. Failures are reported together, and the installation is removed from the stack so
+outer installations can still restore. This cleanup attempt is terminal: subsequent calls to the same restore function
+are no-ops, including after failure, and cannot overwrite a later installation. Only an out-of-order attempt is retryable.
+
+Cleanup completion does not imply every property was restored. Making an installed property non-configurable can
+make exact restoration impossible; the error identifies the failed property, and the kit does not silently claim
+success. Tests that deliberately make irreversible global changes should run in an isolated process.
+
 ## Stateful and configurable controls
 
-`harness.runtime`, `harness.permissions`, `harness.tabs`, `harness.windows`, and `harness.scripting` expose the stateful
+`harness.contexts` owns [contexts and documents](contexts.md). `harness.runtime`, `harness.permissions`, `harness.tabs`, `harness.windows`, `harness.storage`, `harness.offscreen`, and `harness.scripting` expose the stateful
 controls and their methods/events. A namespace can still contain configurable members: for example,
-`tabs.sendMessage` and `tabs.connect` record calls but do not invent tab-context message or port routing. Complex
+Root `tabs.sendMessage` and all `tabs.connect` calls record arguments without routing messages or ports. For tab/context
+delivery, opt into [context-bound messaging](messaging.md). Complex
 namespaces are explicit configurable stubs:
 
 ```ts
@@ -55,7 +98,14 @@ harness.calls;
 ```
 
 Use `.browser` instead of `.chrome` when configuring a Firefox or Safari profile. `harness.configurable.active` follows
-the last profile selected by `installBrowserGlobals()`.
+the currently installed profile; restoring an inner installation returns to the outer profile.
+The retained `configurable.*.offscreen` controls are aliases to the shared [stateful Offscreen adapter](offscreen.md),
+so either facade's alias configures the same method. Use `harness.offscreen.beforeCreate`/`beforeClose` to delay or fail
+an operation while preserving registry updates.
+
+`harness.messaging.forContext(context)` provides [context-bound message routing](messaging.md), including stateful
+`tabs.sendMessage` in that view. Pass `messageContext` to `installBrowserGlobals` to bind real package wrappers.
+This leaves unbound/root method behavior unchanged; the message context is separate from simulated DOM markers.
 
 `tabs.query` selects fixture URLs with a documented match-pattern subset. `permissions.contains` checks whether
 explicitly granted origins cover the requested patterns; manifest declarations do not grant access automatically.
@@ -113,7 +163,8 @@ try {
 ```
 
 An omitted field is untouched; an explicitly supplied `undefined` temporarily removes that global. Restoration is
-idempotent and restores exact original property descriptors, including globals that were originally absent.
+idempotent and restores exact original property descriptors, including globals that were originally absent, unless
+external descriptor changes prevent it. The terminal-cleanup and error-reporting rules above apply to both installers.
 
 ## Capabilities
 

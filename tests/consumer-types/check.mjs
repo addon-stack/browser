@@ -30,7 +30,7 @@ try {
     cpSync(fixtureDirectory, consumerDirectory, {recursive: true});
     writeFileSync(join(consumerDirectory, "package.json"), '{"private":true,"type":"module"}\n');
 
-    execFileSync(npm, ["install", "--ignore-scripts", "--no-package-lock", "--no-save", archive], {
+    execFileSync(npm, ["install", "--ignore-scripts", "--no-package-lock", "--no-save", archive, "jsdom@26.1.0", "@addon-core/storage@0.7.0"], {
         ...npmOptions,
         cwd: consumerDirectory,
         stdio: "inherit",
@@ -39,7 +39,7 @@ try {
     const installedPackageDirectory = join(consumerDirectory, "node_modules/@addon-core/browser");
     const installedPackage = JSON.parse(readFileSync(join(installedPackageDirectory, "package.json"), "utf8"));
 
-    assert.equal(installedPackage.dependencies?.["@types/chrome"], "^0.2.2");
+    assert.equal(installedPackage.dependencies?.["@types/chrome"], "^0.3.0");
     assert.equal(installedPackage.peerDependencies?.["@types/chrome"], undefined);
     assert.equal(installedPackage.types, "dist/index.d.ts");
 
@@ -49,18 +49,27 @@ try {
         require: "./dist/testing/index.cjs",
     });
 
+    assert.deepEqual(installedPackage.exports?.["./testing/node"], {
+        types: "./dist/testing/node/index.d.ts",
+        import: "./dist/testing/node/index.js",
+        require: "./dist/testing/node/index.cjs",
+    });
+
     const declarations = readFileSync(join(installedPackageDirectory, installedPackage.types), "utf8");
     const testingDeclarations = readFileSync(join(installedPackageDirectory, "dist/testing/index.d.ts"), "utf8");
+    const nodeDeclarations = readFileSync(join(installedPackageDirectory, "dist/testing/node/index.d.ts"), "utf8");
 
     assert.match(declarations, /^\/\/\/ <reference types="chrome" \/>/);
     assert.match(testingDeclarations, /^\/\/\/ <reference types="chrome" \/>/);
     assert.match(testingDeclarations, /^\/\/\/ <reference path="\.\.\/api\.d\.ts" \/>/m);
+    assert.match(nodeDeclarations, /^\/\/\/ <reference path="\.\.\/\.\.\/api\.d\.ts" \/>/m);
+    assert.doesNotMatch(testingDeclarations, /NodeScriptExecutor|NodeScriptRuntime|node:vm/);
 
-    for (const file of ["dist/testing/index.js", "dist/testing/index.cjs"]) {
+    for (const file of ["dist/testing/index.js", "dist/testing/index.cjs", "dist/testing/node/index.js", "dist/testing/node/index.cjs"]) {
         assert.equal(existsSync(join(installedPackageDirectory, file)), true, `${file} is missing from the tarball`);
     }
 
-    for (const file of ["dist/testing/index.js.map", "dist/testing/index.cjs.map"]) {
+    for (const file of ["dist/testing/index.js.map", "dist/testing/index.cjs.map", "dist/testing/node/index.js.map", "dist/testing/node/index.cjs.map"]) {
         assert.equal(existsSync(join(installedPackageDirectory, file)), false, `${file} must not be in the tarball`);
     }
 
@@ -76,6 +85,16 @@ try {
 
     execFileSync(process.execPath, [join(consumerDirectory, "esm.mjs")], {cwd: consumerDirectory, stdio: "inherit"});
     execFileSync(process.execPath, [join(consumerDirectory, "cjs.cjs")], {cwd: consumerDirectory, stdio: "inherit"});
+    execFileSync(process.execPath, [join(consumerDirectory, "dom.mjs")], {cwd: consumerDirectory, stdio: "inherit"});
+
+    for (const format of ["esm", "cjs"]) {
+        for (const installer of ["raw", "profile"]) {
+            execFileSync(process.execPath, [join(consumerDirectory, "globals-restore.cjs"), format, installer], {
+                cwd: consumerDirectory,
+                stdio: "inherit",
+            });
+        }
+    }
 } finally {
     rmSync(temporaryDirectory, {force: true, recursive: true});
 }

@@ -16,22 +16,76 @@ Chrome, Firefox, Safari, Opera, or any other real browser.
 - `permissions.contains()` models pattern containment for explicitly granted origins, ignoring paths. It does not
   infer grants from the manifest or simulate prompts, restricted pages, file-access toggles or user site-access
   policy. Grant storage and removal remain exact-entry operations, without partial wildcard subtraction.
-- Complex APIs outside runtime, permissions, tabs, windows, and the scripting content-script registry are configurable
+- Complex APIs outside runtime, permissions, tabs, windows, storage, offscreen, and the modeled scripting APIs are configurable
   stubs. They do not simulate the browser unless the test supplies an implementation or result.
-- `tabs.sendMessage()` and `tabs.connect()` are configurable stubs. The kit does not create content-script contexts,
-  route messages to a particular tab/frame, or simulate long-lived ports.
-- `runtime.sendMessage()` resolves `undefined` when there are no message listeners. Chrome can instead report
+- [Scripting](scripting.md) models document selection and an explicit executor adapter, not JavaScript execution.
+  It does not enforce host permissions, simulate DOM/execution worlds, load files or enable JavaScript execution implicitly.
+  Target-context removal conservatively cancels the entire request; result copying is not browser serialization parity.
+  Ready-made method results bypass target validation and lifetime tracking. CSS APIs remain configurable.
+  Its strict adapter-failure policy differs from measured Chrome child-script exceptions; see the
+  [native outcomes in the scripting contract](scripting.md#errors-pending-work-and-reset).
+- The explicit [Node executor](node.md) runs trusted functions in fresh VM realms for every target/call. It has no DOM,
+  persistent execution worlds or file loader. Its Chrome-measured script exceptions become null per target, while
+  infrastructure failures reject. Its bounded result codec is profile-independent, not Firefox/Safari parity.
+  `node:vm` is not a security boundary. Optional VM timeout uses wall-clock time and only covers synchronous evaluation;
+  neither that option nor AbortSignal forcibly stops arbitrary async code.
+- The separate [persistent Node runtime](node-runtime.md) preserves document/world state with explicit classic-script
+  bootstrap. Optional `documents` binding cleans both worlds and failure records on document removal/reset and rejects
+  unknown IDs; standalone mode still requires disposal before reusing IDs. Reset does not reinstall the executor or
+  replay bootstrap. It has no browser API bridge, DOM or file loader. Bootstrap completion is not an
+  async readiness contract. Its opt-in timeout also covers its own drained guest microtasks, not host work or an overall deadline.
+  VM failures block that document/world pair until a successful explicit `evaluate()`; no silent empty-realm recovery occurs.
+  Bootstrap bundles must not use `eval`/`new Function` because string code generation is disabled.
+  VM termination during guest microtasks can crash Node with active async hooks; use supervised processes for
+  intentional infinite-loop tests, as described in the runtime's timeout caveat.
+- [Guest virtual clocks](node-clock.md) are opt-in, VM-local timer queues controlled by synchronous host calls. Host
+  timers are untouched. Cross-realm ordering, callback budgets and fail-fast timer errors are kit contracts, not a
+  complete browser event loop; no throttling, nested-timer clamp or `queueMicrotask` is modeled. Clock time is not
+  rewound by document reset. Only the basic timer/Promise-microtask order is compared with native Chrome.
+- [Storage](storage.md) models a Chromium-oriented enumerable-data subset, not persistence, remote sync, policy loading,
+  write-rate limits or context access permissions. Only sync has default size/count quotas. Session/managed byte usage
+  stays configurable. Default callbacks and change dispatch start synchronously; `flushChanges()` observes automatic
+  listener failures separately from successful writes. Reset cannot cancel consumer code or detached async work.
+  The `firefox` profile also uses this Chromium-oriented codec (`Date`/`RegExp` without enumerable properties become
+  `{}`), so it must not be used to establish Firefox-specific serialization behavior without a real Firefox probe.
+- Root `tabs.sendMessage()` and all `tabs.connect()` calls remain configurable stubs. Explicit [context-bound
+  messaging](messaging.md) routes runtime/tab requests to registered listeners with per-context ownership. It does not
+  load application code, isolate JavaScript realms or implement long-lived ports. Raw `onMessage.emit()` stays manual.
+- Contextual messages/responses use JSON serialization in **every** profile, including Firefox/Safari, not structured
+  clone. `messaging.promiseListeners` explicitly selects `accept` (default) or `ignore`; it is not inferred from a browser
+  profile/version. Ignored Promise failures are observable in `ignoredPromiseRejections`, not used as replies. A listener
+  that never responds produces `undefined` for a Promise caller but an unanswered-port `lastError` for a callback caller.
+  Explicit `sendResponse()`/`sendResponse(undefined)` instead produce `null`. No receiver rejects in contextual mode,
+  unlike the legacy root behavior below. Globals are
+  not async-local: concurrent/nested sends must use explicit bound APIs to retain the sender across awaits.
+- `runtime.getContexts()` reads registered extension contexts and excludes content scripts. Document/frame lifetimes
+  and cleanup are explicit; updating a tab URL does not simulate navigation.
+- [Offscreen](offscreen.md) creation/closure shares that registry, with explicit delay/failure gates and reset cancellation.
+  It does not load HTML, create a DOM, enforce permissions/MV3 or API restrictions, model separate incognito profiles, or
+  perform audio-based automatic closure. All kit profiles expose the same adapter, including Firefox/Safari profiles;
+  native API availability is not implied. Disable methods through capabilities to test absence. Closing disposes
+  context-owned work and routed responses but not unscoped root runtime message channels.
+- Unbound/root `runtime.sendMessage()` resolves `undefined` when there are no message listeners. Chrome can instead report
   `Could not establish connection. Receiving end does not exist.` through callback-scoped `runtime.lastError` (or a
   rejected Promise).
 - A synchronous `runtime.onMessage` listener return is not a response: every value except literal `true` is ignored.
   Return a Promise/thenable or call `sendResponse()` to answer; literal `true` only keeps the response channel open.
-- A held-open message channel has no automatic browser-lifecycle timeout. It remains pending until `sendResponse()` or
+- A held-open root message channel has no automatic browser-lifecycle timeout. It remains pending until `sendResponse()` or
   `harness.runtime.closeMessageChannels()`; explicit closure rejects with the exact message
   `Browser method "runtime.sendMessage" message channel closed before a response was received.`; `harness.reset()` also
-  closes pending message channels.
+  closes pending message channels. Contextual channels additionally follow sender/receiver disposal, with the API-named
+  error and explicit controls documented in [messaging](messaging.md#pending-channels-and-teardown).
 - Browser profiles model routing and common compatibility shapes, not complete vendor parity. In the Firefox profile,
   production wrappers normally use `harness.browser`; configuring the separate `harness.chrome` facade does not change
   that routing.
+- `environment: "preserve"` installs API namespaces and vendor markers without changing `window`, `document`,
+  `location` or `navigator`. UA-based detection still sees the original environment, not a simulated profile UA.
+  Context registration does not install globals or provide isolated JavaScript realms. Tracked operations reject on
+  disposal, but external work must cooperate with `context.signal` to stop its own side effects.
+- Global restoration cannot undo a property made non-configurable by the test or application. An in-order restore
+  attempts the remaining descriptors and harness settings, reports failures, and releases its stack entry; repeated
+  calls are no-ops even after failure. An out-of-order call changes nothing and can be retried after restoring the inner
+  installation. Use isolated processes for tests that irreversibly change globals.
 - Browser-event dispatch uses a listener snapshot. A listener removed by another listener during the same `emit()` is
   still called for that dispatch; Chrome and DOM events skip a listener removed before its turn.
 - The production `download()` helper retains its real 100 ms validation delay by default, including after
@@ -54,4 +108,4 @@ Raw `createBrowserEvent().emit()` waits for Promises and arbitrary thenables and
 never enabled by default.
 
 Use real-browser integration tests for permissions prompts, full vendor URL-pattern semantics, service-worker suspension,
-cross-context messaging, content-script injection, browser UI, security boundaries, and browser-specific timing.
+cross-context execution/transport compatibility, content-script injection, browser UI, security boundaries, and browser-specific timing.

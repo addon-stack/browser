@@ -27,6 +27,44 @@ test("reads the real wrapper through fake globals", () => {
 });
 ```
 
+## Preserving jsdom
+
+Install `jest-environment-jsdom` in the consuming application's dev dependencies and use `environment: "preserve"`.
+The kit does not depend on jsdom; this option keeps the existing DOM, location, navigator, listeners and object identities.
+
+```ts
+/** @jest-environment jsdom */
+import {expect, test} from "@jest/globals";
+import {getManifest} from "@addon-core/browser";
+import {createBrowserHarness, installBrowserGlobals} from "@addon-core/browser/testing";
+
+test("uses browser APIs alongside the application's DOM", () => {
+    const harness = createBrowserHarness();
+    const existingDocument = document;
+    const restore = installBrowserGlobals(harness, {
+        profile: "chrome",
+        environment: "preserve",
+    });
+
+    try {
+        const button = document.createElement("button");
+        button.textContent = getManifest().name;
+        document.body.append(button);
+        expect(document).toBe(existingDocument);
+        expect(button.textContent).toBe(harness.runtime.manifest.name);
+        button.remove();
+    } finally {
+        harness.reset();
+        restore();
+    }
+});
+```
+
+Restoring globals does not undo application DOM mutations. Clean those up using the application's usual test hooks.
+For stateful persistence without a module mock, see the [real Storage Jest/jsdom example](storage.md#real-addon-corestorage-consumer-jest--jsdom).
+Do not combine preserve mode with `context`; use [simulation mode](harness.md#preserving-an-existing-environment)
+in Node when testing generated context globals. Nested installations must restore in reverse order.
+
 ## Supplying fixtures to a module mock
 
 Fixtures are plain data and can also be returned from an application-level module mock:

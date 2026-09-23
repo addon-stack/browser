@@ -20,7 +20,7 @@ on:
 jobs:
   # One real-browser check, not an OS x Node matrix. Release also waits for this reusable CI job.
   browser-match-patterns:
-    name: Browser match-pattern smoke
+    name: Browser API and context messaging smoke
     # Keep Chromium's sandbox enabled; Ubuntu 23.10+ restricts user namespaces for downloaded binaries.
     runs-on: ubuntu-22.04
     timeout-minutes: 10
@@ -49,7 +49,7 @@ jobs:
           chrome-version: stable
           install-dependencies: true
 
-      - name: Run browser match-pattern smoke
+      - name: Run browser API and context messaging smoke
         env:
           CHROME_FOR_TESTING_PATH: ${{ steps.chrome.outputs.chrome-path }}
         run: npm run test:browser-match-patterns -- "$CHROME_FOR_TESTING_PATH"
