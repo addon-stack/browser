@@ -32,6 +32,7 @@ const checkRuntimeTimeout = async source => {
 };
 
 module.exports = async function checkNodeScripting(production, testing, nodeTesting) {
+    await require("./node-clock.cjs")(production, testing, nodeTesting);
     await require("./node-runtime-lifecycle.cjs")(production, testing, nodeTesting);
     assert.equal("createNodeScriptExecutor" in testing, false);
     assert.equal("createNodeScriptExecutor" in production, false);

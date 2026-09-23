@@ -12,6 +12,18 @@
     "hasValue": false
   },
   {
+    "name": "NodeScriptClock",
+    "hasValue": false
+  },
+  {
+    "name": "NodeScriptClockOptions",
+    "hasValue": false
+  },
+  {
+    "name": "NodeScriptClockRunOptions",
+    "hasValue": false
+  },
+  {
     "name": "NodeScriptException",
     "hasValue": false
   },

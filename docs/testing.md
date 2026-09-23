@@ -50,6 +50,7 @@ they read are supplied by the test.
 - [Scripting targets and executors](testing/scripting.md) selects registered documents and uses an explicitly supplied executor; no code runs implicitly.
 - [Node execution](testing/node.md) provides an opt-in `testing/node` executor with fresh VM realms and data-only globals.
 - [Persistent Node runtime](testing/node-runtime.md) adds classic-script bootstrap, document/world state and optional document lifecycle binding.
+- [Guest virtual clocks](testing/node-clock.md) explicitly controls VM timers and time sources without patching host globals.
 - [Jest usage](testing/jest.md) shows how to combine the kit with Jest without making the kit depend on Jest.
 - [Limitations](testing/limitations.md) describes intentional differences from real browsers.
 

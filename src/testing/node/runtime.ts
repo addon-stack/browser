@@ -1,6 +1,8 @@
 import {type Context, createContext, Script} from "node:vm";
 import type {BrowserScriptExecution, BrowserScriptExecutor} from "../api";
 import type {BrowserDocumentsHarness} from "../model";
+import {clockEpoch, createRuntimeClock, type GuestTimer, type NodeScriptClock, type NodeScriptClockOptions} from "./clock";
+import {CLOCK_DRIVER, CLOCK_KEY} from "./clock-driver";
 import {coverageError, missingCoverageHelper, nodeError} from "./diagnostics";
 import type {NodeScriptException} from "./executor";
 import {RUNTIME_DRIVER, RUNTIME_KEY} from "./runtime-driver";
@@ -16,6 +18,8 @@ export interface NodeScriptBootstrap {
 }
 
 export interface NodeScriptRuntimeOptions {
+    /** Explicit guest-only virtual time. Omitted means no timers and no Date replacement. */
+    readonly clock?: true | NodeScriptClockOptions;
     /** Optional public registry. Bound mode requires live documents and follows their removal/reset. */
     readonly documents?: Pick<BrowserDocumentsHarness, "get" | "onRemoved">;
     /** Optional wall-clock limit per VM entry, including that entry's guest microtasks. No default limit. */
@@ -24,6 +28,7 @@ export interface NodeScriptRuntimeOptions {
 }
 
 export interface NodeScriptRuntime {
+    readonly clock: NodeScriptClock | undefined;
     readonly executor: BrowserScriptExecutor;
     /** Synchronous classic script. A successful call recovers an invalidated realm; completion values are ignored. */
     evaluate(realm: NodeScriptRealm, script: NodeScriptBootstrap): void;
@@ -49,6 +54,7 @@ interface RealmState {
 /** Explicit document/world persistence for trusted code; no host objects, module loader, DOM or browser API bridge. */
 export const createNodeScriptRuntime = (options: NodeScriptRuntimeOptions = {}): NodeScriptRuntime => {
     const {timeout, onScriptError, documents} = options;
+    const epoch = options.clock === undefined ? undefined : clockEpoch(options.clock);
 
     if (timeout !== undefined && (!Number.isSafeInteger(timeout) || timeout <= 0 || timeout > 2147483647)) {
         throw nodeError("timeout must be a positive integer in milliseconds (at most 2147483647)");
@@ -61,6 +67,18 @@ export const createNodeScriptRuntime = (options: NodeScriptRuntimeOptions = {}):
     const runOptions = timeout === undefined ? {} : {timeout};
     let sequence = 0;
     let disposed = false;
+    const clockRef = `globalThis[${JSON.stringify(CLOCK_KEY)}]`;
+
+    const clock = epoch === undefined ? undefined : createRuntimeClock<RealmState>(epoch, {
+        isLive: realm => realms.get(key(realm.identity)) === realm,
+        assertActive() {
+            if (disposed) throw nodeError("runtime is disposed");
+        },
+        describe: realm => `document "${realm.identity.documentId}" world ${realm.identity.world}`,
+        runOne(realm, timer) {
+            enter(realm, `${clockRef}.runOne(${timer.id}); void 0;`, `addon-core-timer-${timer.id}.js`);
+        },
+    });
 
     const identity = (value: NodeScriptRealm): Required<NodeScriptRealm> => {
         if (!value || typeof value.documentId !== "string" || !value.documentId.trim()) throw nodeError("documentId must be a non-empty string");
@@ -88,6 +106,8 @@ export const createNodeScriptRuntime = (options: NodeScriptRuntimeOptions = {}):
 
     const destroy = (realm: RealmState, error: Error): void => {
         if (realms.get(key(realm.identity)) === realm) realms.delete(key(realm.identity));
+
+        clock?.forget(realm);
 
         for (const id of realm.pending.keys()) finish(realm, id, error, true);
     };
@@ -157,12 +177,26 @@ export const createNodeScriptRuntime = (options: NodeScriptRuntimeOptions = {}):
         };
 
         run(realm, RUNTIME_DRIVER);
+
+        if (clock) {
+            // Runtime-owned intrinsics are installed directly in the guest, not through data-only globals.
+            run(realm, `Object.defineProperty(globalThis, ${JSON.stringify(CLOCK_KEY)}, {value: (${CLOCK_DRIVER})(${clock.api.now})}); void 0;`);
+        }
+
         realms.set(key(ref), realm);
 
         return realm;
     };
 
     const drain = (realm: RealmState): void => {
+        if (clock) {
+            const snapshot = run(realm, `${clockRef}.snapshot()`);
+
+            if (typeof snapshot !== "string") throw nodeError("invalid guest timer queue");
+
+            clock.update(realm, JSON.parse(snapshot) as GuestTimer[]);
+        }
+
         const encoded = run(realm, `globalThis[${JSON.stringify(RUNTIME_KEY)}].take()`);
 
         if (typeof encoded !== "string") throw nodeError("invalid runtime completion queue");
@@ -194,6 +228,14 @@ export const createNodeScriptRuntime = (options: NodeScriptRuntimeOptions = {}):
                 finish(realm, entry.id, error, true);
             }
         }
+    };
+
+    // One delivery path for injections, bootstrap, cancellation and each individual timer callback.
+    const enter = (realm: RealmState, source: string, filename?: string): void => {
+        if (clock) run(realm, `${clockRef}.setNow(${clock.api.now}); void 0;`);
+
+        run(realm, source, filename);
+        drain(realm);
     };
 
     const executor: BrowserScriptExecutor = request => {
@@ -237,8 +279,7 @@ export const createNodeScriptRuntime = (options: NodeScriptRuntimeOptions = {}):
                     if (realms.get(key(realm.identity)) !== realm || (documents && !documents.get(realm.identity.documentId))) return;
 
                     try {
-                        run(realm, `globalThis[${JSON.stringify(RUNTIME_KEY)}].cancel(${id}); void 0;`);
-                        drain(realm);
+                        enter(realm, `globalThis[${JSON.stringify(RUNTIME_KEY)}].cancel(${id}); void 0;`);
                     } catch {/* run already invalidated the failed realm and rejected its pending work */}
                 };
 
@@ -253,8 +294,7 @@ export const createNodeScriptRuntime = (options: NodeScriptRuntimeOptions = {}):
 
                 try {
                     // Function expression is compiled in global scope, not inside the driver's closure.
-                    run(realm, `globalThis[${JSON.stringify(RUNTIME_KEY)}].start(${id}, (${source}), JSON.parse(${JSON.stringify(args)})); void 0;`, `addon-core-injection-${id}.js`);
-                    drain(realm);
+                    enter(realm, `globalThis[${JSON.stringify(RUNTIME_KEY)}].start(${id}, (${source}), JSON.parse(${JSON.stringify(args)})); void 0;`, `addon-core-injection-${id}.js`);
                 } catch (error) {
                     finish(realm, id, error, true);
                 }
@@ -265,6 +305,7 @@ export const createNodeScriptRuntime = (options: NodeScriptRuntimeOptions = {}):
     };
 
     return {
+        clock: clock?.api,
         executor,
         evaluate(ref, script) {
             if (!script || typeof script.source !== "string") throw nodeError("bootstrap source must be classic JavaScript text");
@@ -273,8 +314,7 @@ export const createNodeScriptRuntime = (options: NodeScriptRuntimeOptions = {}):
 
             const realm = ensureRealm(ref, true);
             // Preserve classic-script global declarations. Ignore completion values, never return a guest Promise.
-            run(realm, `${script.source}\n;void 0;`, script.filename ?? "addon-core-bootstrap.js");
-            drain(realm);
+            enter(realm, `${script.source}\n;void 0;`, script.filename ?? "addon-core-bootstrap.js");
 
             // Clear only after the whole entry succeeds, never after a failed/reentrant recovery or disposal.
             if (realms.get(key(realm.identity)) === realm) invalidations.delete(key(realm.identity));

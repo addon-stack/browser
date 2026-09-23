@@ -10,12 +10,13 @@ import {join} from "node:path";
 import {createBrowserHarness, createTabFixture} from "../../dist/testing/index.js";
 import {createNodeScriptExecutor, createNodeScriptRuntime} from "../../dist/testing/node/index.js";
 import {removeBrowserTemporaryDirectory} from "./cleanup.mjs";
+import {selectExtensionPageContext} from "./context-selection.mjs";
 import {browserSmokeError, inspectBrowser} from "./launcher.mjs";
 import {checkMessageResponses} from "./messaging-assertions.mjs";
 import {installMessagingReceiver, messageResponsesProbe, messagingProbe} from "./messaging-probe.mjs";
 import {offscreenProbe} from "./offscreen-probe.mjs";
 import {checkScriptingOutcomes} from "./scripting-assertions.mjs";
-import {scriptingOutcomesProbe, scriptingPersistenceProbe, scriptingTargetsProbe} from "./scripting-probe.mjs";
+import {scriptingOutcomesProbe, scriptingPersistenceProbe, scriptingTargetsProbe, scriptingTimerOrderProbe} from "./scripting-probe.mjs";
 import {storageProbe} from "./storage-probe.mjs";
 
 // Reject unsupported binaries before opening a server, creating a profile or waiting for extension results.
@@ -115,6 +116,7 @@ async function probe(config) {
         report.scriptingTargets = await scriptingTargetsProbe(chrome, tab.id, report.messageFrames);
         report.scriptingOutcomes = await scriptingOutcomesProbe(chrome, tab.id);
         report.scriptingPersistence = await scriptingPersistenceProbe(chrome, tab.id);
+        report.timerOrder = await scriptingTimerOrderProbe(chrome, tab.id);
 
         for (const frame of report.messageFrames) {
             await chrome.scripting.executeScript({target: {tabId: tab.id, frameIds: [frame.frameId]}, func: installMessagingReceiver, args: [frame.frameId === 0 ? "main" : "child"]});
@@ -153,6 +155,10 @@ async function probe(config) {
         try {
             extensionTab = await chrome.tabs.create({url: extensionUrl, active: false});
             const sender = await pageReady;
+
+            if (sender.tab?.id !== extensionTab.id) throw new Error("Extension ready message came from an unexpected tab");
+
+            report.extensionPage = {tabId: sender.tab.id, frameId: sender.frameId, documentId: sender.documentId, url: extensionUrl};
             report.extensionMessages = await messageResponsesProbe(chrome, {namespace: "tabs", tabId: extensionTab.id, label: "extension-page"});
             report.extensionTargeted = [];
 
@@ -241,7 +247,7 @@ try {
 
         await writeFile(
             join(directory, "worker.js"),
-            `const storageProbe = ${storageProbe.toString()}; const offscreenProbe = ${offscreenProbe.toString()}; const scriptingTargetsProbe = ${scriptingTargetsProbe.toString()}; const scriptingOutcomesProbe = ${scriptingOutcomesProbe.toString()}; const scriptingPersistenceProbe = ${scriptingPersistenceProbe.toString()}; const installMessagingReceiver = ${installMessagingReceiver.toString()}; const messageResponsesProbe = ${messageResponsesProbe.toString()}; const messagingProbe = ${messagingProbe.toString()}; chrome.runtime.onInstalled.addListener(() => (${probe.toString()})(${JSON.stringify({name: profile.name, base, patterns, requestedOrigins})}));`
+            `const storageProbe = ${storageProbe.toString()}; const offscreenProbe = ${offscreenProbe.toString()}; const scriptingTargetsProbe = ${scriptingTargetsProbe.toString()}; const scriptingOutcomesProbe = ${scriptingOutcomesProbe.toString()}; const scriptingPersistenceProbe = ${scriptingPersistenceProbe.toString()}; const scriptingTimerOrderProbe = ${scriptingTimerOrderProbe.toString()}; const installMessagingReceiver = ${installMessagingReceiver.toString()}; const messageResponsesProbe = ${messageResponsesProbe.toString()}; const messagingProbe = ${messagingProbe.toString()}; chrome.runtime.onInstalled.addListener(() => (${probe.toString()})(${JSON.stringify({name: profile.name, base, patterns, requestedOrigins})}));`
         );
 
         await writeFile(join(directory, "page.html"), '<!doctype html><title>Extension context smoke</title><script src="page.js"></script>');
@@ -310,7 +316,7 @@ try {
         // Deliberately do not evaluate source in Node. Compare only selection/result envelopes with native execution.
         scriptingHarness.scripting.setExecutor(({target, script}) => ({url: target.url, input: script.args[0]}));
         let scriptingTimeout;
-        const scriptRuntime = createNodeScriptRuntime();
+        const scriptRuntime = createNodeScriptRuntime({clock: true});
 
         try {
             const actual = await Promise.race([
@@ -362,6 +368,21 @@ try {
 
             assert.deepEqual(persistence, result.scriptingPersistence, `${profile.name}: persistent state, frame and world isolation`);
             assertions += persistence.length;
+            console.log(`${profile.name}: native timer order ${JSON.stringify(result.timerOrder)}`);
+            assert.deepEqual(result.timerOrder, ["c", "a", "after-a", "b"]);
+            clearTimeout(scriptingTimeout);
+            const timerOrder = scriptingTimerOrderProbe(scriptingHarness.chrome, result.tab.id);
+            scriptRuntime.clock.advance(0);
+
+            const guestOrder = await Promise.race([
+                timerOrder,
+                new Promise((_, reject) => {
+                    scriptingTimeout = setTimeout(() => reject(new Error("Guest timer order probe did not complete")), 5000);
+                }),
+            ]);
+
+            assert.deepEqual(guestOrder, result.timerOrder, `${profile.name}: guest/native timer and microtask order`);
+            assertions++;
         } finally {
             clearTimeout(scriptingTimeout);
             scriptRuntime.dispose();
@@ -475,8 +496,7 @@ try {
 
             assert.deepEqual(actual, result.messaging, `${profile.name}: context messages, frame/document addressing, sender and closure`);
 
-            const extensionInfo = result.contexts.find(context => context.tabId === result.extensionTab.id);
-            assert.ok(extensionInfo, "Extension tab must have a registered document");
+            const extensionInfo = selectExtensionPageContext(result.contexts, result.extensionPage);
 
             const extensionPage = messagingHarness.contexts.create({
                 kind: "extensionPage", tabId: result.extensionTab.id, frameId: extensionInfo.frameId, url: extensionInfo.documentUrl,

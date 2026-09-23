@@ -147,3 +147,24 @@ export async function scriptingPersistenceProbe(api, tabId) {
 
     return entries;
 }
+
+// Establish native task/microtask ordering before implementing guest virtual timers.
+export async function scriptingTimerOrderProbe(api, tabId) {
+    const [entry] = await api.scripting.executeScript({target: {tabId}, func: () => new Promise(resolve => {
+        const order = [];
+
+        setTimeout(() => {
+            order.push("a");
+            Promise.resolve().then(() => order.push("after-a"));
+        }, 0);
+
+        setTimeout(() => {
+            order.push("b");
+            resolve(order);
+        }, 0);
+
+        Promise.resolve().then(() => order.push("c"));
+    })});
+
+    return entry.result;
+}

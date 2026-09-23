@@ -34,7 +34,7 @@ const adapterSource = bundle('export {default as Adapter} from "./src/relay/adap
 const {Adapter} = await import(`data:text/javascript;base64,${Buffer.from(adapterSource).toString("base64")}`);
 const seed = {documentId: "main", tabId: 7, frameId: 0, url: "https://page.test/"};
 const harness = createBrowserHarness({tabs: [createTabFixture({id: 7})], documents: [seed]});
-const runtime = createNodeScriptRuntime({documents: harness.contexts.documents});
+const runtime = createNodeScriptRuntime({documents: harness.contexts.documents, clock: true});
 const restore = installBrowserGlobals(harness);
 
 const install = () => {
@@ -66,7 +66,34 @@ try {
     await assert.rejects(adapter.invoke([1], "increment"), /no executor configured/);
     install();
     assert.equal(await adapter.invoke([1], "increment"), 1);
-    console.log("Real RelayManager + RelayScriptingAdapter: persistence, async replies, remote errors, removal, invalidation and reset verified.");
+    harness.reset();
+    harness.scripting.setExecutor(runtime.executor);
+    // Locks in current behavior; see https://github.com/addon-stack/addon-bone/issues/109.
+    // Both missing-manager paths reject outside the envelope; Chrome-compatible null reaches normalize().
+    const missing = assert.rejects(adapter.invoke([1], "increment"), {name: "TypeError", message: /Cannot read properties of null/});
+    runtime.clock.advance(2699);
+    assert.equal(runtime.pendingExecutions, 1);
+    runtime.clock.advance(1);
+    await missing;
+    assert.equal(runtime.pendingExecutions, 0);
+    const noRetry = new Adapter("counter", {tabId: 7, allFrames: true});
+    // Locks in current behavior; see https://github.com/addon-stack/addon-bone/issues/109.
+    await assert.rejects(noRetry.invoke([1], "increment"), {name: "TypeError", message: /Cannot read properties of null/});
+
+    const registeredLate = adapter.invoke([1], "increment");
+    runtime.clock.advance(300);
+    runtime.evaluate({documentId: "main"}, {source: bootstrap, filename: "relay-manager.iife.js"});
+    runtime.clock.advance(300);
+    assert.equal(await registeredLate, 1);
+    harness.reset();
+    harness.scripting.setExecutor(runtime.executor);
+    const removedDuringRetry = assert.rejects(adapter.invoke([1], "increment"), /removed/);
+    runtime.clock.advance(300);
+    harness.contexts.documents.remove("main");
+    await removedDuringRetry;
+    runtime.clock.runAll({maxTimers: 1});
+    assert.equal(runtime.realmCount, 0);
+    console.log("Real RelayManager + RelayScriptingAdapter: lifecycle, virtual retries, late registration and current #109 failures verified.");
 } finally {
     runtime.dispose();
     harness.reset();

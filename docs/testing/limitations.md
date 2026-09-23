@@ -32,12 +32,16 @@ Chrome, Firefox, Safari, Opera, or any other real browser.
 - The separate [persistent Node runtime](node-runtime.md) preserves document/world state with explicit classic-script
   bootstrap. Optional `documents` binding cleans both worlds and failure records on document removal/reset and rejects
   unknown IDs; standalone mode still requires disposal before reusing IDs. Reset does not reinstall the executor or
-  replay bootstrap. It has no browser API bridge, DOM, file loader or timers. Bootstrap completion is not an
+  replay bootstrap. It has no browser API bridge, DOM or file loader. Bootstrap completion is not an
   async readiness contract. Its opt-in timeout also covers its own drained guest microtasks, not host work or an overall deadline.
   VM failures block that document/world pair until a successful explicit `evaluate()`; no silent empty-realm recovery occurs.
   Bootstrap bundles must not use `eval`/`new Function` because string code generation is disabled.
   VM termination during guest microtasks can crash Node with active async hooks; use supervised processes for
   intentional infinite-loop tests, as described in the runtime's timeout caveat.
+- [Guest virtual clocks](node-clock.md) are opt-in, VM-local timer queues controlled by synchronous host calls. Host
+  timers are untouched. Cross-realm ordering, callback budgets and fail-fast timer errors are kit contracts, not a
+  complete browser event loop; no throttling, nested-timer clamp or `queueMicrotask` is modeled. Clock time is not
+  rewound by document reset. Only the basic timer/Promise-microtask order is compared with native Chrome.
 - [Storage](storage.md) models a Chromium-oriented enumerable-data subset, not persistence, remote sync, policy loading,
   write-rate limits or context access permissions. Only sync has default size/count quotas. Session/managed byte usage
   stays configurable. Default callbacks and change dispatch start synchronously; `flushChanges()` observes automatic

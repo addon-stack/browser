@@ -4,8 +4,8 @@
 `@addon-core/browser/testing/node`. It preserves guest state between injections, separately for each
 `(documentId, world)` pair. Different runtime instances never share that state. Omitted `world` means `ISOLATED`.
 
-The runtime supports classic-script bootstrap, state, guest microtasks and optional document lifecycle binding.
-Virtual guest clocks are **not implemented yet**. The existing
+The runtime supports classic-script bootstrap, state, guest microtasks, optional document lifecycle binding and
+explicit [guest virtual clocks](node-clock.md). The existing
 `createNodeScriptExecutor()` keeps its fresh-realm behavior unchanged.
 
 ## Bootstrap a guest-owned object
@@ -82,8 +82,8 @@ call a resolver previously stored in guest `globalThis` by an injected function.
 There are no host timers or external callbacks injected to advance pending guest work automatically. A Promise
 with no resolution source stays pending until explicit cancellation/disposal. `pendingExecutions` reports tracked
 executor calls, not detached guest Promises; `realmCount` reports allocated document/world environments.
-Future virtual-clock steps must each enter the VM and drain completion packets after that entry; resolving a guest
-Promise without delivering its queued completion is not a completed clock step. Virtual clocks are not available yet.
+With `clock: true` (or `{epoch}`), each fired timer enters the VM, drains guest microtasks and delivers completion
+packets before the next timer runs. `runtime.clock.advance()` and `runAll()` are synchronous; there are no host await hops.
 
 See [Node's microtask and cross-context Promise documentation](https://nodejs.org/api/vm.html#when-microtaskmode-is-afterevaluate-beware-sharing-promises-between-contexts).
 
@@ -159,9 +159,11 @@ deferred responses, document removal, invalidation and reset against the built B
 owns the bootstrap build; no Relay implementation or dependency is added to the published kit. It is optional and
 not part of standalone Browser CI because it requires the separate consumer source tree. The ordinary clean-consumer
 check covers lifecycle semantics through ESM/CJS/TypeScript/jsdom from a fresh Browser tarball.
-This is not real-browser validation and does not exercise manager-registration retries or virtual timers.
+This is not real-browser validation. The optional check also exercises late manager registration, cancellation
+during retries and the current missing-manager failure described below. The standalone kit acceptance uses an
+inline ten-attempt retry loop, not Addon Bone, for independent 2699/2700 ms boundary checks.
 
-Missing-manager acceptance for the virtual-clock stage is tracked in
+Missing-manager behavior in the real Relay consumer is tracked in
 [Addon Bone #109](https://github.com/addon-stack/addon-bone/issues/109): both missing-manager branches must return
 an error envelope, and Relay must independently validate malformed/null responses. Prefer accepting the fixed
 contract; if the consumer fix is deferred, explicitly label any current-behavior regression with that issue.
@@ -169,7 +171,8 @@ The guest-clock scenario must omit the consumer's host `timeoutMs` to keep the t
 
 ## Scope and safety
 
-No `chrome`, `browser`, `window`, `document`, `location`, Node APIs, module loader, `fetch` or timers are installed.
+No `chrome`, `browser`, `window`, `document`, `location`, Node APIs, module loader or `fetch` are installed.
+Timers and virtual Date/performance are installed only with the explicit `clock` option; `queueMicrotask` is absent.
 In particular, a full content bundle that registers `chrome.runtime.onMessage` cannot run without a future explicit
 API bridge. Standalone scripting-based managers can be bootstrapped without such a bridge.
 
@@ -191,6 +194,6 @@ for such loops in an instrumented process. Our infinite-microtask timeout checks
 consumer subprocesses, without runner hooks. Normal asynchronous runtime tests also run inside Jest. No host hooks
 are disabled or patched by the kit; opt-in VM timeout is not a substitute for process isolation.
 
-Virtual guest timers/clocks belong to a later stage. Host timers, including a consumer's request timeout, are always
+Host timers, including a consumer's request timeout, are always
 the consumer test infrastructure's responsibility; this runtime does not patch them. As with the existing executor,
 [`node:vm` is not a security boundary](https://nodejs.org/api/vm.html): use trusted test code only.

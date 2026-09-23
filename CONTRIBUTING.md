@@ -273,7 +273,9 @@ Offscreen create/close, duplicate/absent-operation errors and native context fie
 version-dependent `hasDocument` method is feature-detected and an unavailable method is reported as not compared.
 It also compares contextual runtime/tab messages between worker, Offscreen, main content frame and iframe, including
 frame/document addressing, sender metadata, JSON payloads and held-channel closure through callback/Promise method
-calls. Extension-tab delivery uses a readiness handshake. Promise-listener success/rejection, empty responses and
+calls. Extension-tab delivery uses a readiness handshake. The context snapshot must contain exactly one `TAB` context
+matching that page's tab, frame, document ID and exact URL; missing or ambiguous matches report the full snapshot
+without falling back to the first context in the tab. Promise-listener success/rejection, empty responses and
 unanswered messages are measured separately; the detected `accept`/`ignore` behavior is printed and compared with the
 fake in that mode. Unknown outcomes fail the smoke. Both modes are independently covered by unit tests; this probe
 does not establish rollout availability for all users or isolated application execution. It also compares Storage selectors,
@@ -291,7 +293,10 @@ the factory from the packed `testing/node` entrypoint, including deferred replie
 For changes affecting persistent application managers, optionally run
 `npm run test:relay-consumer -- /path/to/addon-bone` with that checkout's development dependencies installed. This
 read-only check bundles the real Relay manager/adapter; it does not migrate or modify the consumer's tests. It is not
-part of standalone CI and does not cover guest retry timers. See [runtime modes](docs/testing/node-runtime.md).
+part of standalone CI. [Guest clocks](docs/testing/node-clock.md) have independent inline retry acceptance at
+2699/2700 ms; the optional Relay check additionally tracks the consumer's missing-manager bug (#109). The native
+smoke compares a zero-delay timer/microtask ordering sequence with the guest runtime, not wall-clock timing parity.
+See [runtime modes](docs/testing/node-runtime.md).
 The clean-consumer check additionally installs published `@addon-core/storage@0.7.0` and exercises its unmodified
 providers through ESM/CJS kit imports and jsdom. See [Storage scope and consumer examples](docs/testing/storage.md).
 If the browser is unavailable locally, report the smoke as **not run**, not as passed.
