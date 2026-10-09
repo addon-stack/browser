@@ -132,7 +132,9 @@ Retrieves the manifest version (2 or 3).
 isManifestVersion3(): boolean
 ```
 
-Checks if the extension uses Manifest V3.
+Returns `true` only when Manifest V3 is confirmed. Returns `false` for other versions, unavailable APIs,
+or failures reading the manifest, without throwing or logging. Reads the manifest on every call.
+Use `getManifestVersion()` when the exact version is required and lookup errors must propagate.
 
 <a name="getPackageDirectoryEntry"></a>
 

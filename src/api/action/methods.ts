@@ -1,4 +1,4 @@
-import {getManifest, isManifestVersion3} from "../runtime";
+import {getManifest, getManifestVersion} from "../runtime";
 import {callWithPromise} from "../utils";
 import {type Action, action} from "./api";
 
@@ -43,7 +43,7 @@ export const setBadgeText = (text: string | number, tabId?: number): Promise<voi
     callWithPromise(cb => action().setBadgeText({tabId, text: text.toString()}, cb));
 
 export const setBadgeTextColor = (color: Color, tabId?: number): Promise<void> => {
-    if (!isManifestVersion3()) {
+    if (getManifestVersion() !== 3) {
         return Promise.resolve();
     }
 
@@ -63,7 +63,7 @@ export const setActionTitle = (title: string, tabId?: number): Promise<void> =>
 export const getDefaultPopup = (): string => {
     const manifest = getManifest();
 
-    return isManifestVersion3() ? manifest.action.default_popup : manifest.browser_action.default_popup;
+    return getManifestVersion() === 3 ? manifest.action.default_popup : manifest.browser_action.default_popup;
 };
 
 export const clearBadgeText = (tabId?: number): Promise<void> => setBadgeText("", tabId);

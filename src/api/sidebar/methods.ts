@@ -1,7 +1,9 @@
-import type {FirefoxSidebarAction, OperaSidebarAction} from "../../types";
-import {getContexts} from "../runtime";
+import {getContexts, getUrl} from "../runtime";
 import {callWithPromise} from "../utils";
+import {getLastFocusedWindow} from "../windows";
 import {isAvailableOperaSidebar, sidebarAction, sidePanel} from "./api";
+
+import type {FirefoxSidebarAction, OperaSidebarAction} from "../../types";
 
 type Color = string | ColorArray;
 type ColorArray = chrome.extensionTypes.ColorArray;
@@ -10,10 +12,31 @@ type OpenOptions = chrome.sidePanel.OpenOptions;
 type CloseOptions = chrome.sidePanel.CloseOptions;
 type PanelOptions = chrome.sidePanel.PanelOptions;
 type PanelBehavior = chrome.sidePanel.PanelBehavior;
-type ContextFilter = chrome.runtime.ContextFilter;
 type IconDetails = opr.sidebarAction.IconDetails;
 
 export class SidebarError extends Error {}
+
+export enum SidebarState {
+    Open = "open",
+    Closed = "closed",
+    Unknown = "unknown",
+}
+
+const normalizeSidebarPath = (path?: string): string | undefined => {
+    if (!path) {
+        return undefined;
+    }
+
+    const root = new URL(getUrl("/"));
+    const url = new URL(path, root);
+
+    // Extension URL schemes can have an opaque origin; compare their protocol and host instead.
+    if (url.protocol !== root.protocol || url.host !== root.host) {
+        return url.href;
+    }
+
+    return url.href.slice(root.href.length).replace(/^\/+/, "");
+};
 
 // Methods
 export const getSidebarOptions = (tabId?: number): Promise<PanelOptions> =>
@@ -39,19 +62,31 @@ export const getSidebarBehavior = (): Promise<PanelBehavior> =>
     });
 
 export const canOpenSidebar = (): boolean => {
-    const sp = sidePanel();
+    try {
+        const sp = sidePanel();
 
-    if (sp) return typeof sp.open === "function";
+        if (sp) {
+            return typeof sp.open === "function";
+        }
 
-    return typeof (sidebarAction() as FirefoxSidebarAction | undefined)?.open === "function";
+        return typeof (sidebarAction() as FirefoxSidebarAction | undefined)?.open === "function";
+    } catch {
+        return false;
+    }
 };
 
 export const canCloseSidebar = (): boolean => {
-    const sp = sidePanel();
+    try {
+        const sp = sidePanel();
 
-    if (sp) return typeof sp.close === "function";
+        if (sp) {
+            return typeof sp.close === "function";
+        }
 
-    return typeof (sidebarAction() as FirefoxSidebarAction | undefined)?.close === "function";
+        return typeof (sidebarAction() as FirefoxSidebarAction | undefined)?.close === "function";
+    } catch {
+        return false;
+    }
 };
 
 export const openSidebar = (options: OpenOptions): Promise<void> =>
@@ -68,7 +103,9 @@ export const openSidebar = (options: OpenOptions): Promise<void> =>
 
         const sb = sidebarAction() as FirefoxSidebarAction | undefined;
 
-        if (typeof sb?.open === "function") return sb.open();
+        if (typeof sb?.open === "function") {
+            return sb.open();
+        }
 
         throw new SidebarError("The sidebarAction.open API is not supported in this browser");
     });
@@ -87,7 +124,9 @@ export const closeSidebar = (options: CloseOptions): Promise<void> =>
 
         const sb = sidebarAction() as FirefoxSidebarAction | undefined;
 
-        if (typeof sb?.close === "function") return sb.close();
+        if (typeof sb?.close === "function") {
+            return sb.close();
+        }
 
         throw new SidebarError("The sidebarAction.close API is not supported in this browser");
     });
@@ -114,31 +153,45 @@ export const setSidebarBehavior = (behavior?: PanelBehavior): Promise<void> =>
         sp.setPanelBehavior(behavior || {}, cb);
     });
 
-export const isOpenSidebar = async (windowId?: number): Promise<boolean> => {
-    if (sidePanel()) {
-        const filter: ContextFilter = {contextTypes: ["SIDE_PANEL"]};
+export const getSidebarState = async (windowId?: number): Promise<SidebarState> => {
+    try {
+        const sp = sidePanel();
+        const sb = sp ? undefined : sidebarAction() as FirefoxSidebarAction | undefined;
 
-        if (windowId !== undefined) filter.windowIds = [windowId];
-
-        return (await getContexts(filter)).length !== 0;
-    }
-
-    return callWithPromise(async cb => {
-        const sb = sidebarAction() as FirefoxSidebarAction | undefined;
-
-        if (sb?.isOpen) {
-            const result = sb.isOpen({windowId});
-
-            if (result instanceof Promise) {
-                return cb(await result);
-            } else {
-                return cb(result);
-            }
+        if (!sp && typeof sb?.isOpen !== "function") {
+            return SidebarState.Unknown;
         }
 
-        throw new SidebarError("The sidebarAction.isOpen API is not supported in this browser");
-    });
+        const targetWindowId = windowId === undefined ? (await getLastFocusedWindow()).id : windowId;
+
+        if (targetWindowId === undefined) {
+            return SidebarState.Unknown;
+        }
+
+        if (sp) {
+            const contexts = await getContexts({contextTypes: ["SIDE_PANEL"]});
+
+            if (contexts.some(context => context.windowId === targetWindowId)) {
+                return SidebarState.Open;
+            }
+
+            if (contexts.some(context => context.windowId === -1)) {
+                return SidebarState.Unknown;
+            }
+
+            return SidebarState.Closed;
+        }
+
+        const open = await sb!.isOpen({windowId: targetWindowId});
+
+        return open === true ? SidebarState.Open : open === false ? SidebarState.Closed : SidebarState.Unknown;
+    } catch {
+        return SidebarState.Unknown;
+    }
 };
+
+export const isOpenSidebar = async (windowId?: number): Promise<boolean> =>
+    (await getSidebarState(windowId)) === SidebarState.Open;
 
 export const toggleSidebar = (): Promise<void> =>
     callWithPromise(async cb => {
@@ -185,7 +238,7 @@ export const getSidebarPath = async (tabId?: number): Promise<string | undefined
     if (sidePanel()) {
         const options = await getSidebarOptions(tabId);
 
-        return options.path;
+        return normalizeSidebarPath(options.path);
     }
 
     const sb = sidebarAction() as OperaSidebarAction | undefined;
@@ -199,7 +252,7 @@ export const getSidebarPath = async (tabId?: number): Promise<string | undefined
             return (sb as any).getPanel({tabId});
         });
 
-        return new URL(fullUrl).pathname;
+        return normalizeSidebarPath(fullUrl);
     }
 
     throw new Error("The sidebar get path API is not supported for this browser");

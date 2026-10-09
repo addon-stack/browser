@@ -1,4 +1,5 @@
 import {afterEach, beforeEach, describe, expect, jest, test} from "@jest/globals";
+
 import {type BrowserTestApi, installGlobals} from "../../testing";
 import {clearBadgeText, getBadgeText, getDefaultPopup, setBadgeText, setBadgeTextColor} from "./methods";
 
@@ -73,5 +74,20 @@ describe.each([2, 3])("action methods in MV%s", version => {
     test("preserves native callback errors", async () => {
         lastError = {message: "Action access denied"};
         await expect(getBadgeText()).rejects.toThrow("Action access denied");
+    });
+
+    test("manifest errors do not select MV2 or silently skip a color operation", async () => {
+        const error = new Error("Manifest unavailable");
+
+        jest.spyOn(globalThis.chrome.runtime, "getManifest").mockImplementation(() => {
+            throw error;
+        });
+
+        await expect(getBadgeText(7)).rejects.toBe(error);
+        expect(() => setBadgeTextColor("#fff", 7)).toThrow(error);
+        expect(() => getDefaultPopup()).toThrow(error);
+        expect(modernGet).not.toHaveBeenCalled();
+        expect(legacyGet).not.toHaveBeenCalled();
+        expect(setColor).not.toHaveBeenCalled();
     });
 });

@@ -203,10 +203,13 @@ Retrieves the download item for the given download ID, if it exists.
 ### isDownloadExists
 
 ```
-isDownloadExists(downloadId: number): Promise<boolean | undefined>
+isDownloadExists(downloadId: number): Promise<boolean>
 ```
 
-Checks whether a download with the specified ID exists.
+Returns `true` only when the download record confirms that the file exists. Missing records, missing files,
+unavailable APIs, and search failures return `false`. The check does not throw, reject, log, or cache its result.
+Use `findDownload()` when you need the record or must distinguish a failed lookup from a missing download.
+`showDownload()` uses that strict lookup and continues to reject on search or native show errors.
 
 <a name="getDownloadState"></a>
 

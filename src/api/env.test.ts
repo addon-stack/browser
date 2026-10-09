@@ -1,4 +1,6 @@
 import {afterEach, beforeEach, describe, expect, test} from "@jest/globals";
+
+import {describeSafePredicate} from "../../tests/api/predicates";
 import {
     type BrowserHarness,
     type BrowserTestApi,
@@ -8,6 +10,8 @@ import {
     installGlobals,
 } from "../testing";
 import {isBackground} from "./env";
+
+describeSafePredicate("isBackground", isBackground);
 
 describe("isBackground", () => {
     let harness: BrowserHarness;
@@ -90,6 +94,34 @@ describe("isBackground", () => {
         installProfile("serviceWorker");
 
         expect(isBackground()).toBe(true);
+    });
+
+    test("returns false on a manifest failure and recovers on the next call", () => {
+        harness.runtime.setManifest(createManifestFixture({background: {service_worker: "worker.js"}, manifest_version: 3}));
+        installProfile("serviceWorker");
+        harness.runtime.getManifest.failNext(new Error("Manifest unavailable"));
+        expect(isBackground()).toBe(false);
+        expect(isBackground()).toBe(true);
+    });
+
+    test("returns false for MV2 without window or location globals", () => {
+        harness.runtime.setManifest(createManifestFixture({background: {scripts: ["background.js"]}, manifest_version: 2}));
+        installProfile("serviceWorker");
+        expect(isBackground()).toBe(false);
+    });
+
+    test("returns false when reading the background location throws", () => {
+        harness.runtime.setManifest(createManifestFixture({background: {scripts: ["background.js"]}, manifest_version: 2}));
+
+        restoreGlobals = installBrowserGlobals(harness, {
+            context: "backgroundPage",
+            globals: {location: {get pathname(): string {
+                throw new Error("Location unavailable");
+            }}},
+            profile: "chrome",
+        });
+
+        expect(isBackground()).toBe(false);
     });
 
     test("does not identify an MV3 extension document as background", () => {

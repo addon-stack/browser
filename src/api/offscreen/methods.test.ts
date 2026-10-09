@@ -1,4 +1,6 @@
 import {afterEach, beforeEach, describe, expect, test} from "@jest/globals";
+
+import {describeSafePredicate} from "../../../tests/api/predicates";
 import {type BrowserHarness, createBrowserHarness, createExtensionContextFixture, installBrowserGlobals, installGlobals} from "../../testing";
 import {
     closeOffscreen,
@@ -10,6 +12,9 @@ import {
     hasOffscreenPath,
     hasOffscreenUrl,
 } from "./methods";
+
+describeSafePredicate("hasOffscreenUrl", () => hasOffscreenUrl("offscreen.html"));
+describeSafePredicate("hasOffscreenPath", () => hasOffscreenPath("offscreen.html"));
 
 describe("offscreen", () => {
     let harness: BrowserHarness;
@@ -173,11 +178,22 @@ describe.each(["chrome", "firefox"] as const)("offscreen method edge cases in %s
         ["getOffscreenContext", getOffscreenContext],
         ["getOffscreenUrl", getOffscreenUrl],
         ["getOffscreenPath", getOffscreenPath],
-        ["hasOffscreenUrl", () => hasOffscreenUrl("offscreen.html")],
-        ["hasOffscreenPath", () => hasOffscreenPath("offscreen.html")],
     ] as const)("%s propagates context lookup errors", async (_name, invoke) => {
         harness.runtime.getContexts.failNext(new Error("Contexts unavailable"));
         await expect(invoke()).rejects.toThrow("Contexts unavailable");
+    });
+
+    test.each([hasOffscreenUrl, hasOffscreenPath])("%p returns false on context lookup failure", async probe => {
+        harness.runtime.getContexts.failNext(new Error("Contexts unavailable"));
+        await expect(probe("offscreen.html")).resolves.toBe(false);
+    });
+
+    test("hasOffscreenPath contains URL parsing and runtime.getURL failures", async () => {
+        harness.runtime.getContexts.setResult([createExtensionContextFixture({documentUrl: "invalid URL"})]);
+        await expect(hasOffscreenPath("offscreen.html")).resolves.toBe(false);
+        harness.runtime.getContexts.setResult([]);
+        harness.runtime.getURL.failNext(new Error("Extension URL unavailable"));
+        await expect(hasOffscreenPath("offscreen.html")).resolves.toBe(false);
     });
 
     test("uses the first context and preserves absent documentUrl", async () => {

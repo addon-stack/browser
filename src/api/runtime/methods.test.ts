@@ -1,4 +1,6 @@
 import {afterEach, beforeEach, describe, expect, jest, test} from "@jest/globals";
+
+import {describeSafePredicate} from "../../../tests/api/predicates";
 import {
     type BrowserHarness,
     createBrowserEvent,
@@ -27,6 +29,8 @@ import {
     sendMessage,
     setUninstallUrl,
 } from "./methods";
+
+describeSafePredicate("isManifestVersion3", isManifestVersion3);
 
 const port: chrome.runtime.Port = {
     name: "channel",
@@ -177,6 +181,13 @@ describe.each(["chrome", "firefox"] as const)("runtime methods in %s", profile =
         expect(isManifestVersion3()).toBe(version === 3);
     });
 
+    test("isManifestVersion3 returns false on failure and reads again on the next call", () => {
+        harness.runtime.setManifest(createManifestFixture({manifest_version: 3}));
+        harness.runtime.getManifest.failNext(new Error("Manifest unavailable"));
+        expect(isManifestVersion3()).toBe(false);
+        expect(isManifestVersion3()).toBe(true);
+    });
+
     test.each([
         ["getContexts", () => getContexts({})],
         ["getPackageDirectoryEntry", () => getPackageDirectoryEntry()],
@@ -197,7 +208,6 @@ describe.each(["chrome", "firefox"] as const)("runtime methods in %s", profile =
         ["connectNative", () => connectNative("org.example.host")],
         ["getManifest", () => getManifest()],
         ["getManifest", () => getManifestVersion()],
-        ["getManifest", () => isManifestVersion3()],
         ["getURL", () => getUrl("options.html")],
         ["reload", reload],
         ["restart", restart],

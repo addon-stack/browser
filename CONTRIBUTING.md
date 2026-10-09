@@ -9,6 +9,7 @@ Contents:
 - GitFlow: branching and PRs
 - Commits: Conventional Commits and versioning
 - Scope: cover Chrome APIs and add helpers
+- Predicate and state contracts
 - Code quality: lint, format, types
 - Tests
 - Documentation
@@ -270,6 +271,21 @@ consumer per namespace, checks removal of unused wrappers, and executes it witho
 verify lazy access. Clean-package tests verify synchronous types and ESM/CJS exports.
 
 ---
+
+## Predicate and state contracts
+
+Native method proxies preserve native results and errors, including boolean methods such as
+`hasOffscreen()`, `containsPermissions()`, and `getAudioMute()`. A boolean return type does not imply
+that a native proxy suppresses errors. Keep `callWithPromise()` strict.
+
+Custom safe predicates return `boolean` (or `Promise<boolean>`), with `true` only for a confirmed match
+and `false` when the condition cannot be confirmed. They contain lookup errors without logging or caching.
+When callers need to distinguish a negative result from an unknown state, expose an explicit state query,
+such as `getSidebarState(): Promise<SidebarState>`, instead of adding `undefined` to an `is`/`has` result.
+
+Operations must use strict lookups when errors matter: Action selection uses `getManifestVersion()`,
+and `showDownload()` uses `findDownload()`. Do not use a safe predicate to silently suppress operation failures.
+Test native error propagation and safe-predicate fallbacks separately, including public consumer types.
 
 ## Code quality: lint, format, types
 

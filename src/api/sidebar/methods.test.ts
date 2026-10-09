@@ -1,6 +1,9 @@
 import {setImmediate as nextTurn} from "node:timers/promises";
+
 import {afterEach, beforeEach, describe, expect, jest, test} from "@jest/globals";
-import {type BrowserHarness, createBrowserHarness, createExtensionContextFixture, installBrowserGlobals} from "../../testing";
+
+import {installAvailabilityGlobals} from "../../../tests/api/availability";
+import {type BrowserHarness, createBrowserHarness, createExtensionContextFixture, createWindowFixture, installBrowserGlobals} from "../../testing";
 import * as api from "./methods";
 
 const observe = <T>(operation: Promise<T>) => {
@@ -189,13 +192,62 @@ describe("sidebar methods: Chrome sidePanel", () => {
         await expect(api.isOpenSidebar(8)).resolves.toBe(false);
 
         expect(harness.runtime.getContexts.calls.map(call => call.args)).toEqual([
-            [{contextTypes: ["SIDE_PANEL"], windowIds: [7]}], [{contextTypes: ["SIDE_PANEL"], windowIds: [8]}],
+            [{contextTypes: ["SIDE_PANEL"]}], [{contextTypes: ["SIDE_PANEL"]}],
         ]);
     });
 
-    test("isOpenSidebar propagates context lookup errors", async () => {
+    test("isOpenSidebar returns false on context lookup errors", async () => {
         harness.runtime.getContexts.failNext(new Error("Contexts unavailable"));
-        await expect(api.isOpenSidebar(7)).rejects.toThrow("Contexts unavailable");
+        await expect(api.isOpenSidebar(7)).resolves.toBe(false);
+    });
+
+    test("isOpenSidebar contains a delayed runtime.lastError", async () => {
+        const method = harness.runtime.getContexts;
+        method.setImplementation((() => undefined) as unknown as typeof method.api);
+        const operation = observe(api.isOpenSidebar(7));
+        await nextTurn();
+        const lastError = jest.spyOn(harness.chrome.runtime, "lastError", "get");
+        lastError.mockReturnValue({message: "Delayed context lookup failure"});
+
+        try {
+            expect(operation.status).toBe("pending");
+        } finally {
+            try {
+                method.calls[0].callback!();
+            } finally {
+                lastError.mockRestore();
+            }
+
+            await operation.result;
+        }
+
+        expect(await operation.result).toEqual({status: "resolved", value: false});
+    });
+
+    test.each([undefined, 0, 7])("an unassigned sidebar context is unknown for windowId=%s", async windowId => {
+        harness.windows.getLastFocused.setResult(createWindowFixture({id: 7}));
+        // Chromium reports global side panels with windowId=-1, including when they are visibly open.
+        harness.runtime.setContexts([createExtensionContextFixture({contextType: "SIDE_PANEL", windowId: -1})]);
+        await expect(api.isOpenSidebar(windowId)).resolves.toBe(false);
+        await expect(api.getSidebarState(windowId)).resolves.toBe(api.SidebarState.Unknown);
+    });
+
+    test("a matching window remains identifiable alongside an unassigned sidebar context", async () => {
+        harness.runtime.setContexts([
+            createExtensionContextFixture({contextId: "known", contextType: "SIDE_PANEL", windowId: 7}),
+            createExtensionContextFixture({contextId: "unknown", contextType: "SIDE_PANEL", windowId: -1}),
+        ]);
+
+        await expect(api.isOpenSidebar(7)).resolves.toBe(true);
+        await expect(api.isOpenSidebar(8)).resolves.toBe(false);
+        await expect(api.getSidebarState(7)).resolves.toBe(api.SidebarState.Open);
+        await expect(api.getSidebarState(8)).resolves.toBe(api.SidebarState.Unknown);
+    });
+
+    test("no sidebar contexts means closed even when other contexts have no window", async () => {
+        harness.windows.getLastFocused.setResult(createWindowFixture({id: 7}));
+        harness.runtime.setContexts([createExtensionContextFixture({contextType: "BACKGROUND", windowId: -1})]);
+        await expect(api.isOpenSidebar()).resolves.toBe(false);
     });
 
     test("capability checks detect supported open and close methods", () => {
@@ -261,7 +313,7 @@ describe("sidebar methods: Chrome sidePanel", () => {
             ]);
 
             await expect(api.isOpenSidebar(0)).resolves.toBe(false);
-            expect(harness.runtime.getContexts.calls[0].args).toEqual([{contextTypes: ["SIDE_PANEL"], windowIds: [0]}]);
+            expect(harness.runtime.getContexts.calls[0].args).toEqual([{contextTypes: ["SIDE_PANEL"]}]);
         });
     });
 });
@@ -312,7 +364,6 @@ describe("sidebar methods: Firefox sidebarAction", () => {
 
     test.each([
         ...visibilityMethods, ...actionMethods,
-        ["isOpen", () => api.isOpenSidebar(7)],
         ["setIcon", () => api.setSidebarIcon({path: "icon.png"})],
     ] as const)("%s propagates native Promise rejections", async (name, invoke) => {
         const error = new Error("Firefox sidebar denied");
@@ -342,7 +393,7 @@ describe("sidebar methods: Firefox sidebarAction", () => {
         expect(await operation.result).toEqual({status: "rejected", error});
     });
 
-    test.each([undefined, 0, 7])("isOpenSidebar forwards windowId=%s and preserves true/false", async windowId => {
+    test.each([0, 7])("isOpenSidebar forwards windowId=%s and preserves true/false", async windowId => {
         const method = harness.sidebar.firefox.isOpen;
 
         for (const result of [true, false]) {
@@ -350,6 +401,43 @@ describe("sidebar methods: Firefox sidebarAction", () => {
             await expect(api.isOpenSidebar(windowId)).resolves.toBe(result);
             expect(method.calls.at(-1)).toMatchObject({args: [{windowId}], callback: undefined, invocation: "promise"});
         }
+    });
+
+    test("isOpenSidebar returns false on native Promise rejection", async () => {
+        harness.sidebar.firefox.isOpen.failNext(new Error("Firefox sidebar denied"));
+        await expect(api.isOpenSidebar(7)).resolves.toBe(false);
+    });
+
+    test("isOpenSidebar contains a delayed native Promise rejection", async () => {
+        let fail!: (error: Error) => void;
+
+        const pending = new Promise<boolean>((_resolve, reject) => {
+            fail = reject;
+        });
+
+        harness.sidebar.firefox.isOpen.setImplementation(() => pending);
+        const operation = observe(api.isOpenSidebar(7));
+        await nextTurn();
+
+        try {
+            expect(operation.status).toBe("pending");
+        } finally {
+            fail(new Error("Delayed Firefox failure"));
+            await operation.result;
+        }
+
+        expect(await operation.result).toEqual({status: "resolved", value: false});
+    });
+
+    test("isOpenSidebar returns false without sidebarAction.isOpen", async () => {
+        harness.capabilities.set("browser.sidebarAction.isOpen", false);
+        await expect(api.isOpenSidebar(7)).resolves.toBe(false);
+    });
+
+    test("an invalid native state is unknown rather than confirmed closed", async () => {
+        harness.sidebar.firefox.isOpen.setResult(undefined as unknown as boolean);
+        await expect(api.getSidebarState(7)).resolves.toBe(api.SidebarState.Unknown);
+        await expect(api.isOpenSidebar(7)).resolves.toBe(false);
     });
 
     test("setSidebarIcon forwards icon details unchanged", async () => {
@@ -370,7 +458,6 @@ describe("sidebar methods: Firefox sidebarAction", () => {
 
     test.each([
         ...visibilityMethods, ...actionMethods,
-        ["isOpen", () => api.isOpenSidebar(7)],
         ["setIcon", () => api.setSidebarIcon({path: "icon.png"})],
     ] as const)("missing sidebarAction.%s rejects", async (name, invoke) => {
         harness.capabilities.set(`browser.sidebarAction.${name}`, false);
@@ -426,8 +513,6 @@ describe.each(["firefox", "opera"] as const)("sidebarAction title and panel meth
         expect(method.calls[0].invocation).toBe(profile === "opera" ? "sync" : "promise");
     });
 
-    // Deliberately no normalization expectation here: the common getSidebarPath
-    // contract (leading slash, origin, query and fragment) needs a separate decision.
     test.each([undefined, 0, 4])("getSidebarPath queries tabId=%s with the browser's invocation style", async tabId => {
         const method = harness.sidebar[profile].getPanel;
         method.setResult(`${profile === "firefox" ? "moz" : "chrome"}-extension://extension-id/panel.html`);
@@ -440,6 +525,143 @@ describe.each(["firefox", "opera"] as const)("sidebarAction title and panel meth
         ["setOptions", api.setSidebarOptions], ["setPanelBehavior", api.setSidebarBehavior],
     ] as const)("Chrome-only %s rejects", async (_name, invoke) => {
         await expect(invoke()).rejects.toThrow();
+    });
+});
+
+describe.each(["chrome", "firefox", "opera"] as const)("sidebar path contract in %s", profile => {
+    let harness: BrowserHarness;
+    let restore: () => void;
+    const scheme = profile === "firefox" ? "moz-extension" : "chrome-extension";
+    const root = `${scheme}://test-extension-id/`;
+
+    beforeEach(() => {
+        harness = createBrowserHarness();
+        restore = installBrowserGlobals(harness, {profile});
+        harness.runtime.getURL.setResult(root);
+    });
+
+    afterEach(() => restore());
+
+    test.each([
+        ["panel.html?mode=test#ready", "panel.html?mode=test#ready"],
+        ["/panel.html?mode=test#ready", "panel.html?mode=test#ready"],
+        [`${root}panel.html?mode=test#ready`, "panel.html?mode=test#ready"],
+        [`${root}nested/panel%20name.html?q=a%2Fb#part%20one`, "nested/panel%20name.html?q=a%2Fb#part%20one"],
+        [`${root}panel.html?#`, "panel.html?#"],
+        [`${scheme}://another-extension/panel.html?q=1#ready`, `${scheme}://another-extension/panel.html?q=1#ready`],
+        ["https://example.org/panel.html?q=1#ready", "https://example.org/panel.html?q=1#ready"],
+        ["https://test-extension-id/panel.html?q=1#ready", "https://test-extension-id/panel.html?q=1#ready"],
+        ["data:text/html,panel", "data:text/html,panel"],
+        ["", undefined],
+    ] as const)("getSidebarPath normalizes %s without losing the resource address", async (path, expected) => {
+        if (profile === "chrome") {
+            harness.sidebar.sidePanel.getOptions.setResult({path});
+        } else {
+            harness.sidebar[profile].getPanel.setResult(path);
+        }
+
+        await expect(api.getSidebarPath()).resolves.toBe(expected);
+    });
+
+    test("getSidebarPath does not treat another extension scheme as this extension", async () => {
+        const path = `${profile === "firefox" ? "chrome-extension" : "moz-extension"}://test-extension-id/panel.html`;
+
+        if (profile === "chrome") {
+            harness.sidebar.sidePanel.getOptions.setResult({path});
+        } else {
+            harness.sidebar[profile].getPanel.setResult(path);
+        }
+
+        await expect(api.getSidebarPath()).resolves.toBe(path);
+    });
+});
+
+describe.each(["chrome", "firefox"] as const)("sidebar window contract in %s", profile => {
+    let harness: BrowserHarness;
+    let restore: () => void;
+
+    beforeEach(() => {
+        harness = createBrowserHarness();
+        restore = installBrowserGlobals(harness, {profile});
+
+        harness.runtime.setContexts([
+            createExtensionContextFixture({contextId: "panel", contextType: "SIDE_PANEL", windowId: 7}),
+            createExtensionContextFixture({contextId: "popup", contextType: "POPUP", windowId: 8}),
+        ]);
+
+        harness.sidebar.firefox.isOpen.setImplementation(async details => details.windowId === 7);
+    });
+
+    afterEach(() => restore());
+
+    test("isOpenSidebar follows the last focused window on every call", async () => {
+        harness.windows.getLastFocused.setResult(createWindowFixture({id: 8}));
+        await expect(api.isOpenSidebar()).resolves.toBe(false);
+        harness.windows.getLastFocused.setResult(createWindowFixture({id: 7}));
+        await expect(api.isOpenSidebar()).resolves.toBe(true);
+        expect(harness.windows.getLastFocused.calls).toHaveLength(2);
+        expect(harness.windows.getCurrent.calls).toHaveLength(0);
+
+        if (profile === "chrome") {
+            expect(harness.runtime.getContexts.calls.map(call => call.args)).toEqual([
+                [{contextTypes: ["SIDE_PANEL"]}],
+                [{contextTypes: ["SIDE_PANEL"]}],
+            ]);
+        } else {
+            expect(harness.sidebar.firefox.isOpen.calls.map(call => call.args)).toEqual([
+                [{windowId: 8}], [{windowId: 7}],
+            ]);
+        }
+    });
+
+    test.each([undefined, 0, 7])("getSidebarState reports open and closed for windowId=%s", async windowId => {
+        harness.windows.getLastFocused.setResult(createWindowFixture({id: 7}));
+        await expect(api.getSidebarState(windowId)).resolves.toBe(windowId === 0 ? api.SidebarState.Closed : api.SidebarState.Open);
+        harness.runtime.setContexts([]);
+        harness.sidebar.firefox.isOpen.setResult(false);
+        await expect(api.getSidebarState(windowId)).resolves.toBe(api.SidebarState.Closed);
+    });
+
+    test("getSidebarState returns unknown when a native query fails", async () => {
+        if (profile === "chrome") {
+            harness.runtime.getContexts.failNext(new Error("Contexts unavailable"));
+        } else {
+            harness.sidebar.firefox.isOpen.failNext(new Error("Sidebar unavailable"));
+        }
+
+        await expect(api.getSidebarState(7)).resolves.toBe(api.SidebarState.Unknown);
+    });
+
+    test("getSidebarState returns unknown when focus lookup fails or has no window id", async () => {
+        harness.windows.getLastFocused.failNext(new Error("Window unavailable"));
+        await expect(api.getSidebarState()).resolves.toBe(api.SidebarState.Unknown);
+        harness.windows.getLastFocused.setResult(createWindowFixture({id: undefined}));
+        await expect(api.getSidebarState()).resolves.toBe(api.SidebarState.Unknown);
+    });
+
+    test.each([0, 7])("an explicit windowId=%s skips focus lookup", async windowId => {
+        harness.windows.getLastFocused.failNext(new Error("Focus lookup must not run"));
+        await expect(api.isOpenSidebar(windowId)).resolves.toBe(windowId === 7);
+        expect(harness.windows.getLastFocused.calls).toHaveLength(0);
+    });
+
+    test("a resolved windowId=0 does not fall back to other windows", async () => {
+        harness.windows.getLastFocused.setResult(createWindowFixture({id: 0}));
+        await expect(api.isOpenSidebar()).resolves.toBe(false);
+    });
+
+    test("window lookup failures return false before querying sidebar state", async () => {
+        harness.windows.getLastFocused.failNext(new Error("No browser window"));
+        await expect(api.isOpenSidebar()).resolves.toBe(false);
+        expect(harness.runtime.getContexts.calls).toHaveLength(0);
+        expect(harness.sidebar.firefox.isOpen.calls).toHaveLength(0);
+    });
+
+    test("a window without an id returns false without checking every window", async () => {
+        harness.windows.getLastFocused.setResult(createWindowFixture({id: undefined}));
+        await expect(api.isOpenSidebar()).resolves.toBe(false);
+        expect(harness.runtime.getContexts.calls).toHaveLength(0);
+        expect(harness.sidebar.firefox.isOpen.calls).toHaveLength(0);
     });
 });
 
@@ -546,8 +768,14 @@ describe("sidebar methods: Opera sidebarAction", () => {
         expect(api.canCloseSidebar()).toBe(false);
     });
 
-    test.each([...visibilityMethods, ["isOpen", () => api.isOpenSidebar(7)]] as const)("%s rejects when Opera cannot perform it", async (_name, invoke) => {
+    test.each(visibilityMethods)("%s rejects when Opera cannot perform it", async (_name, invoke) => {
         await expect(invoke()).rejects.toBeInstanceOf(api.SidebarError);
+    });
+
+    test.each([undefined, 7])("isOpenSidebar returns false in Opera before window lookup: %s", async windowId => {
+        await expect(api.isOpenSidebar(windowId)).resolves.toBe(false);
+        await expect(api.getSidebarState(windowId)).resolves.toBe(api.SidebarState.Unknown);
+        expect(harness.windows.getLastFocused.calls).toHaveLength(0);
     });
 
     test("setSidebarIcon invokes the native method with a completion callback", async () => {
@@ -624,6 +852,145 @@ describe("sidebar methods: Opera sidebarAction", () => {
     });
 });
 
+describe.each([
+    ["open", api.canOpenSidebar], ["close", api.canCloseSidebar],
+] as const)("safe sidebar %s capability check", (method, probe) => {
+    let restore: () => void = () => undefined;
+
+    afterEach(() => {
+        restore();
+        jest.restoreAllMocks();
+    });
+
+    test.each([{}, {chrome: {}}, {browser: {runtime: {id: "firefox"}}}])("returns false without the API: %j", globals => {
+        restore = installAvailabilityGlobals(globals);
+        expect(probe()).toBe(false);
+    });
+
+    test("contains global access errors", () => {
+        restore = installAvailabilityGlobals();
+
+        Object.defineProperty(globalThis, "chrome", {configurable: true, get: () => {
+            throw new Error("Context invalidated");
+        }});
+
+        expect(probe()).toBe(false);
+    });
+
+    test("contains namespace access errors without falling back or logging", () => {
+        const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+        const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+        const fallback = jest.fn();
+
+        const native = Object.defineProperty({}, "sidePanel", {get: () => {
+            throw new Error("Access denied");
+        }});
+
+        restore = installAvailabilityGlobals({chrome: native, opr: {sidebarAction: {[method]: fallback}}});
+        expect(probe()).toBe(false);
+        expect(fallback).not.toHaveBeenCalled();
+        expect(error).not.toHaveBeenCalled();
+        expect(warn).not.toHaveBeenCalled();
+    });
+
+    test.each(["chrome", "firefox", "opera"])("contains method access errors in %s", profile => {
+        const native = Object.defineProperty({}, method, {get: () => {
+            throw new Error("Method access denied");
+        }});
+
+        const globals = profile === "chrome"
+            ? {chrome: {sidePanel: native}}
+            : profile === "firefox"
+                ? {browser: {runtime: {id: "firefox"}, sidebarAction: native}}
+                : {chrome: {}, opr: {sidebarAction: native}};
+
+        restore = installAvailabilityGlobals(globals);
+        expect(probe()).toBe(false);
+    });
+
+    test("observes method changes without calling or caching the operation", () => {
+        const operation = jest.fn();
+        const native: Record<string, unknown> = {[method]: operation};
+        restore = installAvailabilityGlobals({chrome: {sidePanel: native}});
+        expect(probe()).toBe(true);
+        delete native[method];
+        expect(probe()).toBe(false);
+        native[method] = true;
+        expect(probe()).toBe(false);
+        native[method] = operation;
+        expect(probe()).toBe(true);
+        expect(operation).not.toHaveBeenCalled();
+    });
+});
+
+describe.each([
+    ["isOpenSidebar", api.isOpenSidebar, false],
+    ["getSidebarState", api.getSidebarState, api.SidebarState.Unknown],
+] as const)("safe sidebar state check: %s", (_name, probe, expected) => {
+    let restore: () => void = () => undefined;
+
+    beforeEach(() => {
+        jest.spyOn(console, "error").mockImplementation(() => undefined);
+        jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+        try {
+            expect(console.error).not.toHaveBeenCalled();
+            expect(console.warn).not.toHaveBeenCalled();
+        } finally {
+            restore();
+            jest.restoreAllMocks();
+        }
+    });
+
+    test.each([
+        ["WebExtension globals", {}],
+        ["sidebar API", {chrome: {}}],
+        ["runtime.getContexts", {chrome: {sidePanel: {}, runtime: {}}}],
+        ["Firefox sidebarAction.isOpen", {browser: {runtime: {id: "firefox"}, sidebarAction: {}}}],
+    ] as const)("returns the fallback without %s", async (_name, globals) => {
+        restore = installAvailabilityGlobals(globals);
+        await expect(probe()).resolves.toBe(expected);
+        await expect(probe(7)).resolves.toBe(expected);
+    });
+
+    test("contains global access errors", async () => {
+        restore = installAvailabilityGlobals();
+
+        Object.defineProperty(globalThis, "chrome", {configurable: true, get: () => {
+            throw new Error("Context invalidated");
+        }});
+
+        await expect(probe(7)).resolves.toBe(expected);
+    });
+
+    test.each(["sidePanel", "sidebarAction", "isOpen"])("contains %s access errors", async property => {
+        const native = Object.defineProperty({}, property, {get: () => {
+            throw new Error("API access denied");
+        }});
+
+        const globals = property === "sidePanel"
+            ? {chrome: native}
+            : property === "sidebarAction"
+                ? {browser: Object.assign(native, {runtime: {id: "firefox"}})}
+                : {browser: {runtime: {id: "firefox"}, sidebarAction: native}};
+
+        restore = installAvailabilityGlobals(globals);
+        await expect(probe(7)).resolves.toBe(expected);
+    });
+
+    test("contains a synchronous native query failure", async () => {
+        const isOpen = jest.fn<(details: {windowId: number}) => Promise<boolean>>(() => {
+            throw new Error("Sidebar query failed");
+        });
+
+        restore = installAvailabilityGlobals({browser: {runtime: {id: "firefox"}, sidebarAction: {isOpen}}});
+        await expect(probe(7)).resolves.toBe(expected);
+        expect(isOpen).toHaveBeenCalledWith({windowId: 7});
+    });
+});
+
 describe("sidebar methods without a sidebar API", () => {
     let restore: () => void;
 
@@ -642,9 +1009,13 @@ describe("sidebar methods without a sidebar API", () => {
 
     test.each([
         ...chromeMethods, ...actionMethods, ...badgeMethods,
-        ["toggle", api.toggleSidebar], ["isOpen", api.isOpenSidebar],
+        ["toggle", api.toggleSidebar],
         ["setIcon", () => api.setSidebarIcon({path: "icon.png"})],
     ] as const)("%s rejects instead of succeeding without an API", async (_name, invoke) => {
         await expect(invoke()).rejects.toThrow();
+    });
+
+    test.each([undefined, 7])("isOpenSidebar returns false without an API: %s", async windowId => {
+        await expect(api.isOpenSidebar(windowId)).resolves.toBe(false);
     });
 });

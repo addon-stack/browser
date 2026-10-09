@@ -3,7 +3,9 @@ import {existsSync, readdirSync, readFileSync} from "node:fs";
 import {createRequire} from "node:module";
 import {dirname, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
+
 import ts from "typescript";
+
 import {assertPortableTestingGraph} from "./testing-boundary.mjs";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -50,11 +52,11 @@ const declarationExports = getModuleExports(declarationEntry, {
     types: ["chrome"],
 });
 
-assert.equal(sourceExports.length, 359, "The source public-export baseline changed; update the coverage matrix first");
+assert.equal(sourceExports.length, 361, "The source public-export baseline changed; update the coverage matrix first");
 
 assert.equal(
     sourceExports.filter(value => value.hasValue).length,
-    356,
+    358,
     "The source runtime-export baseline changed; update the coverage matrix first"
 );
 
@@ -128,11 +130,15 @@ const listRuntimeSources = directory =>
     readdirSync(directory, {withFileTypes: true}).flatMap(entry => {
         const file = resolve(directory, entry.name);
 
-        if (entry.isDirectory()) return listRuntimeSources(file);
+        if (entry.isDirectory()) {
+            return listRuntimeSources(file);
+        }
 
         assert.doesNotMatch(entry.name, /\.(?:test|spec)\.[cm]?[jt]sx?$/, `Move test ${file} to tests/testing`);
 
-        if (!entry.name.endsWith(".ts")) return [];
+        if (!entry.name.endsWith(".ts")) {
+            return [];
+        }
 
         return [{file, source: readFileSync(file, "utf8")}];
     });
@@ -164,4 +170,4 @@ for (const {file, source} of testingRuntimeSources) {
     );
 }
 
-console.log("Verified 359 TypeScript exports, 356 ESM/CJS runtime exports, and isolated testing bundles.");
+console.log("Verified 361 TypeScript exports, 358 ESM/CJS runtime exports, and isolated testing bundles.");

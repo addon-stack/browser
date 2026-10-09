@@ -1,6 +1,10 @@
 import {afterEach, beforeEach, describe, expect, test} from "@jest/globals";
+
+import {describeSafePredicate} from "../../../tests/api/predicates";
 import {type BrowserHarness, createBrowserHarness, installBrowserGlobals} from "../../testing";
 import * as api from "./methods";
+
+describeSafePredicate("isDownloadExists", () => api.isDownloadExists(41));
 
 const url = "https://download.example/file.zip";
 
@@ -135,7 +139,7 @@ describe.each(["chrome", "firefox"] as const)("downloads methods in %s", profile
     test.each([
         {items: [createItem()], exists: true, shown: true},
         {items: [createItem({exists: false})], exists: false, shown: false},
-        {items: [], exists: undefined, shown: false},
+        {items: [], exists: false, shown: false},
     ])("isDownloadExists returns $exists and showDownload returns $shown", async ({items, exists, shown}) => {
         const native = harness.configurable.active.downloads;
         native.search.setResult(items);
@@ -150,6 +154,13 @@ describe.each(["chrome", "firefox"] as const)("downloads methods in %s", profile
         harness.configurable.active.downloads.search.setResult([createItem()]);
         harness.configurable.active.downloads.show.failNext(error);
         await expect(api.showDownload(41)).rejects.toBe(error);
+    });
+
+    test("isDownloadExists returns false on search failure without caching the result", async () => {
+        harness.configurable.active.downloads.search.setResult([createItem()]);
+        harness.configurable.active.downloads.search.failNext(new Error("Lookup failed"));
+        await expect(api.isDownloadExists(41)).resolves.toBe(false);
+        await expect(api.isDownloadExists(41)).resolves.toBe(true);
     });
 
     test.each(["in_progress", "interrupted", "complete"] as const)("getDownloadState returns %s and accepts id zero", async state => {
@@ -167,7 +178,6 @@ describe.each(["chrome", "firefox"] as const)("downloads methods in %s", profile
 
     test.each([
         ["findDownload", api.findDownload],
-        ["isDownloadExists", api.isDownloadExists],
         ["getDownloadState", api.getDownloadState],
         ["showDownload", api.showDownload],
     ] as const)("%s propagates search errors", async (_name, invoke) => {
@@ -179,7 +189,9 @@ describe.each(["chrome", "firefox"] as const)("downloads methods in %s", profile
     test.each([undefined, "overwrite"] as const)("download applies conflictAction=%s without mutating options", async conflictAction => {
         const options: chrome.downloads.DownloadOptions = {url, filename: "archive.zip", saveAs: true};
 
-        if (conflictAction) options.conflictAction = conflictAction;
+        if (conflictAction) {
+            options.conflictAction = conflictAction;
+        }
 
         const original = {...options};
         harness.configurable.active.downloads.download.setResult(41);
@@ -218,8 +230,11 @@ describe.each(["chrome", "firefox"] as const)("downloads methods in %s", profile
         await expect(pending).rejects.toBeInstanceOf(Error);
         await expect(pending).rejects.toHaveProperty("message", message);
 
-        if (blocked) await expect(pending).rejects.toBeInstanceOf(api.BlockDownloadError);
-        else await expect(pending).rejects.not.toBeInstanceOf(api.BlockDownloadError);
+        if (blocked) {
+            await expect(pending).rejects.toBeInstanceOf(api.BlockDownloadError);
+        } else {
+            await expect(pending).rejects.not.toBeInstanceOf(api.BlockDownloadError);
+        }
     });
 
     test("download propagates a validation delay failure without searching", async () => {

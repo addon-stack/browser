@@ -40,9 +40,17 @@ export const getOffscreenPath = async (): Promise<string | undefined> => {
 };
 
 export const hasOffscreenUrl = async (url: string): Promise<boolean> => {
-    return (await getOffscreenUrl()) === url;
+    try {
+        return (await getOffscreenUrl()) === url;
+    } catch {
+        return false;
+    }
 };
 
 export const hasOffscreenPath = async (path: string): Promise<boolean> => {
-    return (await getOffscreenPath()) === new URL(getUrl(path)).pathname;
+    try {
+        return (await getOffscreenPath()) === new URL(getUrl(path)).pathname;
+    } catch {
+        return false;
+    }
 };

@@ -1,6 +1,7 @@
-import type {FirefoxRuntime} from "../../types";
 import {browser} from "../browser";
 import {callWithPromise} from "../utils";
+
+import type {FirefoxRuntime} from "../../types";
 
 type BrowserInfo = browser.runtime.BrowserInfo;
 
@@ -59,4 +60,10 @@ export const getId = (): string => runtime().id;
 
 export const getManifestVersion = (): 2 | 3 => getManifest().manifest_version;
 
-export const isManifestVersion3 = (): boolean => getManifestVersion() === 3;
+export const isManifestVersion3 = (): boolean => {
+    try {
+        return getManifestVersion() === 3;
+    } catch {
+        return false;
+    }
+};

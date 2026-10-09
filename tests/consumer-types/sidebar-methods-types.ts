@@ -1,4 +1,4 @@
-import {canCloseSidebar, canOpenSidebar, clearSidebarBadgeText, closeSidebar, getSidebarBadgeBgColor, getSidebarBadgeText, getSidebarBadgeTextColor, getSidebarBehavior, getSidebarOptions, getSidebarPath, getSidebarTitle, isOpenSidebar, openSidebar, setSidebarBadgeBgColor, setSidebarBadgeText, setSidebarBadgeTextColor, setSidebarBehavior, setSidebarIcon, setSidebarOptions, setSidebarPath, setSidebarTitle, SidebarError, toggleSidebar} from "@addon-core/browser";
+import {canCloseSidebar, canOpenSidebar, clearSidebarBadgeText, closeSidebar, getSidebarBadgeBgColor, getSidebarBadgeText, getSidebarBadgeTextColor, getSidebarBehavior, getSidebarOptions, getSidebarPath, getSidebarState, getSidebarTitle, isOpenSidebar, openSidebar, setSidebarBadgeBgColor, setSidebarBadgeText, setSidebarBadgeTextColor, setSidebarBehavior, setSidebarIcon, setSidebarOptions, setSidebarPath, setSidebarTitle, SidebarError, SidebarState, toggleSidebar} from "@addon-core/browser";
 
 type Color = string | ColorArray;
 type ColorArray = chrome.extensionTypes.ColorArray;
@@ -8,7 +8,7 @@ type PanelOptions = chrome.sidePanel.PanelOptions;
 type PanelBehavior = chrome.sidePanel.PanelBehavior;
 type IconDetails = opr.sidebarAction.IconDetails;
 
-const methods = {getSidebarOptions, getSidebarBehavior, canOpenSidebar, canCloseSidebar, openSidebar, closeSidebar, setSidebarOptions, setSidebarBehavior, isOpenSidebar, toggleSidebar, setSidebarPath, getSidebarPath, setSidebarTitle, setSidebarBadgeText, clearSidebarBadgeText, setSidebarIcon, setSidebarBadgeTextColor, setSidebarBadgeBgColor, getSidebarTitle, getSidebarBadgeText, getSidebarBadgeTextColor, getSidebarBadgeBgColor};
+const methods = {getSidebarOptions, getSidebarBehavior, canOpenSidebar, canCloseSidebar, openSidebar, closeSidebar, setSidebarOptions, setSidebarBehavior, getSidebarState, isOpenSidebar, toggleSidebar, setSidebarPath, getSidebarPath, setSidebarTitle, setSidebarBadgeText, clearSidebarBadgeText, setSidebarIcon, setSidebarBadgeTextColor, setSidebarBadgeBgColor, getSidebarTitle, getSidebarBadgeText, getSidebarBadgeTextColor, getSidebarBadgeBgColor};
 
 type Expected = {
     getSidebarOptions: (tabId?: number) => Promise<PanelOptions>;
@@ -19,6 +19,7 @@ type Expected = {
     closeSidebar: (options: CloseOptions) => Promise<void>;
     setSidebarOptions: (options?: PanelOptions) => Promise<void>;
     setSidebarBehavior: (behavior?: PanelBehavior) => Promise<void>;
+    getSidebarState: (windowId?: number) => Promise<SidebarState>;
     isOpenSidebar: (windowId?: number) => Promise<boolean>;
     toggleSidebar: () => Promise<void>;
     setSidebarPath: (path: string, tabId?: number) => Promise<void>;
@@ -36,9 +37,18 @@ type Expected = {
 };
 
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
-const signaturesUnchanged: Equal<typeof methods, Expected> = true;
+const signaturesMatch: Equal<typeof methods, Expected> = true;
 const error: Error = new SidebarError("Unsupported sidebar operation");
-void [methods, signaturesUnchanged, error];
+void [methods, signaturesMatch, error];
+
+const definiteSidebarState: Promise<boolean> = isOpenSidebar();
+const statesMatch: Equal<`${SidebarState}`, "open" | "closed" | "unknown"> = true;
+// @ts-expect-error A state query returns a state string, not a boolean.
+const booleanState: Promise<boolean> = getSidebarState();
+const openState: SidebarState = SidebarState.Open;
+// @ts-expect-error SidebarState requires an enum member, not a raw string.
+const rawState: SidebarState = "open";
+void [definiteSidebarState, statesMatch, booleanState, openState, rawState];
 
 const nativeIconWithoutCallback: void = opr.sidebarAction.setIcon({path: "icon.png"});
 const nativeIconWithCallback: void = opr.sidebarAction.setIcon({path: "icon.png"}, () => {});

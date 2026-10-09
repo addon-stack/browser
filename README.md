@@ -144,6 +144,7 @@ const off = onContextMenusClicked(async (info, tab) => {
 
 ## Helpers
 
+- [env](docs/env.md) — Safe background-context detection with `isBackground()`.
 - [browserDetection](docs/browser-detection.md) — Best-effort browser detection with `BrowserName`, `BrowserFamily`, `guessBrowser()`, `isBrowser()`, and `isBrowserFamily()`.
 
 ## Utilities

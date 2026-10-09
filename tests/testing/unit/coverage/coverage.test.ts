@@ -1,4 +1,5 @@
 import ts from "typescript";
+
 import {
     EXPECTED_ROOT_RUNTIME_EXPORT_COUNT,
     EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT,
@@ -54,18 +55,26 @@ const directEventNamespace = (harness: Harness, namespace: string): unknown => {
 };
 
 const configurableNamespaces = (harness: Harness, namespace: string): readonly unknown[] => {
-    if (namespace === "browser.sidebarAction") return [harness.sidebar.firefox];
+    if (namespace === "browser.sidebarAction") {
+        return [harness.sidebar.firefox];
+    }
 
-    if (namespace === "opr.sidebarAction") return [harness.sidebar.opera];
+    if (namespace === "opr.sidebarAction") {
+        return [harness.sidebar.opera];
+    }
 
     return [memberOf(harness.configurable.chrome, namespace), memberOf(harness.configurable.browser, namespace)];
 };
 
 /** Resolves the control that actually owns a raw facade member, independent of its declared coverage. */
 const resolveRawCapability = (harness: Harness, entry: RawCapabilityEntry): readonly unknown[] => {
-    if (entry.namespace === "storage") return [memberOf(harness.storage, entry.member)];
+    if (entry.namespace === "storage") {
+        return [memberOf(harness.storage, entry.member)];
+    }
 
-    if (entry.namespace.startsWith("storage.")) return [memberOf(memberOf(harness.storage, entry.namespace.split(".")[1]), entry.member)];
+    if (entry.namespace.startsWith("storage.")) {
+        return [memberOf(memberOf(harness.storage, entry.namespace.split(".")[1]), entry.member)];
+    }
 
     if (entry.kind === "property") {
         return [harness.chrome, harness.browser].map(facade => {
@@ -83,7 +92,9 @@ const resolveRawCapability = (harness: Harness, entry: RawCapabilityEntry): read
 
     const directControl = memberOf(directNamespace, entry.member);
 
-    if (directControl !== undefined) return [directControl];
+    if (directControl !== undefined) {
+        return [directControl];
+    }
 
     return configurableNamespaces(harness, entry.namespace).map(namespace => memberOf(namespace, entry.member));
 };
@@ -122,9 +133,13 @@ const isPropertyDescriptor = (value: unknown): boolean => {
 };
 
 const isValidResolution = (entry: RawCapabilityEntry, control: unknown): boolean => {
-    if (entry.kind === "method") return isBrowserMethodControl(control);
+    if (entry.kind === "method") {
+        return isBrowserMethodControl(control);
+    }
 
-    if (entry.kind === "event") return isBrowserEventControl(control);
+    if (entry.kind === "event") {
+        return isBrowserEventControl(control);
+    }
 
     return isPropertyDescriptor(control);
 };
@@ -140,11 +155,15 @@ const rootExports = () => {
     const checker = program.getTypeChecker();
     const source = program.getSourceFile("src/index.ts");
 
-    if (!source) throw new Error("Unable to load src/index.ts for the public export coverage test");
+    if (!source) {
+        throw new Error("Unable to load src/index.ts for the public export coverage test");
+    }
 
     const moduleSymbol = checker.getSymbolAtLocation(source);
 
-    if (!moduleSymbol) throw new Error("Unable to resolve the src/index.ts module symbol");
+    if (!moduleSymbol) {
+        throw new Error("Unable to resolve the src/index.ts module symbol");
+    }
 
     return {checker, exports: checker.getExportsOfModule(moduleSymbol)};
 };
@@ -162,7 +181,7 @@ describe("testing coverage matrices", () => {
         expect(PUBLIC_EXPORT_COVERAGE.filter(entry => entry.coverage === "unsupported")).toEqual([]);
     });
 
-    test("keeps the three interfaces type-only and the other 356 exports runtime-visible", () => {
+    test("keeps declaration-only exports separate from runtime exports", () => {
         const {checker, exports} = rootExports();
 
         const typeOnly = exports
@@ -217,7 +236,9 @@ describe("testing coverage matrices", () => {
         const mismatches = RAW_CAPABILITY_COVERAGE.filter(entry => entry.kind === "method")
             .flatMap(entry => resolveRawCapability(harness, entry).map(control => ({control, entry})))
             .filter(({control, entry}) => {
-                if (!isBrowserMethodControl(control)) return true;
+                if (!isBrowserMethodControl(control)) {
+                    return true;
+                }
 
                 return (entry.coverage === "stateful") !== control.hasDefaultImplementation;
             })
@@ -245,7 +266,9 @@ describe("testing coverage matrices", () => {
                 expect(isBrowserMethodControl(control)).toBe(true);
                 expect((control as AnyBrowserMethod).hasDefaultImplementation).toBe(entry.contextCoverage === "stateful");
                 expect(entry.contextInvocation).toBe("dual");
-            } else expect(isBrowserEventControl(control)).toBe(true);
+            } else {
+                expect(isBrowserEventControl(control)).toBe(true);
+            }
 
             for (const facade of [view.chrome, view.browser]) {
                 expect(memberOf(memberOf(facade, entry.namespace), entry.member)).toBe(memberOf(control, "api"));

@@ -319,6 +319,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
 
     ...entries("sidebar", "method-wrapper", "behavioral", ["isAvailableSidebar"]),
     ...entries("sidebar", "class", "behavioral", ["SidebarError"]),
+    ...entries("sidebar", "enum", "declaration", ["SidebarState"]),
     ...entries("sidebar", "method-wrapper", "behavioral", [
         "getSidebarOptions",
         "getSidebarBehavior",
@@ -328,6 +329,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
         "closeSidebar",
         "setSidebarOptions",
         "setSidebarBehavior",
+        "getSidebarState",
         "isOpenSidebar",
         "toggleSidebar",
         "setSidebarPath",
@@ -470,8 +472,8 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
 
 export const TYPE_ONLY_ROOT_EXPORTS = ["BrowserGuess", "LaunchWebAuthFlowDetails", "WindowEventFilter"] as const;
 
-export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 359;
-export const EXPECTED_ROOT_RUNTIME_EXPORT_COUNT = 356;
+export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 361;
+export const EXPECTED_ROOT_RUNTIME_EXPORT_COUNT = 358;
 
 export const getPublicExportCoverage = (name: string): PublicExportCoverageEntry | undefined =>
     PUBLIC_EXPORT_COVERAGE.find(entry => entry.name === name);

@@ -25,6 +25,7 @@ Custom error class thrown when an API method is not supported or fails.
 - [closeSidebar(options)](#closeSidebar)
 - [setSidebarOptions(options?)](#setSidebarOptions) [Chromium]
 - [setSidebarBehavior(behavior?)](#setSidebarBehavior) [Chromium]
+- [getSidebarState(windowId?)](#getSidebarState)
 - [isOpenSidebar(windowId?)](#isOpenSidebar)
 - [toggleSidebar()](#toggleSidebar) [Firefox]
 - [setSidebarPath(path, tabId?)](#setSidebarPath)
@@ -94,6 +95,8 @@ canOpenSidebar(): boolean
 ```
 
 Returns `true` if the selected API exposes a callable `open` method: `chrome.sidePanel.open` when Side Panel is present, otherwise `sidebarAction.open`. Namespace availability alone is insufficient. This checks API support; it does not guarantee that a particular call will succeed or satisfy user-action requirements.
+Returns `false` if the environment, API, or method is absent, or if reading it throws.
+The check never throws or logs, does not call `open`, and reads the current capability on every call.
 
 <a name="canCloseSidebar"></a>
 
@@ -104,6 +107,9 @@ canCloseSidebar(): boolean
 ```
 
 Returns `true` if the selected API exposes a callable `close` method: `chrome.sidePanel.close` when Side Panel is present, otherwise `sidebarAction.close`. Namespace availability alone is insufficient.
+Returns `false` if the environment, API, or method is absent, or if reading it throws.
+The check never throws or logs, does not call `close`, and reads the current capability on every call.
+It does not guarantee that a later `closeSidebar()` operation will succeed; native operation errors still reject.
 
 <a name="openSidebar"></a>
 
@@ -167,19 +173,96 @@ Sets the sidebar path in Chromium-based browsers via `setOptions` (MV3) or via `
 getSidebarPath(tabId?: number): Promise<string | undefined>
 ```
 
-Retrieves the sidebar path from Chromium-based browsers (MV3) or parses from `sidebarAction.getPanel()` in Firefox/Opera. Throws if unsupported.
+Retrieves the configured sidebar page using Chromium's `sidePanel.getOptions()` (MV3) or
+`sidebarAction.getPanel()` in Firefox/Opera. Uses the same result format across browsers:
+
+- A page belonging to this extension is returned relative to the extension root, without a leading `/`.
+  Query parameters, fragments, and URL encoding are preserved: `panel.html?mode=compact#settings`.
+- An external URL is returned in full, including its scheme and host. Firefox supports remote sidebar pages;
+  their addresses must not be treated as local extension paths.
+- An absent or empty native path returns `undefined`.
+
+An omitted `tabId` queries the default/global panel configuration. Throws if unsupported or if the native query fails.
+
+```ts
+await setSidebarPath("/panel.html?mode=compact#settings", 7);
+const path = await getSidebarPath(7);
+// "panel.html?mode=compact#settings" in Chromium, Firefox, and Opera.
+```
+
+<a name="getSidebarState"></a>
+
+### getSidebarState
+
+```ts
+enum SidebarState {
+    Open = "open",
+    Closed = "closed",
+    Unknown = "unknown",
+}
+
+getSidebarState(windowId?: number): Promise<SidebarState>
+```
+
+Checks the specified window using `runtime.getContexts()` in Chromium (MV3) or `sidebarAction.isOpen()`
+in Firefox. Without `windowId`, resolves the last focused browser window using `windows.getLastFocused()`
+on every call and checks only that window. The last focused window may differ from the window containing
+the calling extension page. An explicit `windowId`, including `0`, bypasses the focus lookup.
+
+Returns `"open"` when an open panel is identified, `"closed"` when the query confirms no open panel in that
+window, or `"unknown"` when the state cannot be determined. Missing WebExtension globals or required APIs,
+API access errors, window lookup failures, and synchronous or asynchronous query failures produce `"unknown"`.
+Opera's legacy `opr.sidebarAction` does not support this check and also produces `"unknown"`.
+The helper does not throw, reject, log errors, or cache its result. The `SidebarState` enum is publicly exported
+as both a runtime value and a TypeScript type.
+
+Chromium limitation: `runtime.getContexts()` can report a side panel with `windowId: -1`, including when the
+panel is visibly open. Such a context cannot be assigned to the requested window. If no context matches that
+window and at least one panel has an unknown window, the result is `"unknown"`.
+No side-panel contexts means `"closed"`; a context matching the window means `"open"`.
+This helper checks context existence in Chromium and does not maintain its own visibility or window registry.
+The unassigned side-panel window ID is also covered by
+[Chromium's native API test](https://chromium.googlesource.com/chromium/src/+/cc748d4034cf809a90bead06f9f9dcabd0dbbaf5/chrome/browser/extensions/api/runtime/runtime_apitest.cc#1165).
+
+```ts
+import {getSidebarState, SidebarState} from "@addon-core/browser";
+
+const state = await getSidebarState();
+
+if (state === SidebarState.Open) {
+    // The panel is open.
+} else if (state === SidebarState.Closed) {
+    // The panel is closed.
+} else {
+    // The browser cannot determine whether the panel is open in this window.
+}
+```
 
 <a name="isOpenSidebar"></a>
 
 ### isOpenSidebar
 
-```
+```ts
 isOpenSidebar(windowId?: number): Promise<boolean>
 ```
 
-Checks if the sidebar is open for the given window in Chromium-based browsers (MV3) using `getContexts` and in Firefox/Opera using `sidebarAction.isOpen()`. Throws if unsupported.
+Returns `true` only when `getSidebarState(windowId)` resolves to `SidebarState.Open`.
+Both `"closed"` and `"unknown"` produce `false`; `false` therefore means that an open panel was not confirmed,
+not necessarily that it is closed. This check never throws or rejects its Promise.
+Use `getSidebarState()` when the distinction between closed and unknown affects your next action.
 
-An explicitly supplied `windowId`, including `0`, is forwarded to the window filter.
+```ts
+import {isOpenSidebar} from "@addon-core/browser";
+
+if (await isOpenSidebar()) {
+    // An open panel was confirmed in the last focused window.
+}
+```
+
+Compatibility note: earlier versions checked all windows in Chromium when `windowId` was omitted.
+The check now targets the last focused window and returns `false` on unavailable or failed queries.
+Use `getSidebarState()` to preserve unknown-state information.
+Earlier Firefox/Opera `getSidebarPath()` results also had a leading `/` and omitted query parameters and fragments.
 
 <a name="toggleSidebar"></a>
 

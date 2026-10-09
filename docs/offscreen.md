@@ -67,7 +67,8 @@ Closes the existing offscreen document.
 hasOffscreen(): Promise<boolean>
 ```
 
-Checks whether an offscreen document is currently open.
+Directly proxies the native `offscreen.hasDocument()` method. Resolves to its boolean result and preserves
+native errors as Promise rejections; this method does not convert failures into `false`.
 
 <a name="getOffscreenContext"></a>
 
@@ -107,7 +108,9 @@ Returns the current offscreen document path within the extension, if one is open
 hasOffscreenUrl(url: string): Promise<boolean>
 ```
 
-Checks whether the current offscreen document matches the given URL.
+Returns `true` when the current offscreen document matches the given URL. Returns `false` when no match
+can be confirmed, including missing APIs or failed context queries. Does not throw, reject, log, or cache.
+Use `getOffscreenUrl()` when query errors must remain observable.
 
 <a name="hasOffscreenPath"></a>
 
@@ -117,4 +120,7 @@ Checks whether the current offscreen document matches the given URL.
 hasOffscreenPath(path: string): Promise<boolean>
 ```
 
-Checks whether the current offscreen document matches the given extension path. Query parameters and hash fragments are ignored.
+Returns `true` when the current offscreen document matches the given extension path. Query parameters
+and hash fragments are ignored. Returns `false` when no match can be confirmed, including API access,
+context lookup, and URL parsing failures. Does not throw, reject, log, or cache.
+Use `getOffscreenPath()` when query errors must remain observable.

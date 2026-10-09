@@ -33,7 +33,7 @@ type Expected = {
     findDownload: (id: number) => Promise<chrome.downloads.DownloadItem | undefined>;
     getDownloadFileIcon: (id: number, options: chrome.downloads.GetFileIconOptions) => Promise<string | undefined>;
     getDownloadState: (id?: number) => Promise<`${chrome.downloads.State}` | undefined>;
-    isDownloadExists: (id: number) => Promise<boolean | undefined>;
+    isDownloadExists: (id: number) => Promise<boolean>;
     openDownload: (id: number) => Promise<void>;
     pauseDownload: (id: number) => Promise<void>;
     removeDownloadFile: (id: number) => Promise<void>;
@@ -45,9 +45,9 @@ type Expected = {
 };
 
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
-const signaturesUnchanged: Equal<typeof methods, Expected> = true;
+const signaturesMatch: Equal<typeof methods, Expected> = true;
 const error: Error = new BlockDownloadError("Blocked");
-void [methods, signaturesUnchanged, error];
+void [methods, signaturesMatch, error];
 
 // @ts-expect-error A download URL is required.
 download({filename: "archive.zip"});

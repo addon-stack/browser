@@ -77,7 +77,9 @@ export const showDownloadFolder = (): void => downloads().showDefaultFolder();
 
 // Custom Methods
 export const showDownload = async (downloadId: number): Promise<boolean> => {
-    if (!(await isDownloadExists(downloadId))) {
+    const item = await findDownload(downloadId);
+
+    if (!item?.exists) {
         return false;
     }
 
@@ -92,10 +94,14 @@ export const findDownload = async (downloadId: number): Promise<DownloadItem | u
     return items[0];
 };
 
-export const isDownloadExists = async (downloadId: number): Promise<boolean | undefined> => {
-    const item = await findDownload(downloadId);
+export const isDownloadExists = async (downloadId: number): Promise<boolean> => {
+    try {
+        const item = await findDownload(downloadId);
 
-    return item?.exists;
+        return item?.exists === true;
+    } catch {
+        return false;
+    }
 };
 
 export const getDownloadState = async (downloadId?: number): Promise<`${DownloadState}` | undefined> => {
