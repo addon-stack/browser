@@ -1,4 +1,4 @@
-import {executeScript, getRegisteredContentScripts, insertCss, isAvailableScripting, registerContentScripts, removeCss, unregisterContentScripts, updateContentScripts} from "@addon-core/browser";
+import {executeScript, getRegisteredContentScripts, insertCss, registerContentScripts, removeCss, unregisterContentScripts, updateContentScripts} from "@addon-core/browser";
 
 type Awaited<T> = chrome.scripting.Awaited<T>;
 type ContentScriptFilter = chrome.scripting.ContentScriptFilter;
@@ -7,7 +7,7 @@ type InjectionResult<T> = chrome.scripting.InjectionResult<T>;
 type RegisteredContentScript = chrome.scripting.RegisteredContentScript;
 type ScriptInjection<Args extends any[], Result> = chrome.scripting.ScriptInjection<Args, Result>;
 
-const methods = {executeScript, getRegisteredContentScripts, insertCss, registerContentScripts, removeCss, unregisterContentScripts, updateContentScripts, isAvailableScripting};
+const methods = {executeScript, getRegisteredContentScripts, insertCss, registerContentScripts, removeCss, unregisterContentScripts, updateContentScripts};
 
 type Expected = {
     executeScript: <T = any>(injection: ScriptInjection<any, T>) => Promise<InjectionResult<Awaited<T>>[]>;
@@ -17,7 +17,6 @@ type Expected = {
     removeCss: (injection: CSSInjection) => Promise<void>;
     unregisterContentScripts: (filter?: ContentScriptFilter) => Promise<void>;
     updateContentScripts: (scripts: RegisteredContentScript[]) => Promise<void>;
-    isAvailableScripting: () => boolean;
 };
 
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;

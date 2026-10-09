@@ -6,6 +6,7 @@ A promise-based wrapper for the Chrome `windows` API to create, query, update, a
 
 ## Methods
 
+- [isAvailableWindows()](#isAvailableWindows)
 - [createWindow(createData?)](#createWindow)
 - [getWindow(windowId, queryOptions?)](#getWindow)
 - [getAllWindows(queryOptions?)](#getAllWindows)
@@ -22,6 +23,27 @@ A promise-based wrapper for the Chrome `windows` API to create, query, update, a
 - [onWindowRemoved(callback, filter?)](#onWindowRemoved)
 
 ---
+
+<a name="isAvailableWindows"></a>
+
+### isAvailableWindows
+
+```ts
+isAvailableWindows(): boolean
+```
+
+Returns `true` when the `windows` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableWindows} from "@addon-core/browser";
+
+if (isAvailableWindows()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="createWindow"></a>
 

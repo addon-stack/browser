@@ -46,6 +46,3 @@ export const unregisterUserScripts = (ids?: string[]): Promise<void> => {
 
 export const updateUserScripts = (scripts: RegisteredUserScript[]): Promise<void> =>
     callWithPromise(() => userScripts().update(scripts));
-
-// Custom Methods
-export const isAvailableUserScripts = (): boolean => !!userScripts();

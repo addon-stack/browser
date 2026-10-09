@@ -6,6 +6,7 @@ A promise-based wrapper for the Chrome `management` API to manage extensions and
 
 ## Methods
 
+- [isAvailableManagement()](#isAvailableManagement)
 - [createAppShortcut(id)](#createAppShortcut)
 - [generateAppForLink(url, title)](#generateAppForLink)
 - [getExtensionInfo(id)](#getExtensionInfo)
@@ -27,6 +28,27 @@ A promise-based wrapper for the Chrome `management` API to manage extensions and
 - [onExtensionUninstalled(callback)](#onExtensionUninstalled)
 
 ---
+
+<a name="isAvailableManagement"></a>
+
+### isAvailableManagement
+
+```ts
+isAvailableManagement(): boolean
+```
+
+Returns `true` when the `management` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableManagement} from "@addon-core/browser";
+
+if (isAvailableManagement()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="createAppShortcut"></a>
 

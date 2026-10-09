@@ -1,14 +1,14 @@
 import {spawn} from "node:child_process";
 import {createRequire} from "node:module";
 import {fileURLToPath} from "node:url";
-import {generate} from "../codegen/index.mjs";
+import {generate} from "../codegen/generate.mjs";
 
 const require = createRequire(import.meta.url);
 const cwd = fileURLToPath(new URL("../", import.meta.url));
 await generate();
 
 const children = [
-    spawn(process.execPath, ["--watch", "--watch-preserve-output", "./codegen/index.mjs"], {cwd, stdio: "inherit"}),
+    spawn(process.execPath, ["--watch", "--watch-preserve-output", "./codegen/generate.mjs"], {cwd, stdio: "inherit"}),
     spawn(process.execPath, [require.resolve("tsup/dist/cli-default.js"), "--watch", "src"], {cwd, stdio: "inherit"}),
 ];
 

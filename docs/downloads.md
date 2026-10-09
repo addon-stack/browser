@@ -6,6 +6,7 @@ A promise-based wrapper for the Chrome `downloads` API.
 
 ## Methods
 
+- [isAvailableDownloads()](#isAvailableDownloads)
 - [acceptDownloadDanger(downloadId)](#acceptDownloadDanger)
 - [cancelDownload(downloadId)](#cancelDownload)
 - [download(options)](#download)
@@ -30,6 +31,27 @@ A promise-based wrapper for the Chrome `downloads` API.
 - [onDownloadsDeterminingFilename(callback)](#onDownloadsDeterminingFilename)
 
 ---
+
+<a name="isAvailableDownloads"></a>
+
+### isAvailableDownloads
+
+```ts
+isAvailableDownloads(): boolean
+```
+
+Returns `true` when the `downloads` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableDownloads} from "@addon-core/browser";
+
+if (isAvailableDownloads()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="acceptDownloadDanger"></a>
 

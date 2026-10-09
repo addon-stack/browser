@@ -4,6 +4,7 @@ import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {fileURLToPath, pathToFileURL} from "node:url";
 import {build} from "tsup";
+import availabilityApis from "../codegen/availability/apis.mjs";
 
 const directory = await mkdtemp(join(tmpdir(), "browser-tree-shaking-"));
 const packageEntry = fileURLToPath(new URL("../dist/index.js", import.meta.url)).replaceAll("\\", "/");
@@ -350,6 +351,102 @@ try {
         }
 
         console.log(`Verified ${exportName} consumer tree shaking (${Buffer.byteLength(source)} bytes minified).`);
+    }
+
+    const originals = ["chrome", "browser", "opr"].map(name => [name, Object.getOwnPropertyDescriptor(globalThis, name)]);
+
+    const setGlobals = values => {
+        for (const name of ["chrome", "browser", "opr"]) {
+            Object.defineProperty(globalThis, name, {configurable: true, writable: true, value: values[name]});
+        }
+    };
+
+    try {
+        for (const {namespace} of availabilityApis) {
+            const exportName = `isAvailable${namespace[0].toUpperCase()}${namespace.slice(1)}`;
+
+            await writeFile(entry, [
+                `import {${exportName}} from ${JSON.stringify(packageEntry)};`,
+                `export const check = ${exportName};`,
+                "",
+            ].join("\n"));
+
+            await build({
+                config: false,
+                entry: {consumer: entry},
+                outDir: join(directory, "dist"),
+                format: ["esm"],
+                outExtension: () => ({js: ".mjs"}),
+                platform: "browser",
+                target: "es2022",
+                bundle: true,
+                minify: true,
+                dts: false,
+                sourcemap: false,
+                silent: true,
+            });
+
+            const output = join(directory, "dist/consumer.mjs");
+            const source = await readFile(output, "utf8");
+            const selected = namespace === "action" ? ["action", "browserAction"] : namespace === "sidebar" ? ["sidePanel", "sidebarAction"] : [namespace];
+
+            for (const name of selected) {
+                assert.match(source, new RegExp(`\\.${name}\\b`), `The consumer lost the ${name} availability branch`);
+            }
+
+            const unusedNamespaces = availabilityApis.map(api => api.namespace)
+                .filter(name => name !== "runtime" && !selected.includes(name));
+
+            assert.doesNotMatch(source, new RegExp(`\\.(?:${unusedNamespaces.join("|")})\\b`), "Unrelated availability checks survived tree shaking");
+            assert.doesNotMatch(source, new RegExp(`\\b(?:${eventNames.join("|")})\\b`), "Event wrappers survived availability tree shaking");
+            assert.doesNotMatch(source, /addListener|removeListener|callWithPromise|\.query\b|\.getContexts\b|\.setIcon\b|createBrowserHarness|generateAvailability/);
+
+            if (namespace !== "action") assert.doesNotMatch(source, /\.getManifest\b/);
+
+            // Import without any extension globals; namespace selection must remain lazy.
+            setGlobals({});
+            const url = pathToFileURL(output);
+            url.searchParams.set("availability", namespace);
+            const {check} = await import(url.href);
+            assert.equal(check(), false);
+
+            if (namespace === "action") {
+                for (const version of [2, 3]) {
+                    const api = {runtime: {getManifest: () => ({manifest_version: version})}};
+                    const selectedName = version === 3 ? "action" : "browserAction";
+                    const otherName = version === 3 ? "browserAction" : "action";
+                    api[otherName] = {};
+                    setGlobals({chrome: api});
+                    assert.equal(check(), false);
+                    api[selectedName] = {};
+                    assert.equal(check(), true);
+                }
+            } else if (namespace === "sidebar") {
+                for (const globals of [
+                    {chrome: {sidePanel: {}}},
+                    {browser: {runtime: {id: "firefox"}, sidebarAction: {}}},
+                    {chrome: {}, opr: {sidebarAction: {}}},
+                ]) {
+                    setGlobals(globals);
+                    assert.equal(check(), true);
+                }
+            } else {
+                for (const globalName of ["chrome", "browser"]) {
+                    const api = {runtime: {id: "availability"}, [namespace]: {id: "availability"}};
+                    setGlobals({[globalName]: api});
+                    assert.equal(check(), true);
+                    delete api[namespace];
+                    assert.equal(check(), false);
+                }
+            }
+
+            console.log(`Verified ${exportName} consumer tree shaking and lazy access (${Buffer.byteLength(source)} bytes minified).`);
+        }
+    } finally {
+        for (const [name, descriptor] of originals) {
+            if (descriptor) Object.defineProperty(globalThis, name, descriptor);
+            else Reflect.deleteProperty(globalThis, name);
+        }
     }
 } finally {
     await rm(directory, {recursive: true, force: true});

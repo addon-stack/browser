@@ -42,6 +42,7 @@ Interactive authorization flows should be started from a user action, such as a 
 
 ## Methods
 
+- [isAvailableIdentity()](#isAvailableIdentity)
 - [getIdentityRedirectUrl(path?)](#getIdentityRedirectUrl)
 - [launchWebAuthFlow(details)](#launchWebAuthFlow)
 - [getAuthToken(details?)](#getAuthToken)
@@ -55,6 +56,27 @@ Interactive authorization flows should be started from a user action, such as a 
 - [onIdentitySignInChanged(callback)](#onIdentitySignInChanged)
 
 ---
+
+<a name="isAvailableIdentity"></a>
+
+### isAvailableIdentity
+
+```ts
+isAvailableIdentity(): boolean
+```
+
+Returns `true` when the `identity` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableIdentity} from "@addon-core/browser";
+
+if (isAvailableIdentity()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="getIdentityRedirectUrl"></a>
 

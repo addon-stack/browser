@@ -63,9 +63,9 @@
   },
   "scripts": {
     "prepare": "husky",
-    "generate": "node ./codegen/index.mjs",
-    "generate:check": "node ./codegen/index.mjs --check",
-    "generate:watch": "node --watch --watch-preserve-output ./codegen/index.mjs",
+    "generate": "node ./codegen/generate.mjs",
+    "generate:check": "node ./codegen/generate.mjs --check",
+    "generate:watch": "node --watch --watch-preserve-output ./codegen/generate.mjs",
     "build": "npm run generate && tsup && node ./scripts/copy-api-types.mjs && node ./scripts/verify-build.mjs && node ./scripts/verify-tree-shaking.mjs",
     "prepublishOnly": "npm run build",
     "dev": "node ./scripts/dev.mjs",

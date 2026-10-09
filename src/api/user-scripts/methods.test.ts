@@ -92,11 +92,4 @@ describe.each(["chrome", "firefox"] as const)("user-scripts methods in %s", prof
         await expect(invoke()).rejects.toThrow("User script denied");
         expect(harness.runtime.lastError).toBeUndefined();
     });
-
-    test("isAvailableUserScripts checks the current namespace", () => {
-        expect(api.isAvailableUserScripts()).toBe(true);
-        const facade = profile === "firefox" ? globalThis.browser : globalThis.chrome;
-        Reflect.deleteProperty(facade, "userScripts");
-        expect(api.isAvailableUserScripts()).toBe(false);
-    });
 });

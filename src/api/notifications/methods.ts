@@ -37,8 +37,6 @@ export const updateNotification = (options: NotificationOptions, notificationId:
     callWithPromise(cb => notifications().update(notificationId, options, cb));
 
 // Custom Methods
-export const isAvailableNotifications = (): boolean => !!notifications();
-
 export const clearAllNotifications = async (): Promise<void> => {
     const allNotificationIds = Object.keys(await getAllNotifications());
 

@@ -6,6 +6,7 @@ A promise-based wrapper for the Chrome `commands` API.
 
 ## Methods
 
+- [isAvailableCommands()](#isAvailableCommands)
 - [getAllCommands()](#getAllCommands)
 
 ## Events
@@ -15,6 +16,27 @@ A promise-based wrapper for the Chrome `commands` API.
 - [onSpecificCommands(handlers)](#onSpecificCommands)
 
 ---
+
+<a name="isAvailableCommands"></a>
+
+### isAvailableCommands
+
+```ts
+isAvailableCommands(): boolean
+```
+
+Returns `true` when the `commands` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableCommands} from "@addon-core/browser";
+
+if (isAvailableCommands()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="getAllCommands"></a>
 

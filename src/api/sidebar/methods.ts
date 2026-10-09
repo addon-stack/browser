@@ -1,7 +1,7 @@
-import type {FirefoxSidebarAction, OperaSidebarAction, SidebarAction} from "../../types";
-import {browser} from "../browser";
+import type {FirefoxSidebarAction, OperaSidebarAction} from "../../types";
 import {getContexts} from "../runtime";
 import {callWithPromise} from "../utils";
+import {isAvailableOperaSidebar, sidebarAction, sidePanel} from "./api";
 
 type Color = string | ColorArray;
 type ColorArray = chrome.extensionTypes.ColorArray;
@@ -12,15 +12,6 @@ type PanelOptions = chrome.sidePanel.PanelOptions;
 type PanelBehavior = chrome.sidePanel.PanelBehavior;
 type ContextFilter = chrome.runtime.ContextFilter;
 type IconDetails = opr.sidebarAction.IconDetails;
-
-// Available in Firefox and Opera
-const sidebarAction = (): SidebarAction | undefined =>
-    globalThis?.opr?.sidebarAction || globalThis?.browser?.sidebarAction;
-
-const isAvailableOperaSidebar = (): boolean => globalThis?.opr?.sidebarAction !== undefined;
-
-// Chromium standard
-const sidePanel = (): typeof chrome.sidePanel | undefined => browser().sidePanel;
 
 export class SidebarError extends Error {}
 

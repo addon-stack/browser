@@ -6,6 +6,7 @@ A unified, promise-based wrapper around the Chrome Action API. It transparently 
 
 ## Methods
 
+- [isAvailableAction()](#isAvailableAction)
 - [disableAction(tabId)](#disableAction)
 - [enableAction(tabId)](#enableAction)
 - [getBadgeBgColor(tabId?)](#getBadgeBgColor)
@@ -31,6 +32,27 @@ A unified, promise-based wrapper around the Chrome Action API. It transparently 
 - [onActionUserSettingsChanged(callback)](#onActionUserSettingsChanged) [MV3]
 
 ---
+
+<a name="isAvailableAction"></a>
+
+### isAvailableAction
+
+```ts
+isAvailableAction(): boolean
+```
+
+Checks the same API selected by action methods and events: `action` for Manifest V3 and `browserAction` for Manifest V2. Does not fall back to the other namespace if the selected one is missing.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableAction} from "@addon-core/browser";
+
+if (isAvailableAction()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="disableAction"></a>
 

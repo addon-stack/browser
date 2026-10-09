@@ -39,7 +39,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Check generated event sources
+      - name: Check generated sources
         run: npm run generate:check
 
       - name: Build
@@ -102,7 +102,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Check generated event sources
+      - name: Check generated sources
         run: npm run generate:check
 
       - name: Lint

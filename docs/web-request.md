@@ -6,6 +6,7 @@ A promise-based wrapper for the Chrome `webRequest` API, providing methods to ob
 
 ## Methods
 
+- [isAvailableWebRequest()](#isAvailableWebRequest)
 - [handlerWebRequestBehaviorChanged()](#handlerWebRequestBehaviorChanged)
 
 ## Events
@@ -21,6 +22,27 @@ A promise-based wrapper for the Chrome `webRequest` API, providing methods to ob
 - [onWebRequestErrorOccurred(callback, filter, extraInfoSpec?)](#onWebRequestErrorOccurred)
 
 ---
+
+<a name="isAvailableWebRequest"></a>
+
+### isAvailableWebRequest
+
+```ts
+isAvailableWebRequest(): boolean
+```
+
+Returns `true` when the `webRequest` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableWebRequest} from "@addon-core/browser";
+
+if (isAvailableWebRequest()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="handlerWebRequestBehaviorChanged"></a>
 

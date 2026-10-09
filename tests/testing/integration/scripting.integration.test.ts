@@ -1,5 +1,6 @@
 import {describe, expect, test} from "@jest/globals";
-import {executeScript, isAvailableScripting} from "../../../src/api/scripting/methods";
+import {isAvailableScripting} from "../../../src/api/scripting/availability";
+import {executeScript} from "../../../src/api/scripting/methods";
 import {createBrowserHarness, createTabFixture, installBrowserGlobals} from "../../../src/testing";
 
 describe("real executeScript wrapper with fake globals", () => {

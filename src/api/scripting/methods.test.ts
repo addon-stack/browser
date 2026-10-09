@@ -66,11 +66,4 @@ describe.each(["chrome", "firefox"] as const)("scripting methods in %s", profile
         await expect(invoke()).rejects.toThrow("Scripting denied");
         expect(harness.runtime.lastError).toBeUndefined();
     });
-
-    test("isAvailableScripting checks the current namespace", () => {
-        expect(api.isAvailableScripting()).toBe(true);
-        const facade = profile === "firefox" ? globalThis.browser : globalThis.chrome;
-        Reflect.deleteProperty(facade, "scripting");
-        expect(api.isAvailableScripting()).toBe(false);
-    });
 });

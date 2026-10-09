@@ -6,6 +6,7 @@ A promise-based wrapper for the Chrome `history` API to manage browser history.
 
 ## Methods
 
+- [isAvailableHistory()](#isAvailableHistory)
 - [addHistoryUrl(url)](#addHistoryUrl)
 - [deleteAllHistory()](#deleteAllHistory)
 - [deleteRangeHistory(range)](#deleteRangeHistory)
@@ -19,6 +20,27 @@ A promise-based wrapper for the Chrome `history` API to manage browser history.
 - [onHistoryVisitRemoved(callback)](#onHistoryVisitRemoved)
 
 ---
+
+<a name="isAvailableHistory"></a>
+
+### isAvailableHistory
+
+```ts
+isAvailableHistory(): boolean
+```
+
+Returns `true` when the `history` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableHistory} from "@addon-core/browser";
+
+if (isAvailableHistory()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="addHistoryUrl"></a>
 

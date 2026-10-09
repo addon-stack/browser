@@ -16,6 +16,7 @@ Custom error class thrown when an API method is not supported or fails.
 
 ## Methods
 
+- [isAvailableSidebar()](#isAvailableSidebar)
 - [getSidebarOptions(tabId?)](#getSidebarOptions) [Chromium]
 - [getSidebarBehavior()](#getSidebarBehavior) [Chromium]
 - [canOpenSidebar()](#canOpenSidebar)
@@ -40,6 +41,29 @@ Custom error class thrown when an API method is not supported or fails.
 - [getSidebarBadgeBgColor(tabId?)](#getSidebarBadgeBgColor) [Opera]
 
 ---
+
+<a name="isAvailableSidebar"></a>
+
+### isAvailableSidebar
+
+```ts
+isAvailableSidebar(): boolean
+```
+
+Checks the same accessors used by sidebar methods: the selected browser API’s `sidePanel`, then `opr.sidebarAction` or `browser.sidebarAction`. Opera takes precedence over Firefox when both sidebar actions exist.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+Use `canOpenSidebar()` and `canCloseSidebar()` to check whether those specific methods exist.
+
+```ts
+import {isAvailableSidebar} from "@addon-core/browser";
+
+if (isAvailableSidebar()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="getSidebarOptions"></a>
 

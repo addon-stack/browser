@@ -24,6 +24,7 @@ const entries = (
  * deliberate test failure instead of an implicit fake implementation.
  */
 export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
+    ...entries("action", "method-wrapper", "behavioral", ["isAvailableAction"]),
     ...entries("action", "method-wrapper", "configurable", [
         "disableAction",
         "enableAction",
@@ -45,6 +46,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ...entries("action", "method-wrapper", "behavioral", ["getDefaultPopup", "clearBadgeText"]),
     ...entries("action", "event-wrapper", "event", ["onActionClicked", "onActionUserSettingsChanged"]),
 
+    ...entries("alarms", "method-wrapper", "behavioral", ["isAvailableAlarms"]),
     ...entries("alarms", "method-wrapper", "configurable", [
         "clearAlarm",
         "clearAllAlarm",
@@ -55,6 +57,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ...entries("alarms", "method-wrapper", "behavioral", ["createAlarmIfNotExists"]),
     ...entries("alarms", "event-wrapper", "event", ["onAlarm", "onSpecificAlarm", "onSpecificAlarms"]),
 
+    ...entries("audio", "method-wrapper", "behavioral", ["isAvailableAudio"]),
     ...entries("audio", "method-wrapper", "configurable", [
         "getAudioDevices",
         "getAudioMute",
@@ -74,6 +77,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ...entries("browserDetection", "interface", "declaration", ["BrowserGuess"]),
     ...entries("browserDetection", "method-wrapper", "behavioral", ["guessBrowser", "isBrowser", "isBrowserFamily"]),
 
+    ...entries("browsingData", "method-wrapper", "behavioral", ["isAvailableBrowsingData"]),
     ...entries("browsingData", "method-wrapper", "configurable", [
         "removeBrowsingData",
         "removeAppcacheData",
@@ -92,9 +96,11 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
         "getBrowsingDataSettings",
     ]),
 
+    ...entries("commands", "method-wrapper", "behavioral", ["isAvailableCommands"]),
     ...entries("commands", "method-wrapper", "configurable", ["getAllCommands"]),
     ...entries("commands", "event-wrapper", "event", ["onCommand", "onSpecificCommand", "onSpecificCommands"]),
 
+    ...entries("contextMenus", "method-wrapper", "behavioral", ["isAvailableContextMenus"]),
     ...entries("contextMenus", "method-wrapper", "configurable", [
         "createContextMenus",
         "removeContextMenus",
@@ -104,6 +110,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ...entries("contextMenus", "method-wrapper", "behavioral", ["createOrUpdateContextMenu"]),
     ...entries("contextMenus", "event-wrapper", "event", ["onContextMenusClicked"]),
 
+    ...entries("cookies", "method-wrapper", "behavioral", ["isAvailableCookies"]),
     ...entries("cookies", "method-wrapper", "configurable", [
         "getCookie",
         "getAllCookie",
@@ -114,6 +121,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ]),
     ...entries("cookies", "event-wrapper", "event", ["onCookieChanged"]),
 
+    ...entries("documentScan", "method-wrapper", "behavioral", ["isAvailableDocumentScan"]),
     ...entries("documentScan", "method-wrapper", "configurable", [
         "cancelDocScanning",
         "closeDocScanner",
@@ -126,6 +134,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
         "startDocScanning",
     ]),
 
+    ...entries("downloads", "method-wrapper", "behavioral", ["isAvailableDownloads"]),
     ...entries("downloads", "class", "behavioral", ["BlockDownloadError"]),
     ...entries("downloads", "method-wrapper", "configurable", [
         "acceptDownloadDanger",
@@ -155,6 +164,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
 
     ...entries("env", "method-wrapper", "behavioral", ["isBackground"]),
 
+    ...entries("extension", "method-wrapper", "behavioral", ["isAvailableExtension"]),
     ...entries("extension", "method-wrapper", "configurable", [
         "getBackgroundPage",
         "getViews",
@@ -163,6 +173,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
         "setUpdateUrlData",
     ]),
 
+    ...entries("history", "method-wrapper", "behavioral", ["isAvailableHistory"]),
     ...entries("history", "method-wrapper", "configurable", [
         "addHistoryUrl",
         "deleteAllHistory",
@@ -173,6 +184,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ]),
     ...entries("history", "event-wrapper", "event", ["onHistoryVisited", "onHistoryVisitRemoved"]),
 
+    ...entries("i18n", "method-wrapper", "behavioral", ["isAvailableI18n"]),
     ...entries("i18n", "method-wrapper", "configurable", [
         "detectI18Language",
         "getI18nAcceptLanguages",
@@ -181,6 +193,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ]),
     ...entries("i18n", "method-wrapper", "behavioral", ["getDefaultLanguage"]),
 
+    ...entries("identity", "method-wrapper", "behavioral", ["isAvailableIdentity"]),
     ...entries("identity", "interface", "declaration", ["LaunchWebAuthFlowDetails"]),
     ...entries("identity", "method-wrapper", "configurable", [
         "getIdentityRedirectUrl",
@@ -193,6 +206,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ]),
     ...entries("identity", "event-wrapper", "event", ["onIdentitySignInChanged"]),
 
+    ...entries("idle", "method-wrapper", "behavioral", ["isAvailableIdle"]),
     ...entries("idle", "method-wrapper", "configurable", [
         "getIdleAutoLockDelay",
         "queryIdleState",
@@ -200,6 +214,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ]),
     ...entries("idle", "event-wrapper", "event", ["onIdleStateChanged"]),
 
+    ...entries("management", "method-wrapper", "behavioral", ["isAvailableManagement"]),
     ...entries("management", "method-wrapper", "configurable", [
         "createAppShortcut",
         "generateAppForLink",
@@ -236,6 +251,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
         "onNotificationsPermissionLevelChanged",
     ]),
 
+    ...entries("offscreen", "method-wrapper", "behavioral", ["isAvailableOffscreen"]),
     ...entries("offscreen", "method-wrapper", "stateful", ["closeOffscreen", "createOffscreen", "hasOffscreen"]),
     ...entries("offscreen", "method-wrapper", "behavioral", [
         "getOffscreenContext",
@@ -245,6 +261,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
         "hasOffscreenPath",
     ]),
 
+    ...entries("permissions", "method-wrapper", "behavioral", ["isAvailablePermissions"]),
     ...entries("permissions", "method-wrapper", "configurable", ["addHostAccessRequest", "removeHostAccessRequest"]),
     ...entries("permissions", "method-wrapper", "stateful", [
         "containsPermissions",
@@ -254,6 +271,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ]),
     ...entries("permissions", "event-wrapper", "event", ["onPermissionsAdded", "onPermissionsRemoved"]),
 
+    ...entries("runtime", "method-wrapper", "behavioral", ["isAvailableRuntime"]),
     ...entries("runtime", "method-wrapper", "configurable", [
         "connect",
         "connectNative",
@@ -299,6 +317,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ]),
     ...entries("scripting", "method-wrapper", "behavioral", ["isAvailableScripting"]),
 
+    ...entries("sidebar", "method-wrapper", "behavioral", ["isAvailableSidebar"]),
     ...entries("sidebar", "class", "behavioral", ["SidebarError"]),
     ...entries("sidebar", "method-wrapper", "behavioral", [
         "getSidebarOptions",
@@ -325,6 +344,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
         "getSidebarBadgeBgColor",
     ]),
 
+    ...entries("tabCapture", "method-wrapper", "behavioral", ["isAvailableTabCapture"]),
     ...entries("tabCapture", "method-wrapper", "configurable", [
         "createTabCapture",
         "getCapturedTabs",
@@ -332,6 +352,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ]),
     ...entries("tabCapture", "event-wrapper", "event", ["onCaptureStatusChanged"]),
 
+    ...entries("tabs", "method-wrapper", "behavioral", ["isAvailableTabs"]),
     ...entries("tabs", "method-wrapper", "stateful", [
         "createTab",
         "getCurrentTab",
@@ -400,6 +421,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ]),
     ...entries("userScripts", "method-wrapper", "behavioral", ["isAvailableUserScripts"]),
 
+    ...entries("webNavigation", "method-wrapper", "behavioral", ["isAvailableWebNavigation"]),
     ...entries("webNavigation", "method-wrapper", "configurable", ["getAllFrames", "getFrame"]),
     ...entries("webNavigation", "event-wrapper", "event", [
         "onWebNavigationBeforeNavigate",
@@ -413,6 +435,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
         "onWebNavigationTabReplaced",
     ]),
 
+    ...entries("webRequest", "method-wrapper", "behavioral", ["isAvailableWebRequest"]),
     ...entries("webRequest", "method-wrapper", "configurable", ["handlerWebRequestBehaviorChanged"]),
     ...entries("webRequest", "event-wrapper", "event", [
         "onWebRequestAuthRequired",
@@ -426,6 +449,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
         "onWebRequestSendHeaders",
     ]),
 
+    ...entries("windows", "method-wrapper", "behavioral", ["isAvailableWindows"]),
     ...entries("windows", "interface", "declaration", ["WindowEventFilter"]),
     ...entries("windows", "method-wrapper", "stateful", [
         "createWindow",
@@ -446,8 +470,8 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
 
 export const TYPE_ONLY_ROOT_EXPORTS = ["BrowserGuess", "LaunchWebAuthFlowDetails", "WindowEventFilter"] as const;
 
-export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 335;
-export const EXPECTED_ROOT_RUNTIME_EXPORT_COUNT = 332;
+export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 359;
+export const EXPECTED_ROOT_RUNTIME_EXPORT_COUNT = 356;
 
 export const getPublicExportCoverage = (name: string): PublicExportCoverageEntry | undefined =>
     PUBLIC_EXPORT_COVERAGE.find(entry => entry.name === name);

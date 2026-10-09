@@ -6,6 +6,7 @@ A promise-based wrapper for the Chrome `permissions` API to request and manage e
 
 ## Methods
 
+- [isAvailablePermissions()](#isAvailablePermissions)
 - [containsPermissions(permissions)](#containsPermissions)
 - [getAllPermissions()](#getAllPermissions)
 - [requestPermissions(permissions)](#requestPermissions)
@@ -19,6 +20,27 @@ A promise-based wrapper for the Chrome `permissions` API to request and manage e
 - [onPermissionsRemoved(callback)](#onPermissionsRemoved)
 
 ---
+
+<a name="isAvailablePermissions"></a>
+
+### isAvailablePermissions
+
+```ts
+isAvailablePermissions(): boolean
+```
+
+Returns `true` when the `permissions` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailablePermissions} from "@addon-core/browser";
+
+if (isAvailablePermissions()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="containsPermissions"></a>
 

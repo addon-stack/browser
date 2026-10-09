@@ -1,0 +1,41 @@
+import actionEvents from "./action.mjs";
+import alarmsEvents from "./alarms.mjs";
+import audioEvents from "./audio.mjs";
+import commandsEvents from "./commands.mjs";
+import contextMenusEvents from "./context-menus.mjs";
+import cookiesEvents from "./cookies.mjs";
+import downloadsEvents from "./downloads.mjs";
+import historyEvents from "./history.mjs";
+import identityEvents from "./identity.mjs";
+import idleEvents from "./idle.mjs";
+import managementEvents from "./management.mjs";
+import notificationsEvents from "./notifications.mjs";
+import permissionsEvents from "./permissions.mjs";
+import runtimeEvents from "./runtime.mjs";
+import tabCaptureEvents from "./tab-capture.mjs";
+import tabsEvents from "./tabs.mjs";
+import webNavigationEvents from "./web-navigation.mjs";
+import webRequestEvents from "./web-request.mjs";
+import windowsEvents from "./windows.mjs";
+
+export default [
+    actionEvents,
+    alarmsEvents,
+    audioEvents,
+    commandsEvents,
+    contextMenusEvents,
+    cookiesEvents,
+    downloadsEvents,
+    historyEvents,
+    identityEvents,
+    idleEvents,
+    managementEvents,
+    notificationsEvents,
+    permissionsEvents,
+    runtimeEvents,
+    tabCaptureEvents,
+    tabsEvents,
+    webNavigationEvents,
+    webRequestEvents,
+    windowsEvents,
+];

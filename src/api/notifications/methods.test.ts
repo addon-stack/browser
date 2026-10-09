@@ -6,7 +6,6 @@ import {
     createNotification,
     getAllNotifications,
     getNotificationPermissionLevel,
-    isAvailableNotifications,
     updateNotification,
 } from "./methods";
 
@@ -106,12 +105,5 @@ describe.each(["chrome", "firefox"] as const)("notification methods in %s", prof
         native.getAll.setResult({first: true});
         native[name].failNext(new Error("Cannot clear notifications"));
         await expect(clearAllNotifications()).rejects.toThrow("Cannot clear notifications");
-    });
-
-    test("isAvailableNotifications explicitly checks namespace availability", () => {
-        expect(isAvailableNotifications()).toBe(true);
-        const native = Reflect.get(globalThis, profile === "chrome" ? "chrome" : "browser") as object;
-        Reflect.deleteProperty(native, "notifications");
-        expect(isAvailableNotifications()).toBe(false);
     });
 });

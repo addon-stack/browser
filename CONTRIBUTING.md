@@ -33,8 +33,8 @@ npm ci
 ```
 
 3) Useful scripts
-- `npm run dev` — watch event descriptions and build in watch mode (tsup)
-- `npm run generate` — regenerate event wrapper sources
+- `npm run dev` — watch generation descriptions and build in watch mode (tsup)
+- `npm run generate` — regenerate event wrappers and API availability checks
 - `npm run generate:check` — check generated sources without writing files
 - `npm run build` — production build (tsup)
 - `npm run lint` — check code, formatting, and filenames with ESLint; does not edit files
@@ -97,12 +97,14 @@ BREAKING CHANGE: function renamed to align with Chrome naming.
 The goal is to cover as much of the WebExtensions/Chrome API surface as possible and provide practical helpers. For major changes, please open an issue first to discuss.
 
 Production API modules live in `src/api/`. Namespaces use directories with `methods.ts`, `methods.test.ts`,
-and a handwritten `index.ts`; namespaces with listeners also have event files as described below.
+and a handwritten `index.ts`; native API namespaces also have generated `availability.ts` with `availability.test.ts`.
+Namespaces with listeners also have event files as described below.
 `browser-detection/` follows the same structure and exports its methods, enums, and interface.
 `browser.ts` remains a single function with `browser.test.ts`; `env.ts` and `utils.ts` also remain flat modules.
-`sidebar/` follows the methods-only structure with separate Chrome, Firefox, and Opera test cases.
+`sidebar/` has methods and an availability check with separate Chrome, Firefox, and Opera test cases.
+Its internal `api.ts` shares native API accessors between methods and availability.
 Tests stay beside the corresponding implementations and import
-`./methods` or `./events` directly. Global native API declarations live in `src/api/api.d.ts`;
+`./methods`, `./events`, or `./availability` directly. Global native API declarations live in `src/api/api.d.ts`;
 they are not re-exported from the API index. `src/types.ts`, `src/internal/`, and `src/testing/` remain outside `api/`.
 `src/api/index.ts` explicitly re-exports the public API modules. The root `src/index.ts` re-exports `./api`.
 The build copies `src/api/api.d.ts` to `dist/api.d.ts`, preserving the published declaration references.
@@ -110,12 +112,13 @@ Keep the API export list in `src/api/index.ts`; `utils.ts` remains available thr
 Published entrypoints, including the separate `/utils` and `/testing` exports, remain unchanged.
 
 In `src/api/action/`, handwritten `methods.ts` and generated `events.ts` share the internal `api.ts`
-selector for MV3 `action` and MV2 `browserAction`. Its index exports only methods and events.
+selector for MV3 `action` and MV2 `browserAction`. Generated `availability.ts` uses the same selector.
+Its index exports methods, events, and availability; the selector remains internal.
 Manifest selection remains in that handwritten selector and runs when each wrapper is called.
 
 How to add a new API wrapper:
 1) Implementation
-- Create `src/api/<api-in-kebab-case>/` with `methods.ts`, `methods.test.ts`, and a handwritten `index.ts` that re-exports the methods. Add event files when the API has listeners, following the generation rules below.
+- Create `src/api/<api-in-kebab-case>/` with `methods.ts`, `methods.test.ts`, and a handwritten `index.ts` that re-exports the methods. Register the native namespace in `codegen/availability/apis.mjs` and re-export its generated availability check. Add event files when the API has listeners, following the generation rules below.
 - Wrap callback‑style APIs into `Promise` and call `checkLastError()` inside callbacks.
 - Events must return an unsubscribe function `() => void` (see `handleListener`/`safeListener`).
 - Use precise types from `@types/chrome` (avoid `Parameters<>` in the final documentation — show real argument types).
@@ -136,13 +139,14 @@ See the list of not-yet-covered APIs in the "Not yet covered" section of `README
 
 ### Generated events
 
-Event descriptions live in `codegen/events/`:
+Event descriptions live in `codegen/events/apis/`:
 
 - Basic subscriptions: `alarms`, `audio`, `commands`, `context-menus`, `cookies`, `downloads`, `history`, `identity`, `idle`, `management`,
   `notifications`, `permissions`, `runtime`, `tab-capture`, and `tabs`.
 - Specialized or mixed subscriptions: `action`, `web-request`, `windows`, and `web-navigation`.
 
-Each namespace has its own `.mjs` description.
+Each namespace has its own `.mjs` description. `codegen/events/apis/index.mjs` explicitly imports these
+descriptions and exports their combined list.
 Edit these descriptions, then run `npm run generate`; do not edit their `src/api/<namespace>/events.ts` files directly.
 Keep descriptions and generated
 sources in version control. Each namespace's `index.ts` is maintained manually and re-exports `./events`
@@ -156,10 +160,10 @@ For example, `commands/events.ts` generates `onCommand`, while `commands/custom-
 `onSpecificCommand` by importing `onCommand` directly from `./events`. Alarms follow the same structure:
 generated `onAlarm` and handwritten `onSpecificAlarm`. The namespace index re-exports both
 event files and `./methods`. A custom listener returns the base subscription's unsubscribe function and the
-callback result, so `safeListener` can observe rejected Promises. Generation owns only `events.ts` and must
+callback result, so `safeListener` can observe rejected Promises. Event generation owns only `events.ts` and must
 not rewrite custom listeners. Namespaces without custom listeners do not need these extra files.
 
-`codegen/events/index.mjs` selects a template for each event and combines the functions and their imports
+`codegen/events/generate.mjs` selects a template for each event and combines the functions and their imports
 into one module per namespace. A description's `template` selects the default (`basic` when omitted).
 An event may be a native event name, or an object such as
 `{event: "onActionIgnored", template: "basic"}` to override that default for one event.
@@ -169,7 +173,7 @@ Templates live in `codegen/events/templates/`:
 
 - `basic.mjs` accepts only a callback and delegates subscription and cleanup to `handleListener`.
   Notifications use this template without an availability guard. `isAvailableNotifications()` remains
-  a separate handwritten method for callers that need an explicit namespace check.
+  a separate generated function for callers that need an explicit namespace check.
   Runtime message events also use it: `sendResponse` is a callback argument, not a registration option.
   Their wrappers preserve callback return values, including `true` and Promises, through `safeListener`.
   Downloads use the same template: `suggest` is a callback argument of `onDownloadsDeterminingFilename`;
@@ -193,12 +197,34 @@ deduplicates these imports alongside the required utilities. Templates using `br
 
 Browser API access happens when a wrapper is called, not during import. Descriptions and generation
 scripts are not part of the published runtime. Events with other registration behavior need a matching
-template under `codegen/events/templates/`, registered in `codegen/events/index.mjs`.
+template under `codegen/events/templates/`, registered in `codegen/events/generate.mjs`.
 
-`codegen/index.mjs` is the common entrypoint. Generators return module descriptions with `namespace`, `name`,
+`codegen/generate.mjs` is the common CLI and programmatic entrypoint. It imports the default functions from
+`codegen/events/index.mjs` and `codegen/availability/index.mjs` and calls them without arguments. Each section
+index connects its own API descriptions to the algorithm in its local `generate.mjs`. Importing or calling a
+section entrypoint does not write files. Calling its default function returns module descriptions with `namespace`, `name`,
 `exports`, and `source`. The entrypoint checks output-path and export-name conflicts, then writes or checks
-`src/api/<namespace>/events.ts`. Namespace indexes and methods are maintained manually; generation only owns
-the event files and does not create indexes or select public exports by scanning directories.
+`src/api/<namespace>/events.ts` and `src/api/<namespace>/availability.ts`. Namespace indexes and methods are maintained
+manually; generation owns those two generated files and does not create indexes or select public exports by scanning directories.
+
+The section algorithms still accept descriptions as an argument for focused tests; callers that need the full
+configured generation use each section's default export. Keep relative ESM imports explicit, including the
+`.mjs` extension and `/index.mjs` for directory entrypoints: these scripts run directly in Node.js.
+
+```text
+codegen/
+├── generate.mjs
+├── events/
+│   ├── index.mjs          # configured default-export generator
+│   ├── generate.mjs       # algorithm accepting descriptions
+│   ├── apis/             # per-namespace descriptions and their index.mjs list
+│   └── templates/
+└── availability/
+    ├── index.mjs          # configured default-export generator
+    ├── generate.mjs       # algorithm accepting descriptions
+    ├── apis.mjs           # namespace descriptions
+    └── templates/
+```
 
 `npm run build` generates sources before tsup and checks a separate consumer for each generated namespace,
 importing one event from the built ESM entrypoint: unused event wrappers and methods must disappear.
@@ -209,8 +235,39 @@ Runtime has separate consumers for all three message events to verify callback f
 `npm run dev` starts the generator under Node's watch mode alongside tsup;
 `npm run generate:watch` watches descriptions and templates without starting tsup.
 CI runs `npm run generate:check` before any build so generation cannot hide a stale checked-in file.
-When adding another namespace, add its description under `codegen/events/`, register it in `codegen/index.mjs`,
-and explicitly re-export `./events` from the appropriate public source module.
+When adding another event namespace, add its description under `codegen/events/apis/`, register it in
+`codegen/events/apis/index.mjs`, and explicitly re-export `./events` from the appropriate public source module.
+
+### Generated availability checks
+
+`codegen/availability/apis.mjs` explicitly lists all 27 native API modules, including modules without events.
+Descriptions contain `namespace` and an optional `template` (`basic` by default). Export names are derived as
+`isAvailable` plus the namespace with its first letter capitalized; the rest of its camelCase is preserved.
+For example, `userScripts` produces `isAvailableUserScripts`. There is no `exportName` override.
+Utility modules (`browser`, `browser-detection`, `env`, and `utils`) are not native API namespaces.
+
+`codegen/availability/generate.mjs` renders one `availability.ts` per description. Its templates live in
+`codegen/availability/templates/`: `basic` checks `browser().<namespace>`, `action` uses the shared MV2/MV3
+selector, and `sidebar` uses the shared Side Panel/Sidebar Action accessors. Unknown fields, invalid namespaces,
+and unknown or mismatched specialized templates fail before any output is written. The common generation
+entrypoint also rejects duplicate output paths or export names across generators.
+
+Every check is a synchronous `() => boolean`: it returns false when the API is absent or API access throws,
+without logging, probing native methods, or caching the result. A true result means namespace presence only;
+it does not promise permission, individual method support, or successful operations. Action reads the manifest
+through its existing selector. In particular, `isAvailableUserScripts` does not probe `getScripts()` to detect
+revoked access; `canOpenSidebar` and `canCloseSidebar` remain separate method-level checks.
+
+Add `export * from "./availability"` to the handwritten namespace index. Remove any duplicate handwritten
+availability export from `methods.ts`; the existing Notifications, Scripting, and User Scripts export names
+remain unchanged. These checks now return false, rather than throwing, when WebExtension globals are absent.
+Document each function in `docs/<api>.md` and classify every new public export in the testing coverage matrix.
+
+Keep tests in each module's `availability.test.ts`, importing the generated implementation directly. Common
+namespace cases live in `tests/api/availability.ts`; Action and Sidebar have dedicated branch tests. The
+`generate:check` and codegen CLI tests cover both output kinds. Build verification bundles one availability
+consumer per namespace, checks removal of unused wrappers, and executes it without extension globals to
+verify lazy access. Clean-package tests verify synchronous types and ESM/CJS exports.
 
 ---
 
@@ -280,7 +337,8 @@ Framework: **Jest** (`npm test`). Recommendations:
 - Test-kit checks belong in `tests/testing/unit/` and `tests/testing/integration/`, not in `src/testing/`.
   Production-wrapper and utility tests are colocated in `src/api/`.
 - Colocated tests import the implementation directly: `methods.test.ts` imports `./methods`,
-  `events.test.ts` imports `./events`, `custom-events.test.ts` imports `./custom-events`, and type imports
+  `events.test.ts` imports `./events`, `custom-events.test.ts` imports `./custom-events`,
+  `availability.test.ts` imports `./availability`, and type imports
   use their defining module.
   Public entrypoint exports are checked separately by build verification and package-consumer tests.
 
@@ -310,6 +368,7 @@ tests/
 ├── testing/
 │   ├── unit/             # component tests grouped by the corresponding source responsibility
 │   └── integration/      # combined components, real wrappers and jsdom (no real browser)
+├── api/                  # shared test cases for colocated production API tests
 ├── consumer-types/       # fresh tarball: TypeScript, ESM, CJS and jsdom
 ├── browser-match-patterns/ # real-browser comparisons with a temporary Chromium profile
 └── tooling/              # lint/hooks, layout and dependency-boundary guards

@@ -1,22 +1,30 @@
 import {spawnSync} from "node:child_process";
-import {cpSync, existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync} from "node:fs";
+import {cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
-import {fileURLToPath} from "node:url";
+import {fileURLToPath, pathToFileURL} from "node:url";
 import {afterEach, beforeEach, describe, expect, test} from "@jest/globals";
-import {generateEvents} from "../../codegen/events/index.mjs";
-import {renderGeneratedFiles} from "../../codegen/index.mjs";
+import availabilityApis from "../../codegen/availability/apis.mjs";
+import {generateAvailability} from "../../codegen/availability/generate.mjs";
+import {generateEvents} from "../../codegen/events/generate.mjs";
+import {renderGeneratedFiles} from "../../codegen/generate.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const basicNamespaces = ["alarms", "audio", "commands", "context-menus", "cookies", "downloads", "history", "identity", "idle", "management", "permissions", "runtime", "tab-capture"];
 const generatedNamespaces = ["action", ...basicNamespaces, "notifications", "tabs", "web-request", "windows", "web-navigation"];
+const availabilityNamespaces = [...generatedNamespaces, "browsing-data", "document-scan", "extension", "i18n", "offscreen", "scripting", "sidebar", "user-scripts"];
+
+const generatedOutputs = [
+    ...generatedNamespaces.map(name => `src/api/${name}/events.ts`),
+    ...availabilityNamespaces.map(name => `src/api/${name}/availability.ts`),
+];
 
 describe("source generation CLI", () => {
     let directory;
     let output;
     let index;
 
-    const run = (...args) => spawnSync(process.execPath, [join(directory, "codegen/index.mjs"), ...args], {
+    const run = (...args) => spawnSync(process.execPath, [join(directory, "codegen/generate.mjs"), ...args], {
         cwd: tmpdir(),
         encoding: "utf8",
         timeout: 10000,
@@ -33,13 +41,41 @@ describe("source generation CLI", () => {
         rmSync(directory, {recursive: true, force: true});
     });
 
+    test.each([
+        ["events", generatedNamespaces],
+        ["availability", availabilityNamespaces],
+    ])("the %s entrypoint returns configured sources without writing files", (section, namespaces) => {
+        const url = pathToFileURL(join(directory, `codegen/${section}/index.mjs`)).href;
+
+        const result = spawnSync(process.execPath, ["--input-type=module", "--eval", `
+            import generate from ${JSON.stringify(url)};
+            const modules = generate();
+            console.log(JSON.stringify(modules));
+        `], {cwd: directory, encoding: "utf8", timeout: 10000});
+
+        expect(result.stderr).toBe("");
+        expect(result.status).toBe(0);
+        const modules = JSON.parse(result.stdout);
+
+        expect(modules.map(module => module.namespace.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)).sort())
+            .toEqual([...namespaces].sort());
+
+        for (const module of modules) {
+            expect(module.name).toBe(section);
+            expect(module.exports.length).toBeGreaterThan(0);
+            expect(module.source).toContain(`export const ${module.exports[0]}`);
+        }
+
+        expect(existsSync(join(directory, "src"))).toBe(false);
+    });
+
     test("check reports a missing file without creating it", () => {
         const result = run("--check");
         expect(result.status).toBe(1);
         expect(result.stderr).toContain("Run npm run generate");
 
-        for (const namespace of generatedNamespaces) {
-            expect(result.stderr).toContain(`src/api/${namespace}/events.ts`);
+        for (const path of generatedOutputs) {
+            expect(result.stderr).toContain(path);
         }
 
         expect(existsSync(join(directory, "src"))).toBe(false);
@@ -47,7 +83,7 @@ describe("source generation CLI", () => {
 
     test("generation is deterministic and leaves unchanged files untouched", () => {
         expect(run().status).toBe(0);
-        const outputs = generatedNamespaces.map(name => `src/api/${name}/events.ts`);
+        const outputs = generatedOutputs;
 
         for (const path of outputs) {
             expect(readFileSync(join(directory, path), "utf8")).toBe(readFileSync(join(root, path), "utf8"));
@@ -55,6 +91,8 @@ describe("source generation CLI", () => {
 
         expect(existsSync(index)).toBe(false);
         expect(existsSync(join(directory, "src/api/action/api.ts"))).toBe(false);
+        expect(existsSync(join(directory, "src/api/sidebar/api.ts"))).toBe(false);
+        expect(existsSync(join(directory, "src/api/browser-detection"))).toBe(false);
         expect(existsSync(join(directory, "src/api/alarms/custom-events.ts"))).toBe(false);
         expect(existsSync(join(directory, "src/api/commands/custom-events.ts"))).toBe(false);
         expect(existsSync(join(directory, "src/api/tabs/generated"))).toBe(false);
@@ -70,7 +108,7 @@ describe("source generation CLI", () => {
         expect(run().status).toBe(0);
         const before = readFileSync(output, "utf8");
 
-        writeFileSync(join(directory, "codegen/events/tabs.mjs"), `export default {
+        writeFileSync(join(directory, "codegen/events/apis/tabs.mjs"), `export default {
     namespace: "tabs",
     events: {onTabChanged: "onUpdated"},
 };\n`);
@@ -93,10 +131,12 @@ describe("source generation CLI", () => {
                 [join(directory, `src/api/${namespace}/methods.ts`), "export const customMethod = () => true;\n"],
             ]),
             [join(directory, "src/api/action/api.ts"), "export const action = () => nativeAction;\n"],
+            [join(directory, "src/api/sidebar/api.ts"), "export const sidePanel = () => nativeSidePanel;\n"],
+            [join(directory, "src/api/sidebar/methods.ts"), "export const customSidebarMethod = () => true;\n"],
             [join(directory, "src/api/action/methods.ts"), "export const customActionMethod = () => true;\n"],
             [join(directory, "src/api/action/index.ts"), 'export * from "./events";\nexport * from "./methods";\n'],
             [join(directory, "src/api/notifications/index.ts"), 'export * from "./events";\nexport * from "./methods";\n'],
-            [join(directory, "src/api/notifications/methods.ts"), "export const isAvailableNotifications = () => true;\n"],
+            [join(directory, "src/api/notifications/methods.ts"), "export const clearAllNotifications = () => true;\n"],
             [index, 'export * from "./events";\nexport * from "./methods";\n'],
             [join(directory, "src/api/tabs/methods.ts"), "export const customMethod = () => true;\n"],
             [join(directory, "src/api/web-request/index.ts"), 'export * from "./events";\nexport * from "./methods";\n'],
@@ -192,7 +232,7 @@ describe("source generation CLI", () => {
     });
 
     test("rejects an unknown template before writing any namespace", () => {
-        writeFileSync(join(directory, "codegen/events/web-request.mjs"), `export default {
+        writeFileSync(join(directory, "codegen/events/apis/web-request.mjs"), `export default {
     namespace: "webRequest",
     template: "unknown",
     events: {onWebRequestBeforeRequest: "onBeforeRequest"},
@@ -201,6 +241,75 @@ describe("source generation CLI", () => {
         expect(run().status).toBe(1);
         expect(existsSync(join(directory, "src"))).toBe(false);
     });
+
+    test("detects and repairs a stale availability file without rewriting events", () => {
+        expect(run().status).toBe(0);
+        const path = join(directory, "src/api/tabs/availability.ts");
+        const expected = readFileSync(path, "utf8");
+        const eventsModifiedAt = statSync(output).mtimeMs;
+        writeFileSync(path, expected + "// Stale availability\n");
+        const result = run("--check");
+        expect(result.status).toBe(1);
+        expect(result.stderr).toContain("src/api/tabs/availability.ts");
+        expect(result.stderr).not.toContain("src/api/tabs/events.ts");
+        expect(readFileSync(path, "utf8")).toContain("// Stale availability");
+        expect(run().status).toBe(0);
+        expect(readFileSync(path, "utf8")).toBe(expected);
+        expect(statSync(output).mtimeMs).toBe(eventsModifiedAt);
+    });
+
+    test("detects availability template changes without affecting events or specialized checks", () => {
+        expect(run().status).toBe(0);
+        const template = join(directory, "codegen/availability/templates/basic.mjs");
+        writeFileSync(template, readFileSync(template, "utf8").replace("browser().", "/* changed */ browser()."));
+        const result = run("--check");
+        expect(result.status).toBe(1);
+        expect(result.stderr).toContain("src/api/tabs/availability.ts");
+        expect(result.stderr).not.toContain("src/api/action/availability.ts");
+        expect(result.stderr).not.toContain("src/api/tabs/events.ts");
+        expect(run().status).toBe(0);
+        expect(run("--check").status).toBe(0);
+    });
+
+    test.each([
+        [{namespace: "tabs", template: "unknown"}],
+        [{namespace: "tabs"}, {namespace: "tabs"}],
+        [{namespace: "tabs", exportName: "customName"}],
+    ])("rejects invalid availability descriptions before writing any sources: %j", (...specs) => {
+        writeFileSync(join(directory, "codegen/availability/apis.mjs"), `export default ${JSON.stringify(specs)};\n`);
+        expect(run().status).toBe(1);
+        expect(existsSync(join(directory, "src"))).toBe(false);
+    });
+});
+
+test("availability descriptions cover every native API directory and preserve public naming", () => {
+    const nativeDirectories = readdirSync(join(root, "src/api"), {withFileTypes: true})
+        .filter(entry => entry.isDirectory() && entry.name !== "browser-detection")
+        .map(entry => entry.name)
+        .sort();
+
+    expect(availabilityNamespaces.sort()).toEqual(nativeDirectories);
+    const files = renderGeneratedFiles(generateAvailability(availabilityApis));
+    expect([...files.keys()].sort()).toEqual(nativeDirectories.map(name => `src/api/${name}/availability.ts`));
+
+    for (const name of nativeDirectories) {
+        expect(readFileSync(join(root, `src/api/${name}/index.ts`), "utf8")).toContain('export * from "./availability";');
+    }
+});
+
+test.each([
+    ["tabs", "isAvailableTabs"],
+    ["userScripts", "isAvailableUserScripts"],
+    ["webRequest", "isAvailableWebRequest"],
+    ["i18n", "isAvailableI18n"],
+])("derives %s availability names without losing camelCase", (namespace, expected) => {
+    const [module] = generateAvailability([{namespace}]);
+    expect(module.exports).toEqual([expected]);
+    expect(module.source).toContain(`export const ${expected} = (): boolean`);
+});
+
+test.each([null, [], {}, {namespace: "../tabs"}, {namespace: "tabs", template: "action"}])("rejects invalid availability descriptions: %j", spec => {
+    expect(() => generateAvailability([spec])).toThrow();
 });
 
 test("rejects invalid identifiers and duplicate exports before writing modules", () => {

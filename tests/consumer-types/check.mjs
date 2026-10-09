@@ -88,6 +88,11 @@ try {
     execFileSync(process.execPath, [join(consumerDirectory, "dom.mjs")], {cwd: consumerDirectory, stdio: "inherit"});
 
     for (const format of ["esm", "cjs"]) {
+        execFileSync(process.execPath, [join(consumerDirectory, "availability.cjs"), format], {
+            cwd: consumerDirectory,
+            stdio: "inherit",
+        });
+
         for (const installer of ["raw", "profile"]) {
             execFileSync(process.execPath, [join(consumerDirectory, "globals-restore.cjs"), format, installer], {
                 cwd: consumerDirectory,

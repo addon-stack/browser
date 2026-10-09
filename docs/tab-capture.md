@@ -6,6 +6,7 @@ A promise-based wrapper for the Chrome `tabCapture` API to capture and retrieve 
 
 ## Methods
 
+- [isAvailableTabCapture()](#isAvailableTabCapture)
 - [createTabCapture(options)](#createTabCapture)
 - [getCapturedTabs()](#getCapturedTabs)
 - [getCaptureMediaStreamId(options)](#getCaptureMediaStreamId)
@@ -15,6 +16,27 @@ A promise-based wrapper for the Chrome `tabCapture` API to capture and retrieve 
 - [onCaptureStatusChanged(callback)](#onCaptureStatusChanged)
 
 ---
+
+<a name="isAvailableTabCapture"></a>
+
+### isAvailableTabCapture
+
+```ts
+isAvailableTabCapture(): boolean
+```
+
+Returns `true` when the `tabCapture` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableTabCapture} from "@addon-core/browser";
+
+if (isAvailableTabCapture()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="createTabCapture"></a>
 

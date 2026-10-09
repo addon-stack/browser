@@ -31,6 +31,3 @@ export const unregisterContentScripts = (filter?: ContentScriptFilter): Promise<
 
 export const updateContentScripts = (scripts: RegisteredContentScript[]): Promise<void> =>
     callWithPromise(cb => scripting().updateContentScripts(scripts, cb));
-
-// Custom Methods
-export const isAvailableScripting = (): boolean => !!scripting();

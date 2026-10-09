@@ -1,11 +1,11 @@
-import {configureUserScriptsWorld, executeUserScript, getUserScripts, getUserScriptsWorldConfigs, isAvailableUserScripts, registerUserScripts, resetUserScriptsWorldConfigs, unregisterUserScripts, updateUserScripts} from "@addon-core/browser";
+import {configureUserScriptsWorld, executeUserScript, getUserScripts, getUserScriptsWorldConfigs, registerUserScripts, resetUserScriptsWorldConfigs, unregisterUserScripts, updateUserScripts} from "@addon-core/browser";
 
 type WorldProperties = chrome.userScripts.WorldProperties;
 type RegisteredUserScript = chrome.userScripts.RegisteredUserScript;
 type UserScriptInjection = chrome.userScripts.UserScriptInjection;
 type InjectionResult = chrome.userScripts.InjectionResult;
 
-const methods = {configureUserScriptsWorld, getUserScripts, getUserScriptsWorldConfigs, executeUserScript, registerUserScripts, resetUserScriptsWorldConfigs, unregisterUserScripts, updateUserScripts, isAvailableUserScripts};
+const methods = {configureUserScriptsWorld, getUserScripts, getUserScriptsWorldConfigs, executeUserScript, registerUserScripts, resetUserScriptsWorldConfigs, unregisterUserScripts, updateUserScripts};
 
 type Expected = {
     configureUserScriptsWorld: (properties?: WorldProperties) => Promise<void>;
@@ -16,7 +16,6 @@ type Expected = {
     resetUserScriptsWorldConfigs: (worldId?: string) => Promise<void>;
     unregisterUserScripts: (ids?: string[]) => Promise<void>;
     updateUserScripts: (scripts: RegisteredUserScript[]) => Promise<void>;
-    isAvailableUserScripts: () => boolean;
 };
 
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;

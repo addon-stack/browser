@@ -102,8 +102,22 @@ Updates previously registered user scripts with new definitions.
 
 ### isAvailableUserScripts
 
-```
+```ts
 isAvailableUserScripts(): boolean
 ```
 
-Returns `true` if the `chrome.userScripts` API is available in the current environment (typically Manifest V3), otherwise `false`.
+Returns `true` when the `userScripts` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+In Chrome, the namespace can remain defined after user-script access is revoked until the context reloads.
+This check does not call `getScripts()` to probe that access. See [Chrome’s availability guidance](https://developer.chrome.com/docs/extensions/reference/api/userScripts#check_for_api_availability).
+
+```ts
+import {isAvailableUserScripts} from "@addon-core/browser";
+
+if (isAvailableUserScripts()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
