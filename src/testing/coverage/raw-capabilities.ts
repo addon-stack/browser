@@ -416,6 +416,8 @@ export const RAW_CAPABILITY_COVERAGE: readonly RawCapabilityEntry[] = [
         "onZoomChange",
     ]),
 
+    ...methodCapabilities("topSites", "configurable", callbackInvocation, ["get"]),
+
     ...methodCapabilities("userScripts", "configurable", callbackInvocation, ["getScripts"]),
     ...methodCapabilities("userScripts", "configurable", promiseInvocation, [
         "configureWorld",

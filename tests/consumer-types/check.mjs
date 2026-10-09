@@ -88,6 +88,11 @@ try {
     execFileSync(process.execPath, [join(consumerDirectory, "dom.mjs")], {cwd: consumerDirectory, stdio: "inherit"});
 
     for (const format of ["esm", "cjs"]) {
+        execFileSync(process.execPath, [join(consumerDirectory, "top-sites.cjs"), format], {
+            cwd: consumerDirectory,
+            stdio: "inherit",
+        });
+
         execFileSync(process.execPath, [join(consumerDirectory, "search.cjs"), format], {
             cwd: consumerDirectory,
             stdio: "inherit",

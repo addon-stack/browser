@@ -14,7 +14,7 @@ import {renderGeneratedFiles} from "../../codegen/generate.mjs";
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const basicNamespaces = ["alarms", "audio", "commands", "context-menus", "cookies", "downloads", "history", "identity", "idle", "management", "permissions", "runtime", "tab-capture"];
 const generatedNamespaces = ["action", ...basicNamespaces, "notifications", "tabs", "web-request", "windows", "web-navigation"];
-const availabilityNamespaces = [...generatedNamespaces, "browsing-data", "document-scan", "extension", "i18n", "offscreen", "scripting", "search", "sidebar", "user-scripts"];
+const availabilityNamespaces = [...generatedNamespaces, "browsing-data", "document-scan", "extension", "i18n", "offscreen", "scripting", "search", "sidebar", "top-sites", "user-scripts"];
 
 const generatedOutputs = [
     ...generatedNamespaces.map(name => `src/api/${name}/events.ts`),

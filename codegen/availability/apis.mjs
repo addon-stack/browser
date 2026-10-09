@@ -23,6 +23,7 @@ export default [
     {namespace: "sidebar", template: "sidebar"},
     {namespace: "tabCapture"},
     {namespace: "tabs"},
+    {namespace: "topSites"},
     {namespace: "userScripts"},
     {namespace: "webNavigation"},
     {namespace: "webRequest"},

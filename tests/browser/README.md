@@ -12,6 +12,7 @@ tests/browser/
 ├── extension/                # shared background entrypoint and base manifests
 └── api/
     ├── index.ts              # explicit suite registry
+    ├── top-sites/            # basic retrieval, Firefox options, missing permission
     └── search/
         ├── index.ts          # browsers, permission profiles, scenarios
         ├── query.scenario.ts
@@ -72,6 +73,23 @@ The tests observe `webNavigation.onBeforeNavigate` and native tab/window state. 
 results page. Default-provider scenarios use synthetic query text (including Unicode and URL-sensitive characters);
 the browser may send that text to its default search provider. No personal browser profile is used. The engine-selection
 fixture navigates to `https://search.browser.test/`; that address is intentionally not a live search service.
+
+## Top Sites coverage
+
+The `top-sites` suite runs with only `topSites` permission and in a separate profile without it.
+Both browsers exercise the basic call; Chromium must reject the Firefox options overload. Firefox
+also checks option calls, result limits, extra entry fields and native argument validation.
+Clean profiles may return an empty list. The tests do not assert specific websites or ranking,
+and do not require `history` permission. Select this suite with `--api top-sites`.
+
+```bash
+npm run build
+npm run test:browser -- --browser chromium --api top-sites --binary /path/to/chrome-for-testing
+npm run test:browser -- --browser firefox --api top-sites --binary /path/to/firefox
+```
+
+The shared CI commands include this suite. These runners cover Chromium and Firefox;
+they do not launch Edge, Opera or Safari.
 
 ## Add another API
 

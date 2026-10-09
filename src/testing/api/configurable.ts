@@ -338,6 +338,8 @@ export type TabsConfigurableApi = Pick<
     | "ungroup"
 >;
 
+export type TopSitesConfigurableApi = Pick<typeof chrome.topSites, "get">;
+
 export type UserScriptsConfigurableApi = Pick<
     typeof chrome.userScripts,
     | "configureWorld"
@@ -430,6 +432,7 @@ export interface ConfigurableBrowserApi {
     sidePanel: SidePanelConfigurableApi;
     tabCapture: TabCaptureConfigurableApi;
     tabs: TabsConfigurableApi;
+    topSites: TopSitesConfigurableApi;
     userScripts: UserScriptsConfigurableApi;
     webNavigation: WebNavigationConfigurableApi;
     webRequest: WebRequestConfigurableApi;
@@ -466,6 +469,7 @@ export interface ConfigurableBrowserControls {
     readonly sidePanel: BrowserNamespaceHarness<SidePanelConfigurableApi>;
     readonly tabCapture: BrowserNamespaceHarness<TabCaptureConfigurableApi>;
     readonly tabs: BrowserNamespaceHarness<TabsConfigurableApi>;
+    readonly topSites: BrowserNamespaceHarness<TopSitesConfigurableApi>;
     readonly userScripts: BrowserNamespaceHarness<UserScriptsConfigurableApi>;
     readonly webNavigation: BrowserNamespaceHarness<WebNavigationConfigurableApi>;
     readonly webRequest: BrowserNamespaceHarness<WebRequestConfigurableApi>;

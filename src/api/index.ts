@@ -25,6 +25,7 @@ export * from "./search";
 export * from "./sidebar";
 export * from "./tab-capture";
 export * from "./tabs";
+export * from "./top-sites";
 export * from "./user-scripts";
 export * from "./web-navigation";
 export * from "./web-request";

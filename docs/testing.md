@@ -74,6 +74,13 @@ tabs or simulate a search provider. The configurable surface is a cross-browser 
 `harness.capabilities.set("search.get", false)` and `harness.capabilities.set("search.search", false)` to model Chromium's
 missing engine APIs, or install globals without the namespace to model Safari.
 
+Top Sites is configurable through `harness.configurable.active.topSites.get.setResult(sites)`.
+The Chromium facade models callback calls and the Firefox facade supports callback/Promise calls,
+including the options overload. This stub returns configured data; it does not rank browsing history
+or implement Firefox's filtering. Configure native failures with `failNext(error)` and remove the
+capability to model an unavailable API. See [Top Sites browser coverage](../tests/browser/README.md#top-sites-coverage)
+for the real-browser scenarios.
+
 ## Reset and isolation
 
 Every harness owns independent state. Call `harness.reset()` between tests when reusing one harness, or create a fresh

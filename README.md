@@ -76,6 +76,7 @@ older `@types/chrome` should update it to the same range to avoid mixing global 
 - [storage](https://github.com/addon-stack/storage) — via separate package: [@addon-core/storage](https://www.npmjs.com/package/@addon-core/storage)
 - [tabCapture](docs/tab-capture.md)
 - [tabs](docs/tabs.md)
+- [topSites](docs/top-sites.md) — Most-visited sites with optional Firefox query settings.
 - [userScripts](docs/user-scripts.md)
 - [webNavigation](docs/web-navigation.md)
 - [webRequest](docs/web-request.md)
@@ -187,6 +188,5 @@ These commonly used WebExtensions/Chrome Extension APIs are not wrapped here yet
 - system.memory
 - system.storage
 - tabGroups
-- topSites
 - tts
 - ttsEngine

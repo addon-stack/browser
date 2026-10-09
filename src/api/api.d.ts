@@ -2,6 +2,36 @@
 // API shape instead of redeclaring that value. Firefox-only members below still
 // require runtime feature detection; this is a cross-browser type superset.
 declare namespace chrome {
+    /** Firefox-only options and result fields; Chromium only supports get() without options. */
+    namespace topSites {
+        interface MostVisitedURL {
+            /** Firefox only. May be null when not requested or unavailable. */
+            favicon?: string | null;
+            /** Firefox only. Distinguishes page links from search shortcuts. */
+            type?: "url" | "search";
+        }
+
+        interface GetOptions {
+            /** Include sites removed from the new tab page. Defaults to false. */
+            includeBlocked?: boolean;
+            /** Include available favicons. Defaults to false. */
+            includeFavicon?: boolean;
+            /** Include pinned sites. Defaults to false. */
+            includePinned?: boolean;
+            /** Include search shortcuts. Defaults to false. */
+            includeSearchShortcuts?: boolean;
+            /** Number of results (1–100). Defaults to 12. */
+            limit?: number;
+            /** Use the new tab list; only limit and includeFavicon are then considered. Defaults to false. */
+            newtab?: boolean;
+            /** Return at most one page per domain. Defaults to true. */
+            onePerDomain?: boolean;
+        }
+
+        /** Firefox only. The options overload returns a Promise. */
+        function get(options: GetOptions): Promise<MostVisitedURL[]>;
+    }
+
     /** Firefox-only additions; detect each method before use in other browsers. */
     namespace search {
         interface SearchEngine {

@@ -243,7 +243,7 @@ When adding another event namespace, add its description under `codegen/events/a
 
 ### Generated availability checks
 
-`codegen/availability/apis.mjs` explicitly lists all 28 native API modules, including modules without events.
+`codegen/availability/apis.mjs` explicitly lists all 29 native API modules, including modules without events.
 Descriptions contain `namespace` and an optional `template` (`basic` by default). Export names are derived as
 `isAvailable` plus the namespace with its first letter capitalized; the rest of its camelCase is preserved.
 For example, `userScripts` produces `isAvailableUserScripts`. There is no `exportName` override.

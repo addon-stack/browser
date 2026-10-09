@@ -426,6 +426,10 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
         "onTabZoomChange",
     ]),
 
+    ...entries("topSites", "interface", "declaration", ["TopSite", "TopSitesOptions"]),
+    ...entries("topSites", "method-wrapper", "configurable", ["getTopSites"]),
+    ...entries("topSites", "method-wrapper", "behavioral", ["isAvailableTopSites"]),
+
     ...entries("userScripts", "method-wrapper", "configurable", [
         "configureUserScriptsWorld",
         "getUserScripts",
@@ -485,10 +489,10 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ]),
 ] as const;
 
-export const TYPE_ONLY_ROOT_EXPORTS = ["BrowserGuess", "LaunchWebAuthFlowDetails", "SearchEngine", "SearchTargetOptions", "WindowEventFilter"] as const;
+export const TYPE_ONLY_ROOT_EXPORTS = ["BrowserGuess", "LaunchWebAuthFlowDetails", "SearchEngine", "SearchTargetOptions", "TopSite", "TopSitesOptions", "WindowEventFilter"] as const;
 
-export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 376;
-export const EXPECTED_ROOT_RUNTIME_EXPORT_COUNT = 371;
+export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 380;
+export const EXPECTED_ROOT_RUNTIME_EXPORT_COUNT = 373;
 
 export const getPublicExportCoverage = (name: string): PublicExportCoverageEntry | undefined =>
     PUBLIC_EXPORT_COVERAGE.find(entry => entry.name === name);
