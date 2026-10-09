@@ -91,7 +91,7 @@ describe("pre-commit staged formatting in an isolated Git clone", () => {
     });
 
     test("preserves unstaged edits in a partially staged file without committing or formatting them", () => {
-        const file = "src/browser.ts";
+        const file = "src/index.ts";
         const middle = Array.from({length: 12}, (_, index) => `export const marker${index} = ${index};`).join("\n");
         const source = `export const ready=true\n${middle}\nexport const draft = "staged";\n`;
         const draft = "export const draft='unstaged'\n";
@@ -138,13 +138,13 @@ describe("pre-commit staged formatting in an isolated Git clone", () => {
         const source = read("package-lock.json");
         write("package-lock.json", `${source}\n`);
         git("add", "--", "package-lock.json");
-        git("rm", "--", "src/browser.ts");
+        git("rm", "--", "src/index.ts");
 
         const result = lintStaged();
         expect(result.stderr).toBe("");
         expect(result.status).toBe(0);
         expect(staged("package-lock.json")).toBe(`${source}\n`);
-        expect(git("diff", "--cached", "--name-status")).toContain("D\tsrc/browser.ts");
+        expect(git("diff", "--cached", "--name-status")).toContain("D\tsrc/index.ts");
     });
 
     test("allows an empty staged selection without formatting anything", () => {

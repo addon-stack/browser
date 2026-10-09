@@ -53,7 +53,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
         "getAllAlarm",
     ]),
     ...entries("alarms", "method-wrapper", "behavioral", ["createAlarmIfNotExists"]),
-    ...entries("alarms", "event-wrapper", "event", ["onAlarm", "onSpecificAlarm"]),
+    ...entries("alarms", "event-wrapper", "event", ["onAlarm", "onSpecificAlarm", "onSpecificAlarms"]),
 
     ...entries("audio", "method-wrapper", "configurable", [
         "getAudioDevices",
@@ -93,7 +93,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ]),
 
     ...entries("commands", "method-wrapper", "configurable", ["getAllCommands"]),
-    ...entries("commands", "event-wrapper", "event", ["onCommand", "onSpecificCommand"]),
+    ...entries("commands", "event-wrapper", "event", ["onCommand", "onSpecificCommand", "onSpecificCommands"]),
 
     ...entries("contextMenus", "method-wrapper", "configurable", [
         "createContextMenus",
@@ -446,8 +446,8 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
 
 export const TYPE_ONLY_ROOT_EXPORTS = ["BrowserGuess", "LaunchWebAuthFlowDetails", "WindowEventFilter"] as const;
 
-export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 333;
-export const EXPECTED_ROOT_RUNTIME_EXPORT_COUNT = 330;
+export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 335;
+export const EXPECTED_ROOT_RUNTIME_EXPORT_COUNT = 332;
 
 export const getPublicExportCoverage = (name: string): PublicExportCoverageEntry | undefined =>
     PUBLIC_EXPORT_COVERAGE.find(entry => entry.name === name);

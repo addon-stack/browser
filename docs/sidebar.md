@@ -69,7 +69,7 @@ Gets the current side panel behavior settings. Throws if unsupported (requires C
 canOpenSidebar(): boolean
 ```
 
-Returns `true` if `chrome.sidePanel` (Chromium MV3) is available, or if `sidebarAction.open` is available (Firefox/Opera).
+Returns `true` if the selected API exposes a callable `open` method: `chrome.sidePanel.open` when Side Panel is present, otherwise `sidebarAction.open`. Namespace availability alone is insufficient. This checks API support; it does not guarantee that a particular call will succeed or satisfy user-action requirements.
 
 <a name="canCloseSidebar"></a>
 
@@ -79,7 +79,7 @@ Returns `true` if `chrome.sidePanel` (Chromium MV3) is available, or if `sidebar
 canCloseSidebar(): boolean
 ```
 
-Returns `true` if `chrome.sidePanel` (Chromium MV3) is available, or if `sidebarAction.close` is available (Firefox/Opera).
+Returns `true` if the selected API exposes a callable `close` method: `chrome.sidePanel.close` when Side Panel is present, otherwise `sidebarAction.close`. Namespace availability alone is insufficient.
 
 <a name="openSidebar"></a>
 
@@ -91,6 +91,8 @@ openSidebar(options: chrome.sidePanel.OpenOptions): Promise<void>
 
 Opens the side panel with the given options in Chromium-based browsers (MV3). Falls back to `sidebarAction.open()` in Firefox/Opera. Throws if unsupported.
 
+Resolves after the native callback or Promise completes. Callback `runtime.lastError`, native Promise rejections, and synchronous failures reject the returned Promise. If the selected API lacks `open`, rejects with `SidebarError`.
+
 <a name="closeSidebar"></a>
 
 ### closeSidebar
@@ -100,6 +102,8 @@ closeSidebar(options: chrome.sidePanel.CloseOptions): Promise<void>
 ```
 
 Closes the side panel with the given options in Chromium-based browsers (MV3). Falls back to `sidebarAction.close()` in Firefox/Opera. Throws if unsupported.
+
+Resolves after the native callback or Promise completes and rejects on native errors. If the selected API lacks `close`, rejects with `SidebarError`.
 
 <a name="setSidebarOptions"></a>
 
@@ -151,6 +155,8 @@ isOpenSidebar(windowId?: number): Promise<boolean>
 
 Checks if the sidebar is open for the given window in Chromium-based browsers (MV3) using `getContexts` and in Firefox/Opera using `sidebarAction.isOpen()`. Throws if unsupported.
 
+An explicitly supplied `windowId`, including `0`, is forwarded to the window filter.
+
 <a name="toggleSidebar"></a>
 
 ### toggleSidebar [Firefox]
@@ -179,10 +185,11 @@ Sets the sidebar title via `sidebarAction.setTitle()` (Firefox/Opera). Throws if
 setSidebarIcon(details: opr.sidebarAction.IconDetails): Promise<void>
 ```
 
-Sets the sidebar icon via `sidebarAction.setIcon()` (Firefox/Opera). Throws if unsupported.
+Sets the sidebar icon via `sidebarAction.setIcon()` (Firefox/Opera). Rejects with `SidebarError` if the method is unavailable.
 
-> Known issue (Opera): The `opr.sidebarAction.setIcon` API is currently broken and may fail with "Access to extension API denied".
-> See: https://forums.opera.com/topic/75680/opr-sidebaraction-seticon-api-is-broken-access-to-extension-api-denied
+In Firefox, waits for the native Promise. In Opera, passes a completion callback and checks `runtime.lastError` inside it. Native errors, including `Access to extension API denied`, reject the returned Promise. The wrapper attempts the operation in Opera and does not report success without calling the API.
+
+Opera limitation: in a local check on Opera 135 (macOS, Manifest V2), an existing icon file still produced `Access to extension API denied`. An absent file produced a browser-side error without completing the callback, leaving the Promise pending. The wrapper does not add a timeout for a missing native callback.
 
 <a name="setSidebarBadgeText"></a>
 

@@ -1,5 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
-import {executeScript} from "../../../../src/scripting";
+import {executeScript} from "../../../../src/api/scripting/methods";
 import {type BrowserScriptExecution, createBrowserHarness, createTabFixture, installBrowserGlobals} from "../../../../src/testing";
 import {createNodeScriptExecutor, type NodeScriptException, type NodeScriptExecutorOptions} from "../../../../src/testing/node";
 import {injectedFunction} from "./injected-function";

@@ -1,4 +1,4 @@
-import {getContexts} from "../../../../src/runtime";
+import {getContexts} from "../../../../src/api/runtime";
 import {
     type BrowserContextInfo,
     createBrowserHarness,

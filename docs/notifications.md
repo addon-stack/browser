@@ -16,6 +16,11 @@ A promise-based wrapper for the Chrome `notifications` API to create and manage 
 
 ## Events
 
+Listeners subscribe directly to the native event. If the notifications API or the requested event is unavailable,
+subscription throws; it does not log a warning or return an empty unsubscribe function.
+Call `isAvailableNotifications()` explicitly when you need to check whether the namespace is available
+in an extension context. It does not check individual events.
+
 - [onNotificationsButtonClicked(callback)](#onNotificationsButtonClicked)
 - [onNotificationsClicked(callback)](#onNotificationsClicked)
 - [onNotificationsClosed(callback)](#onNotificationsClosed)

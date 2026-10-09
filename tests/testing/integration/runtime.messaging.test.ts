@@ -1,5 +1,6 @@
-import {onMessage, sendMessage} from "../../../src/runtime";
-import {createBrowserHarness, createMessageSenderFixture, createTabFixture, installGlobals} from "../../../src/testing/index";
+import {onMessage} from "../../../src/api/runtime/events";
+import {sendMessage} from "../../../src/api/runtime/methods";
+import {createBrowserHarness, createMessageSenderFixture, createTabFixture, installBrowserGlobals, installGlobals} from "../../../src/testing/index";
 
 const restorers: Array<() => void> = [];
 
@@ -12,6 +13,46 @@ const installChromeHarness = (harness: ReturnType<typeof createBrowserHarness>):
 
 afterEach(() => {
     while (restorers.length > 0) restorers.pop()?.();
+});
+
+describe.each(["chrome", "firefox"] as const)("generated runtime message wrapper in %s", profile => {
+    test("keeps the channel open for a deferred sendResponse when the listener returns true", async () => {
+        const harness = createBrowserHarness();
+        restorers.push(installBrowserGlobals(harness, {profile}));
+
+        const unsubscribe = onMessage((message, _sender, sendResponse) => {
+            queueMicrotask(() => sendResponse({echo: message}));
+
+            return true;
+        });
+
+        await expect(sendMessage({kind: "ping"})).resolves.toEqual({echo: {kind: "ping"}});
+        unsubscribe();
+        await expect(sendMessage({kind: "ping"})).resolves.toBeUndefined();
+    });
+
+    test("forwards a Promise response through the generated listener and the sendMessage method", async () => {
+        const harness = createBrowserHarness();
+        restorers.push(installBrowserGlobals(harness, {profile}));
+        const unsubscribe = onMessage(async message => ({echo: message}));
+        await expect(sendMessage({kind: "ping"})).resolves.toEqual({echo: {kind: "ping"}});
+        unsubscribe();
+    });
+
+    test("logs a listener rejection and propagates it to the message sender", async () => {
+        const harness = createBrowserHarness();
+        restorers.push(installBrowserGlobals(harness, {profile, captureListenerErrors: true}));
+        const error = new Error("Message handler failed");
+
+        const unsubscribe = onMessage(async () => {
+            throw error;
+        });
+
+        await expect(sendMessage({kind: "ping"})).rejects.toThrow("Message handler failed");
+        expect(harness.listenerErrors.entries).toEqual([{args: [], error, kind: "promise"}]);
+        expect(harness.runtime.lastError).toBeUndefined();
+        unsubscribe();
+    });
 });
 
 describe("stateful runtime messaging", () => {

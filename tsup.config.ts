@@ -9,7 +9,7 @@ const common: Options = {
 export default defineConfig([
     {
         ...common,
-        entry: ["src/index.ts", "src/utils.ts"],
+        entry: {index: "src/index.ts", utils: "src/api/utils.ts"},
         format: ["esm"],
         dts: {
             banner: '/// <reference types="chrome" />\n/// <reference path="./api.d.ts" />',
@@ -35,7 +35,7 @@ export default defineConfig([
     },
     {
         ...common,
-        entry: ["src/index.ts", "src/utils.ts"],
+        entry: {index: "src/index.ts", utils: "src/api/utils.ts"},
         format: ["cjs"],
         dts: false,
         outExtension() {

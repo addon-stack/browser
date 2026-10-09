@@ -39,6 +39,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check generated event sources
+        run: npm run generate:check
+
       - name: Build
         run: npm run build
 
@@ -98,6 +101,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Check generated event sources
+        run: npm run generate:check
 
       - name: Lint
         run: npm run lint

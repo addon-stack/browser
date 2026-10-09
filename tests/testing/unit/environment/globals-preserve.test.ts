@@ -1,4 +1,4 @@
-import {getUrl} from "../../../../src/runtime";
+import {getUrl} from "../../../../src/api/runtime";
 import {createBrowserHarness, installBrowserGlobals, installGlobals} from "../../../../src/testing/index";
 
 const restorers: Array<() => void> = [];

@@ -1,6 +1,6 @@
 export type RawCapabilityKind = "method" | "event" | "property";
 export type RawCapabilityCoverage = "stateful" | "configurable" | "event";
-export type RawMethodInvocation = "sync" | "callback" | "promise" | "dual" | "promise-tolerant" | "hybrid";
+export type RawMethodInvocation = "sync" | "callback" | "callback-optional" | "promise" | "dual" | "promise-tolerant" | "hybrid";
 
 export type RawFailureChannel =
     | "none"
@@ -483,10 +483,10 @@ export const RAW_CAPABILITY_COVERAGE: readonly RawCapabilityEntry[] = [
         "setBadgeBackgroundColor",
         "setBadgeText",
         "setBadgeTextColor",
-        "setIcon",
         "setPanel",
         "setTitle",
     ]),
+    ...methodCapabilities("opr.sidebarAction", "configurable", {browser: "callback-optional", chrome: "callback-optional"}, ["setIcon"]),
 ].map(entry => {
     if (entry.path === "runtime.sendMessage" || entry.path === "tabs.sendMessage") {
         return {...entry, contextCoverage: "stateful", contextInvocation: "dual"} as const;

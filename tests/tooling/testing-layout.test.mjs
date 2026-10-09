@@ -64,7 +64,7 @@ describe("test-kit source and test layout", () => {
     test("every implementation directory explicitly selects its public exports", () => {
         const indexes = moduleDirectories.map(directory => resolve(directory, "index.ts"));
         expect(indexes.filter(file => !existsSync(file))).toEqual([]);
-        const program = ts.createProgram([...sourceFiles, resolve(root, "src/api.d.ts")], compilerOptions);
+        const program = ts.createProgram([...sourceFiles, resolve(root, "src/api/api.d.ts")], compilerOptions);
         const checker = program.getTypeChecker();
 
         const exportsOf = file => {
@@ -105,7 +105,7 @@ describe("test-kit source and test layout", () => {
 
     test("composes public indexes with star exports without expanding the package contract", () => {
         const entry = resolve(sourceDirectory, "index.ts");
-        const program = ts.createProgram([entry, resolve(root, "src/api.d.ts")], compilerOptions);
+        const program = ts.createProgram([entry, resolve(root, "src/api/api.d.ts")], compilerOptions);
         const checker = program.getTypeChecker();
         const source = program.getSourceFile(entry);
 

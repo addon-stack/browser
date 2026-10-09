@@ -3,6 +3,7 @@ import {createBrowserMethod} from "../../../../src/testing/primitives";
 
 type SyncApi = (value: string) => number;
 type CallbackApi = (value: string, callback: (result: number) => void) => void;
+type OptionalCallbackApi = (value: string, callback?: (result: number) => void) => void;
 type PromiseApi = (value: string) => Promise<number>;
 
 type DualApi = {
@@ -126,6 +127,38 @@ describe("createBrowserMethod", () => {
         expect(method.calls.map(call => call.invocation)).toEqual(["callback", "promise"]);
     });
 
+    test("optional-callback methods accept omitted callbacks without returning a Promise or result", () => {
+        const method = createBrowserMethod<OptionalCallbackApi, number>({name: "optional", invocation: "callback-optional"});
+        const callback = jest.fn();
+        method.setResult(8);
+        expect(method.api("without callback")).toBeUndefined();
+        expect(method.api("with callback", callback)).toBeUndefined();
+        expect(callback).toHaveBeenCalledWith(8);
+        expect(method.calls.map(call => call.invocation)).toEqual(["sync", "callback"]);
+        expect(method.calls.map(call => call.args)).toEqual([["without callback"], ["with callback"]]);
+        expect(method.calls[1].callbackCalls).toEqual([[8]]);
+    });
+
+    test("optional-callback implementations can complete later and return no value", () => {
+        const method = createBrowserMethod<OptionalCallbackApi, number>({name: "optional", invocation: "callback-optional"});
+        const callback = jest.fn();
+        let complete: ((value: number) => void) | undefined;
+
+        method.setImplementation((_value, nativeCallback) => {
+            complete = nativeCallback;
+
+            return 12;
+        });
+
+        expect(method.api("without callback")).toBeUndefined();
+        expect(complete).toBeUndefined();
+        expect(method.api("with callback", callback)).toBeUndefined();
+        expect(callback).not.toHaveBeenCalled();
+        complete!(9);
+        expect(callback).toHaveBeenCalledWith(9);
+        expect(method.calls[1].callbackCalls).toEqual([[9]]);
+    });
+
     test("promise-tolerant methods ignore a trailing callback and always return a Promise", async () => {
         const method = createBrowserMethod<PromiseTolerantApi, number>({
             name: "runtime.promiseTolerant",
@@ -186,7 +219,7 @@ describe("createBrowserMethod", () => {
         expect(method.calls[0].callbackCalls).toEqual([[12]]);
     });
 
-    test("exposes lastError only while a failed callback runs", () => {
+    test.each(["callback", "callback-optional"] as const)("%s exposes lastError only while a failed callback runs", invocation => {
         let lastError: unknown;
 
         const controller = {
@@ -203,7 +236,7 @@ describe("createBrowserMethod", () => {
 
         const method = createBrowserMethod<CallbackApi, number>({
             name: "tabs.get",
-            invocation: "callback",
+            invocation,
             lastError: controller,
         });
 

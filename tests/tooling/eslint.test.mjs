@@ -138,7 +138,7 @@ describe("ESLint project configuration", () => {
     });
 
     test("retains any and reports non-fixable unused variables", async () => {
-        const [result] = await fixer.lintText("export function identity(value: any) { const unused = 1; return value; }", {filePath: "src/identity.ts"});
+        const [result] = await fixer.lintText("export function identity(value: any) { const unused = 1; return value; }", {filePath: "src/api/identity.ts"});
         expect(result.messages.some(message => message.ruleId === "@typescript-eslint/no-unused-vars")).toBe(true);
         expect(result.messages.some(message => message.ruleId === "@typescript-eslint/no-explicit-any")).toBe(false);
     });
@@ -151,7 +151,7 @@ describe("ESLint project configuration", () => {
         expect(await checker.isPathIgnored(filePath)).toBe(false);
     });
 
-    test.each(["src/module-name.ts", "src/api.d.ts", "src/module-name.test.ts", "src/Example.test.ts", "src/Example.integration.test.ts", "tests/module-name.spec.mjs", "tsup.config.ts"])("accepts ordinary/test filename %s", async filePath => {
+    test.each(["src/module-name.ts", "src/api/api.d.ts", "src/module-name.test.ts", "src/Example.test.ts", "src/Example.integration.test.ts", "tests/module-name.spec.mjs", "tsup.config.ts"])("accepts ordinary/test filename %s", async filePath => {
         expect(await messagesFor("export {};\n", filePath)).toEqual([]);
     });
 
@@ -186,7 +186,7 @@ describe("ESLint project configuration", () => {
         "class DownloadError extends Error {} export {DownloadError};",
         "export default class extends Error {}",
     ])("keeps exception classes in their owning module: %s", async source => {
-        expect(await messagesFor(source, "src/downloads.ts")).toEqual([]);
+        expect(await messagesFor(source, "src/api/downloads.ts")).toEqual([]);
     });
 
     test("ignores exception classes alongside a regular exported class", async () => {

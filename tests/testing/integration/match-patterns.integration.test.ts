@@ -1,8 +1,8 @@
 import {afterEach, describe, expect, test} from "@jest/globals";
-import {containsPermissions, getAllPermissions, removePermissions, requestPermissions} from "../../../src/permissions";
-import {onInstalled} from "../../../src/runtime";
-import {executeScript, insertCss} from "../../../src/scripting";
-import {queryTabs} from "../../../src/tabs";
+import {containsPermissions, getAllPermissions, removePermissions, requestPermissions} from "../../../src/api/permissions";
+import {onInstalled} from "../../../src/api/runtime";
+import {executeScript, insertCss} from "../../../src/api/scripting/methods";
+import {queryTabs} from "../../../src/api/tabs";
 import {
     createBrowserHarness,
     createInstalledDetailsFixture,

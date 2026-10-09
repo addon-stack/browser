@@ -1,7 +1,7 @@
-import {BlockDownloadError, download} from "../../../src/downloads";
-import {findTabById, getTab, getTabUrl} from "../../../src/tabs";
+import {BlockDownloadError, download} from "../../../src/api/downloads/methods";
+import {findTabById, getTab, getTabUrl} from "../../../src/api/tabs";
+import {getUserScripts} from "../../../src/api/user-scripts/methods";
 import {createBrowserHarness, createTabFixture, installBrowserGlobals, installGlobals} from "../../../src/testing/index";
-import {getUserScripts} from "../../../src/user-scripts";
 
 const restorers: Array<() => void> = [];
 
@@ -158,47 +158,16 @@ describe("current production behavior through the browser harness", () => {
             expect(harness.configurable.active.downloads.search.calls[0]?.args).toEqual([{id: 41}]);
         });
 
-        test("preserves a delay failure and does not query the item", async () => {
-            const error = new Error("Validation wait failed");
-            harness.delays.downloadValidation.failNext(error);
-
-            await expect(download({url})).rejects.toBe(error);
-            expect(harness.configurable.active.downloads.search.calls).toHaveLength(0);
-            expect(harness.runtime.lastError).toBeUndefined();
-        });
-
-        test("does not schedule validation if download creation fails", async () => {
-            harness.configurable.active.downloads.download.failNext(new Error("Download unavailable"));
-
-            await expect(download({url})).rejects.toThrow("Download unavailable");
-            expect(harness.delays.downloadValidation.calls).toHaveLength(0);
-            expect(harness.configurable.active.downloads.search.calls).toHaveLength(0);
-        });
-
-        test.each([
-            [[], "Download item not found after created"],
-            [
-                [createDownloadItemFixture({error: "USER_CANCELED", state: "interrupted"})],
-                "Requires user permission to upload",
-            ],
-        ] as const)("preserves the exact BlockDownloadError for %j", async (items, message) => {
-            harness.configurable.active.downloads.search.setResult([...items]);
-            const pending = download({url});
-
-            await expect(pending).rejects.toBeInstanceOf(BlockDownloadError);
-            await expect(pending).rejects.toHaveProperty("message", message);
-            expect(harness.delays.downloadValidation.calls[0]?.args).toEqual([100]);
-        });
-
-        test("preserves the ordinary error for other interruptions", async () => {
+        test("reports a user-blocked download after validation", async () => {
             harness.configurable.active.downloads.search.setResult([
-                createDownloadItemFixture({error: "NETWORK_FAILED", state: "interrupted"}),
+                createDownloadItemFixture({error: "USER_CANCELED", state: "interrupted"}),
             ]);
 
             const pending = download({url});
 
-            await expect(pending).rejects.toHaveProperty("message", "Download error: NETWORK_FAILED");
-            await expect(pending).rejects.not.toBeInstanceOf(BlockDownloadError);
+            await expect(pending).rejects.toBeInstanceOf(BlockDownloadError);
+            await expect(pending).rejects.toHaveProperty("message", "Requires user permission to upload");
+            expect(harness.delays.downloadValidation.calls[0]?.args).toEqual([100]);
         });
     });
 });

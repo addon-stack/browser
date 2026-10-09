@@ -1,8 +1,8 @@
-import {BrowserGuessSource, BrowserName, guessBrowser} from "../../../src/browser-detection";
-import {getI18nUILanguage} from "../../../src/i18n";
-import {getId} from "../../../src/runtime";
-import {canOpenSidebar, getSidebarTitle, openSidebar, setSidebarTitle, SidebarError} from "../../../src/sidebar";
-import {onTabCreated} from "../../../src/tabs";
+import {BrowserGuessSource, BrowserName, guessBrowser} from "../../../src/api/browser-detection/methods";
+import {getI18nUILanguage} from "../../../src/api/i18n/methods";
+import {getId} from "../../../src/api/runtime";
+import {canOpenSidebar, getSidebarTitle, openSidebar, setSidebarTitle, SidebarError} from "../../../src/api/sidebar/methods";
+import {onTabCreated} from "../../../src/api/tabs";
 import {createBrowserHarness, createTabFixture, installBrowserGlobals, installGlobals} from "../../../src/testing/index";
 
 const restorers: Array<() => void> = [];
