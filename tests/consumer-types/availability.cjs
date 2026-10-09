@@ -4,7 +4,7 @@ const names = [
     "isAvailableAction", "isAvailableAlarms", "isAvailableAudio", "isAvailableBrowsingData", "isAvailableCommands",
     "isAvailableContextMenus", "isAvailableCookies", "isAvailableDocumentScan", "isAvailableDownloads", "isAvailableExtension",
     "isAvailableHistory", "isAvailableI18n", "isAvailableIdentity", "isAvailableIdle", "isAvailableManagement",
-    "isAvailableNotifications", "isAvailableOffscreen", "isAvailablePermissions", "isAvailableRuntime", "isAvailableScripting",
+    "isAvailableNotifications", "isAvailableOffscreen", "isAvailablePermissions", "isAvailableRuntime", "isAvailableScripting", "isAvailableSearch",
     "isAvailableSidebar", "isAvailableTabCapture", "isAvailableTabs", "isAvailableUserScripts", "isAvailableWebNavigation",
     "isAvailableWebRequest", "isAvailableWindows",
 ];

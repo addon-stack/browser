@@ -18,9 +18,9 @@ on:
         default: false
 
 jobs:
-  # One real-browser check, not an OS x Node matrix. Release also waits for this reusable CI job.
+  # Real-browser checks, not an OS x Node matrix. Release also waits for this reusable CI job.
   browser-match-patterns:
-    name: Browser API and context messaging smoke
+    name: Browser API integration and context messaging smoke
     # Keep Chromium's sandbox enabled; Ubuntu 23.10+ restricts user namespaces for downloaded binaries.
     runs-on: ubuntu-22.04
     timeout-minutes: 10
@@ -56,6 +56,22 @@ jobs:
         env:
           CHROME_FOR_TESTING_PATH: ${{ steps.chrome.outputs.chrome-path }}
         run: npm run test:browser-match-patterns -- "$CHROME_FOR_TESTING_PATH"
+
+      - name: Run production API integration tests in Chromium
+        env:
+          CHROME_FOR_TESTING_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: npm run test:browser -- --browser chromium
+
+      - name: Install Firefox
+        id: firefox
+        uses: browser-actions/setup-firefox@2ddc1281882c66dd6a359947714eed0a4b91afc1 # v1
+        with:
+          firefox-version: latest
+
+      - name: Run production API integration tests in Firefox
+        env:
+          FIREFOX_PATH: ${{ steps.firefox.outputs.firefox-path }}
+        run: npm run test:browser -- --browser firefox
 
   compute-matrix:
     name: Compute matrix

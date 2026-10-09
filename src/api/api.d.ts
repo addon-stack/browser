@@ -2,6 +2,27 @@
 // API shape instead of redeclaring that value. Firefox-only members below still
 // require runtime feature detection; this is a cross-browser type superset.
 declare namespace chrome {
+    /** Firefox-only additions; detect each method before use in other browsers. */
+    namespace search {
+        interface SearchEngine {
+            name: string;
+            isDefault: boolean;
+            alias?: string;
+            favIconUrl?: string;
+        }
+
+        type SearchProperties = {query: string; engine?: string} & (
+            | {tabId?: number; disposition?: undefined}
+            | {tabId?: undefined; disposition?: `${Disposition}`}
+        );
+
+        /** Firefox only. Lists the user's available search engines. */
+        function get(): Promise<SearchEngine[]>;
+
+        /** Firefox only. Uses the named engine, or the default when omitted. Defaults to a new tab. */
+        function search(searchProperties: SearchProperties): Promise<void>;
+    }
+
     /**
      * Firefox only; not provided by Chrome's browser alias.
      * @see: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction

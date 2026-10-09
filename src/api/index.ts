@@ -21,6 +21,7 @@ export * from "./offscreen";
 export * from "./permissions";
 export * from "./runtime";
 export * from "./scripting";
+export * from "./search";
 export * from "./sidebar";
 export * from "./tab-capture";
 export * from "./tabs";

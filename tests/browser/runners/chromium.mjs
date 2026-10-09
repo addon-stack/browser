@@ -2,6 +2,8 @@ import {execFile} from "node:child_process";
 import {resolve} from "node:path";
 import {promisify} from "node:util";
 
+import {launchProcess} from "./process.mjs";
+
 const run = promisify(execFile);
 
 const browserHint =
@@ -47,3 +49,10 @@ export const browserSmokeError = (reason, browser, diagnostics = "") =>
         `${reason}\nBrowser: ${browser.version} (${browser.path})\n${browserHint}` +
             (diagnostics ? `\nBrowser stderr (last 1200 characters):\n${diagnostics.slice(-1200)}` : "")
     );
+
+export const launchChromium = ({binary, profile, extension}) => launchProcess(binary, [
+    "--headless=new", "--no-first-run", "--no-default-browser-check",
+    "--disable-background-networking", "--disable-component-update", "--disable-sync", "--no-proxy-server",
+    `--user-data-dir=${profile}`, `--disable-extensions-except=${extension}`, `--load-extension=${extension}`,
+    "about:blank",
+]);

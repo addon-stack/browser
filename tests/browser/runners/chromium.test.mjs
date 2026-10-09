@@ -1,6 +1,6 @@
 import {describe, expect, test} from "@jest/globals";
 
-import {assertSupportedBrowser, browserSmokeError, inspectBrowser} from "./launcher.mjs";
+import {assertSupportedBrowser, browserSmokeError, inspectBrowser} from "./chromium.mjs";
 
 describe("browser smoke launcher diagnostics", () => {
     test.each(["Google Chrome for Testing 148.0.7778.96", "Chromium 148.0.7778.96"])("accepts %s", version => {

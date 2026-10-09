@@ -52,17 +52,17 @@ const declarationExports = getModuleExports(declarationEntry, {
     types: ["chrome"],
 });
 
-assert.equal(sourceExports.length, 361, "The source public-export baseline changed; update the coverage matrix first");
+assert.equal(sourceExports.length, 376, "The source public-export baseline changed; update the coverage matrix first");
 
 assert.equal(
     sourceExports.filter(value => value.hasValue).length,
-    358,
+    371,
     "The source runtime-export baseline changed; update the coverage matrix first"
 );
 
 assert.deepEqual(sortNames(declarationExports), sortNames(sourceExports), "Source and declaration exports differ");
 
-const expectedTypeOnly = ["BrowserGuess", "LaunchWebAuthFlowDetails", "WindowEventFilter"];
+const expectedTypeOnly = ["BrowserGuess", "LaunchWebAuthFlowDetails", "SearchEngine", "SearchTargetOptions", "WindowEventFilter"];
 
 assert.deepEqual(
     sourceExports
@@ -170,4 +170,4 @@ for (const {file, source} of testingRuntimeSources) {
     );
 }
 
-console.log("Verified 361 TypeScript exports, 358 ESM/CJS runtime exports, and isolated testing bundles.");
+console.log("Verified 376 TypeScript exports, 371 ESM/CJS runtime exports, and isolated testing bundles.");

@@ -74,6 +74,8 @@
     "fix": "eslint . --fix --max-warnings 0",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:ci": "npm test -- --ci --passWithNoTests --coverage",
+    "test:browser": "node ./tests/browser/run.mjs",
+    "typecheck:browser": "tsc -p tests/browser/tsconfig.json",
     "test:browser-match-patterns": "node ./tests/browser-match-patterns/check.mjs",
     "test:consumer-types": "npm run build && node ./tests/consumer-types/check.mjs",
     "test:relay-consumer": "npm run build && node ./tests/relay-consumer/check.mjs",

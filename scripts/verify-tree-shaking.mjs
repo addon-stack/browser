@@ -468,6 +468,47 @@ try {
 
             console.log(`Verified ${exportName} consumer tree shaking and lazy access (${Buffer.byteLength(source)} bytes minified).`);
         }
+
+        for (const exportName of ["querySearch", "searchInNewTab"]) {
+            await writeFile(entry, `import {${exportName}} from ${JSON.stringify(packageEntry)};\nexport const run = ${exportName};\n`);
+
+            await build({
+                config: false,
+                entry: {consumer: entry},
+                outDir: join(directory, "dist"),
+                format: ["esm"],
+                outExtension: () => ({js: ".mjs"}),
+                platform: "browser",
+                target: "es2022",
+                bundle: true,
+                minify: true,
+                dts: false,
+                sourcemap: false,
+                silent: true,
+            });
+
+            const output = join(directory, "dist/consumer.mjs");
+            const source = await readFile(output, "utf8");
+            assert.match(source, /\.query\b/);
+            assert.doesNotMatch(source, /\.get\b|\.search\(|\.find\b|\.some\b|isDefault|\.engine\b|createBrowserHarness/);
+            const unrelated = availabilityApis.map(api => api.namespace).filter(name => name !== "search" && name !== "runtime");
+            assert.doesNotMatch(source, new RegExp(`\\.(?:${unrelated.join("|")})\\b`));
+            setGlobals({});
+            const url = pathToFileURL(output);
+            url.searchParams.set("search", exportName);
+            const {run} = await import(url.href);
+            const calls = [];
+
+            setGlobals({chrome: {runtime: {}, search: {query(options, callback) {
+                calls.push(options);
+                callback();
+            }}}});
+
+            const expected = exportName === "querySearch" ? {text: "test"} : {text: "test", disposition: "NEW_TAB"};
+            await run(exportName === "querySearch" ? expected : "test");
+            assert.deepEqual(calls, [expected]);
+            console.log(`Verified ${exportName} consumer tree shaking (${Buffer.byteLength(source)} bytes minified).`);
+        }
     } finally {
         for (const [name, descriptor] of originals) {
             if (descriptor) {

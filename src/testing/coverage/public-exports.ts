@@ -317,6 +317,21 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ]),
     ...entries("scripting", "method-wrapper", "behavioral", ["isAvailableScripting"]),
 
+    ...entries("search", "interface", "declaration", ["SearchEngine", "SearchTargetOptions"]),
+    ...entries("search", "method-wrapper", "configurable", ["querySearch", "getSearchEngines", "searchWithEngine"]),
+    ...entries("search", "method-wrapper", "behavioral", [
+        "isAvailableSearch",
+        "canQuerySearch",
+        "canGetSearchEngines",
+        "canSearchWithEngine",
+        "searchInTab",
+        "searchInCurrentTab",
+        "searchInNewTab",
+        "searchInNewWindow",
+        "getDefaultSearchEngine",
+        "hasSearchEngine",
+    ]),
+
     ...entries("sidebar", "method-wrapper", "behavioral", ["isAvailableSidebar"]),
     ...entries("sidebar", "class", "behavioral", ["SidebarError"]),
     ...entries("sidebar", "enum", "declaration", ["SidebarState"]),
@@ -470,10 +485,10 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ]),
 ] as const;
 
-export const TYPE_ONLY_ROOT_EXPORTS = ["BrowserGuess", "LaunchWebAuthFlowDetails", "WindowEventFilter"] as const;
+export const TYPE_ONLY_ROOT_EXPORTS = ["BrowserGuess", "LaunchWebAuthFlowDetails", "SearchEngine", "SearchTargetOptions", "WindowEventFilter"] as const;
 
-export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 361;
-export const EXPECTED_ROOT_RUNTIME_EXPORT_COUNT = 358;
+export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 376;
+export const EXPECTED_ROOT_RUNTIME_EXPORT_COUNT = 371;
 
 export const getPublicExportCoverage = (name: string): PublicExportCoverageEntry | undefined =>
     PUBLIC_EXPORT_COVERAGE.find(entry => entry.name === name);

@@ -40,7 +40,7 @@ pnpm add @addon-core/browser
 
 The package depends on `@types/chrome@^0.3.0`, which owns the global `browser` alias
 (`typeof chrome`). Our declarations extend that shared API shape with Firefox-only
-`sidebarAction` and `runtime.getBrowserInfo`, plus the existing legacy APIs. They do
+`sidebarAction`, `runtime.getBrowserInfo`, and search engine methods, plus the existing legacy APIs. They do
 not redeclare the `browser` value. The previous type names
 `browser.runtime.BrowserInfo` and `browser.sidebarAction.ImageDataType` remain available.
 
@@ -71,6 +71,7 @@ older `@types/chrome` should update it to the same range to avoid mixing global 
 - [permissions](docs/permissions.md)
 - [runtime](docs/runtime.md)
 - [scripting](docs/scripting.md)
+- [search](docs/search.md) — Default-provider search and Firefox engine selection; Safari limitations and a Tabs API example.
 - [sidebar](docs/sidebar.md) — Unified helpers for Chrome Side Panel (MV3) and Firefox/Opera `sidebarAction`.
 - [storage](https://github.com/addon-stack/storage) — via separate package: [@addon-core/storage](https://www.npmjs.com/package/@addon-core/storage)
 - [tabCapture](docs/tab-capture.md)
@@ -160,6 +161,9 @@ configurable browser methods and events, stateful runtime/permissions/tabs/windo
 browser-global installation. Importing it never changes `globalThis`, and it has no dependency on Jest or another test
 runner.
 
+Production API integration tests run in real Chromium and Firefox extensions through `npm run test:browser`.
+See the [browser test guide](tests/browser/README.md) for setup, per-API scenarios and permission profiles.
+
 ## Not yet covered
 
 These commonly used WebExtensions/Chrome Extension APIs are not wrapped here yet (Chrome OS–only APIs are intentionally omitted). If you’d like to contribute, please see [CONTRIBUTING.md](CONTRIBUTING.md) and open an issue/PR.
@@ -178,7 +182,6 @@ These commonly used WebExtensions/Chrome Extension APIs are not wrapped here yet
 - power
 - privacy
 - proxy
-- search
 - sessions
 - system.cpu
 - system.memory

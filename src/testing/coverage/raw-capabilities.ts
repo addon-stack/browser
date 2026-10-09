@@ -334,6 +334,9 @@ export const RAW_CAPABILITY_COVERAGE: readonly RawCapabilityEntry[] = [
         "updateContentScripts",
     ]),
 
+    ...methodCapabilities("search", "configurable", callbackInvocation, ["query"]),
+    ...methodCapabilities("search", "configurable", promiseInvocation, ["get", "search"]),
+
     ...methodCapabilities("sidePanel", "configurable", callbackInvocation, [
         "close",
         "getOptions",

@@ -44,6 +44,8 @@ npm ci
 - `npm run typecheck` — type-check package source and TypeScript tests with tsc
 - `npm test` / `npm run test:ci` — tests (Jest)
 - `npm run test:browser-match-patterns -- /absolute/path/to/browser` — real-browser match-pattern smoke (build first)
+- `npm run test:browser -- --browser chromium --api search --binary /absolute/path/to/browser` — production API integration tests in a real extension (build first)
+- `npm run typecheck:browser` — type-check browser scenarios against the built package
 
 Minimum Node.js version: current LTS (at release time).
 
@@ -241,7 +243,7 @@ When adding another event namespace, add its description under `codegen/events/a
 
 ### Generated availability checks
 
-`codegen/availability/apis.mjs` explicitly lists all 27 native API modules, including modules without events.
+`codegen/availability/apis.mjs` explicitly lists all 28 native API modules, including modules without events.
 Descriptions contain `namespace` and an optional `template` (`basic` by default). Export names are derived as
 `isAvailable` plus the namespace with its first letter capitalized; the rest of its camelCase is preserved.
 For example, `userScripts` produces `isAvailableUserScripts`. There is no `exportName` override.
@@ -362,6 +364,14 @@ In CI use `npm run test:ci`. All test scripts (`npm test`, `npm run test:ci`, an
 
 Import Jest helpers explicitly in test files, for example `import {describe, expect, jest, test} from "@jest/globals"`. In ESM, the `jest` object is not a global. These imports belong only in test suites; the published `@addon-core/browser/testing` runtime remains runner-independent.
 
+### Browser API integration tests
+
+Production API integration tests live in [`tests/browser/`](tests/browser/README.md). The common runner, browser
+launchers and extension shell are shared; `api/<namespace>/` declares browser support, permission profiles and
+`.scenario.ts` files. These scenarios import the built production package and run inside real disposable extensions.
+They are separate from Jest and from the in-memory test-kit integration tests below. The regular Jest suite still
+checks browser-runner infrastructure through its `.test.mjs` files. Add new API scenarios to `tests/browser/api/index.ts`.
+
 ### Test-kit layout and dependency boundaries
 
 `src/testing/` contains the shipped implementation, not its test suites:
@@ -386,6 +396,7 @@ tests/
 │   └── integration/      # combined components, real wrappers and jsdom (no real browser)
 ├── api/                  # shared test cases for colocated production API tests
 ├── consumer-types/       # fresh tarball: TypeScript, ESM, CJS and jsdom
+├── browser/              # production API integration tests in Chromium and Firefox
 ├── browser-match-patterns/ # real-browser comparisons with a temporary Chromium profile
 └── tooling/              # lint/hooks, layout and dependency-boundary guards
 ```
@@ -499,8 +510,9 @@ not Firefox/Safari validation or complete browser parity. See [scope and example
 
 Releases are performed by maintainers.
 
-The reusable CI workflow includes the [browser match-pattern smoke](#browser-match-pattern-smoke). Keep it green
-alongside unit, type, build, and consumer checks before publishing; no separate manual browser-test waiver is implied.
+The reusable CI workflow includes [production API integration tests](tests/browser/README.md) in Chromium and Firefox
+and the [browser match-pattern smoke](#browser-match-pattern-smoke). Keep these green alongside unit, type, build,
+and consumer checks before publishing; no separate manual browser-test waiver is implied.
 
 Flow (aligned with GitFlow):
 1) Merge features into `develop` via PRs.

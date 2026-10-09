@@ -292,6 +292,8 @@ export type RuntimeConfigurableApi = Pick<
 
 export type ScriptingConfigurableApi = Pick<typeof chrome.scripting, "executeScript" | "insertCSS" | "removeCSS">;
 
+export type SearchConfigurableApi = Pick<typeof chrome.search, "query" | "get" | "search">;
+
 export type SidePanelConfigurableApi = Pick<
     typeof chrome.sidePanel,
     "close" | "getOptions" | "getPanelBehavior" | "open" | "setOptions" | "setPanelBehavior"
@@ -424,6 +426,7 @@ export interface ConfigurableBrowserApi {
     permissions: PermissionsConfigurableApi;
     runtime: RuntimeConfigurableApi;
     scripting: ScriptingConfigurableApi;
+    search: SearchConfigurableApi;
     sidePanel: SidePanelConfigurableApi;
     tabCapture: TabCaptureConfigurableApi;
     tabs: TabsConfigurableApi;
@@ -459,6 +462,7 @@ export interface ConfigurableBrowserControls {
     readonly permissions: BrowserNamespaceHarness<PermissionsConfigurableApi>;
     readonly runtime: BrowserNamespaceHarness<RuntimeConfigurableApi>;
     readonly scripting: BrowserNamespaceHarness<ScriptingConfigurableApi>;
+    readonly search: BrowserNamespaceHarness<SearchConfigurableApi>;
     readonly sidePanel: BrowserNamespaceHarness<SidePanelConfigurableApi>;
     readonly tabCapture: BrowserNamespaceHarness<TabCaptureConfigurableApi>;
     readonly tabs: BrowserNamespaceHarness<TabsConfigurableApi>;
@@ -567,6 +571,8 @@ const NO_RESULT_METHODS = new Set([
     "runtime.setUninstallURL",
     "scripting.insertCSS",
     "scripting.removeCSS",
+    "search.query",
+    "search.search",
     "sidePanel.close",
     "sidePanel.open",
     "sidePanel.setOptions",

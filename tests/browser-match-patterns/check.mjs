@@ -10,9 +10,9 @@ import {join} from "node:path";
 
 import {createBrowserHarness, createTabFixture} from "../../dist/testing/index.js";
 import {createNodeScriptExecutor, createNodeScriptRuntime} from "../../dist/testing/node/index.js";
-import {removeBrowserTemporaryDirectory} from "./cleanup.mjs";
+import {browserSmokeError, inspectBrowser} from "../browser/runners/chromium.mjs";
+import {removeBrowserTemporaryDirectory} from "../browser/runners/cleanup.mjs";
 import {selectExtensionPageContext} from "./context-selection.mjs";
-import {browserSmokeError, inspectBrowser} from "./launcher.mjs";
 import {checkMessageResponses} from "./messaging-assertions.mjs";
 import {installMessagingReceiver, messageResponsesProbe, messagingProbe} from "./messaging-probe.mjs";
 import {offscreenProbe} from "./offscreen-probe.mjs";

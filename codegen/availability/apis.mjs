@@ -19,6 +19,7 @@ export default [
     {namespace: "permissions"},
     {namespace: "runtime"},
     {namespace: "scripting"},
+    {namespace: "search"},
     {namespace: "sidebar", template: "sidebar"},
     {namespace: "tabCapture"},
     {namespace: "tabs"},
