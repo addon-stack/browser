@@ -11,7 +11,7 @@ async function main() {
         removeListener: listener => listeners.delete(listener),
     };
 
-    globalThis.chrome = {runtime: {}, tabGroups: {
+    globalThis.chrome = {runtime: {id: "chromium"}, tabGroups: {
         get(id, callback) {
             assert.equal(id, 7);
             callback(group);
@@ -19,6 +19,7 @@ async function main() {
         onRemoved,
     }, tabs: {
         ungroup(ids, callback) {
+            assert.equal(this, globalThis.chrome.tabs);
             assert.deepEqual(ids, [7, 8]);
             callback();
         },
@@ -28,6 +29,8 @@ async function main() {
         assert.equal(api.isAvailableTabGroups(), true);
         assert.equal(await api.getTabGroup(7), group);
         assert.equal(await api.ungroupTab([7, 8]), undefined);
+        globalThis.browser = globalThis.chrome;
+        assert.equal(await api.ungroupTab([7, 8]), undefined);
         const received = [];
         const off = api.onTabGroupRemoved((...args) => received.push(args));
         [...listeners][0](group);
@@ -35,7 +38,9 @@ async function main() {
         off();
         assert.equal(listeners.size, 0);
 
-        globalThis.browser = {runtime: {id: "firefox"}, tabGroups: {get: async () => group, onRemoved}, tabs: {
+        globalThis.browser = {runtime: {id: "firefox", getBrowserInfo() {
+            throw new Error("Namespace selection must not call getBrowserInfo");
+        }}, tabGroups: {get: async () => group, onRemoved}, tabs: {
             async ungroup(...args) {
                 assert.equal(args.length, 1);
                 assert.equal(this, globalThis.browser.tabs);
@@ -52,6 +57,8 @@ async function main() {
         assert.equal(received[1][1], info);
         offFirefox();
         assert.equal(listeners.size, 0);
+        globalThis.chrome = globalThis.browser;
+        assert.equal(await api.ungroupTab([7, 8]), undefined);
     } finally {
         delete globalThis.chrome;
         delete globalThis.browser;

@@ -86,7 +86,10 @@ describe("identity methods", () => {
         harness.configurable.chrome.identity.launchWebAuthFlow.setResult(redirectUrl);
         const details = {interactive: true, url: "https://accounts.example/oauth"};
 
-        await expect(launchWebAuthFlow(details)).resolves.toBe(redirectUrl);
+        const pending = launchWebAuthFlow(details);
+
+        expect(harness.configurable.chrome.identity.launchWebAuthFlow.calls).toHaveLength(1);
+        await expect(pending).resolves.toBe(redirectUrl);
 
         expect(harness.configurable.chrome.identity.launchWebAuthFlow.calls).toMatchObject([
             {
@@ -113,23 +116,35 @@ describe("identity methods", () => {
         });
     });
 
-    test("should use the dual Promise path for a Firefox runtime", async () => {
+    test("should use the browser Promise path without querying browser information", async () => {
         installFirefox();
         const firefoxRedirect = "https://extension-id.extensions.allizom.org/oauth?code=123";
         harness.configurable.browser.identity.launchWebAuthFlow.setResult(firefoxRedirect);
 
-        const details = {
-            redirect_uri: "https://extension-id.extensions.allizom.org/oauth",
-            url: "https://accounts.example/oauth",
-        };
+        const url = new URL("https://accounts.example/oauth");
+        url.searchParams.set("redirect_uri", "https://extension-id.extensions.allizom.org/oauth");
+        const details = {url: url.href};
 
-        await expect(launchWebAuthFlow(details)).resolves.toBe(firefoxRedirect);
+        const pending = launchWebAuthFlow(details);
+
+        expect(harness.configurable.browser.identity.launchWebAuthFlow.calls).toHaveLength(1);
+        await expect(pending).resolves.toBe(firefoxRedirect);
 
         expect(harness.configurable.browser.identity.launchWebAuthFlow.calls).toMatchObject([
             {args: [details], callback: undefined, callbackCalls: [], invocation: "promise"},
         ]);
 
-        expect(harness.runtime.getBrowserInfo.calls).toHaveLength(1);
+        expect(harness.runtime.getBrowserInfo.calls).toHaveLength(0);
+        expect(harness.configurable.chrome.identity.launchWebAuthFlow.calls).toHaveLength(0);
+    });
+
+    test("should retain a native rejection from the browser Promise path", async () => {
+        installFirefox();
+        const error = new Error("Authorization flow failed");
+        harness.configurable.browser.identity.launchWebAuthFlow.failNext(error);
+
+        await expect(launchWebAuthFlow({url: "https://accounts.example/oauth"})).rejects.toBe(error);
+        expect(harness.configurable.browser.identity.launchWebAuthFlow.calls).toHaveLength(1);
         expect(harness.configurable.chrome.identity.launchWebAuthFlow.calls).toHaveLength(0);
     });
 
@@ -159,6 +174,46 @@ describe("identity methods", () => {
                 invocation: "promise-tolerant",
             },
         ]);
+    });
+
+    test("should preserve callback completion when browser aliases chrome", async () => {
+        restoreGlobals();
+        restoreGlobals = installGlobals({browser: harness.chrome, chrome: harness.chrome});
+        const native = harness.configurable.chrome.identity.launchWebAuthFlow;
+        native.setResult(redirectUrl);
+        const details = {url: "https://accounts.example/oauth"};
+
+        const pending = launchWebAuthFlow(details);
+
+        expect(native.calls).toHaveLength(1);
+        expect(native.calls[0]).toMatchObject({args: [details], invocation: "callback"});
+        await expect(pending).resolves.toBe(redirectUrl);
+    });
+
+    test.each([false, true])("should preserve the receiver and exact arguments of a Promise-only browser method (shared namespace: %s)", async shared => {
+        const details = {url: "https://accounts.example/oauth", interactive: true};
+
+        const native = jest.fn(function (this: typeof chrome.identity, ...args: unknown[]) {
+            expect(this).toBe(browserApi.identity);
+            expect(args).toEqual([details]);
+            expect(args[0]).toBe(details);
+
+            return Promise.resolve(redirectUrl);
+        });
+
+        const browserApi = {
+            ...harness.browser,
+            identity: {...harness.browser.identity, launchWebAuthFlow: native},
+        } as BrowserTestApi;
+
+        restoreGlobals();
+        restoreGlobals = installGlobals({browser: browserApi, chrome: shared ? browserApi : harness.chrome});
+
+        const pending = launchWebAuthFlow(details);
+
+        expect(native).toHaveBeenCalledTimes(1);
+        expect(harness.runtime.getBrowserInfo.calls).toHaveLength(0);
+        await expect(pending).resolves.toBe(redirectUrl);
     });
 
     test("should reject launchWebAuthFlow through callback-scoped runtime.lastError", async () => {
@@ -217,6 +272,42 @@ describe("identity methods", () => {
 
         await expect(getAuthToken()).rejects.toThrow("OAuth token unavailable");
         expect(harness.runtime.lastError).toBeUndefined();
+    });
+
+    test.each(["resolve", "reject", "throw"] as const)("should retain getAuthToken %s without a callback result", async outcome => {
+        const result = {token: "promise-token", grantedScopes: ["email"]};
+        const error = new Error("Token request failed");
+        const details = {interactive: false, scopes: ["email"]};
+
+        const native = jest.fn(function (this: typeof chrome.identity, ...args: unknown[]) {
+            expect(this).toBe(api.identity);
+            expect(args).toEqual([details, expect.any(Function)]);
+            expect(args[0]).toBe(details);
+
+            if (outcome === "throw") {
+                throw error;
+            }
+
+            return outcome === "resolve" ? Promise.resolve(result) : Promise.reject(error);
+        });
+
+        const api = {
+            ...harness.chrome,
+            identity: {...harness.chrome.identity, getAuthToken: native},
+        } as BrowserTestApi;
+
+        restoreGlobals();
+        restoreGlobals = installGlobals({browser: undefined, chrome: api});
+
+        const pending = getAuthToken(details);
+
+        if (outcome === "resolve") {
+            await expect(pending).resolves.toBe(result);
+        } else {
+            await expect(pending).rejects.toBe(error);
+        }
+
+        expect(native).toHaveBeenCalledTimes(1);
     });
 
     test("should model the hybrid callback and thenable race", async () => {

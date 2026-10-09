@@ -2,10 +2,14 @@ import {afterEach, describe, expect, jest, test} from "@jest/globals";
 
 import {type BrowserTestApi, createBrowserEvent, installGlobals} from "../testing";
 import {createListenerErrorCapture} from "../testing/environment/listener-errors";
-import {callWithPromise, checkLastError, handleListener, safeListener} from "./utils";
+import {callBrowserMethod, callWithPromise, checkLastError, handleListener, safeListener} from "./utils";
 
 const runtimeApi = (lastError?: chrome.runtime.LastError): BrowserTestApi =>
     ({runtime: {lastError}}) as unknown as BrowserTestApi;
+
+const createBrowserMethodApi = (
+    runtime: {id?: string; lastError?: chrome.runtime.LastError} = {id: "test-extension"}
+): BrowserTestApi => ({runtime}) as BrowserTestApi;
 
 describe("utils", () => {
     let restoreGlobals: () => void = () => undefined;
@@ -166,6 +170,131 @@ describe("utils", () => {
             expect(event.listenerCount()).toBe(1);
             unsubscribe();
             expect(event.listenerCount()).toBe(0);
+        });
+    });
+
+    describe("callBrowserMethod", () => {
+        test.each([
+            "chrome only",
+            "browser aliases chrome",
+            "Firefox with shared namespaces",
+            "separate browser",
+            "browser only",
+            "separate roots with shared API namespaces",
+            "browser without an extension ID",
+        ])("selects one invocation for %s", async scenario => {
+            const chromeApi = createBrowserMethodApi();
+
+            const browserApi = ["browser aliases chrome", "Firefox with shared namespaces"].includes(scenario)
+                ? chromeApi
+                : createBrowserMethodApi();
+
+            const getBrowserInfo = jest.fn(async () => ({name: "Firefox", vendor: "Mozilla", version: "157", buildID: "test"}));
+
+            if (scenario === "Firefox with shared namespaces") {
+                browserApi.runtime.getBrowserInfo = getBrowserInfo;
+            }
+
+            if (scenario === "separate roots with shared API namespaces") {
+                browserApi.runtime = chromeApi.runtime;
+            }
+
+            if (scenario === "browser without an extension ID") {
+                browserApi.runtime = {...browserApi.runtime, id: ""};
+            }
+
+            setGlobals({
+                browser: scenario === "chrome only" ? undefined : browserApi,
+                chrome: scenario === "browser only" ? undefined : chromeApi,
+            });
+
+            const result = {value: 42};
+            const callback = jest.fn((_api: typeof chrome, done: (value: typeof result) => void) => done(result));
+            const promise = jest.fn(async (_api: typeof chrome) => result);
+            const pending = callBrowserMethod({callback, promise});
+            const usesCallback = ["chrome only", "browser aliases chrome", "browser without an extension ID"].includes(scenario);
+
+            // Native calls must start immediately, without an asynchronous browser-detection step.
+            if (usesCallback) {
+                expect(callback).toHaveBeenCalledTimes(1);
+                expect(callback.mock.calls[0][0]).toBe(chromeApi);
+                expect(callback.mock.calls[0][1]).toEqual(expect.any(Function));
+                expect(promise).not.toHaveBeenCalled();
+            } else {
+                expect(promise).toHaveBeenCalledTimes(1);
+                expect(promise.mock.calls[0][0]).toBe(browserApi);
+                expect(callback).not.toHaveBeenCalled();
+            }
+
+            await expect(pending).resolves.toBe(result);
+            expect(getBrowserInfo).not.toHaveBeenCalled();
+        });
+
+        test("waits for callback completion and retains callback-scoped lastError", async () => {
+            const runtime: {id: string; lastError?: chrome.runtime.LastError} = {id: "test-extension"};
+            const api = createBrowserMethodApi(runtime);
+            setGlobals({browser: api, chrome: api});
+            let complete!: (value: string) => void;
+            const promise = jest.fn(async () => "unexpected");
+
+            const pending = callBrowserMethod({
+                callback: (_api, done) => {
+                    complete = done;
+                },
+                promise,
+            });
+
+            const settled = jest.fn();
+            void pending.then(settled, settled);
+            await Promise.resolve();
+            expect(settled).not.toHaveBeenCalled();
+
+            runtime.lastError = {message: "Native failure"};
+            complete("ignored");
+            delete runtime.lastError;
+
+            await expect(pending).rejects.toThrow("Native failure");
+            expect(promise).not.toHaveBeenCalled();
+        });
+
+        test.each(["callback", "promise"] as const)("retains a Promise rejection in the %s branch without retrying", async branch => {
+            const api = createBrowserMethodApi();
+            setGlobals({browser: branch === "promise" ? api : undefined, chrome: branch === "callback" ? api : undefined});
+            const error = new Error("Native rejection");
+            const callback = jest.fn(() => Promise.reject(error));
+            const promise = jest.fn(() => Promise.reject(error));
+
+            await expect(callBrowserMethod({callback, promise})).rejects.toBe(error);
+            expect(callback).toHaveBeenCalledTimes(branch === "callback" ? 1 : 0);
+            expect(promise).toHaveBeenCalledTimes(branch === "promise" ? 1 : 0);
+        });
+
+        test.each(["callback", "promise"] as const)("turns a synchronous %s failure into a rejection without retrying", async branch => {
+            const api = createBrowserMethodApi();
+            setGlobals({browser: branch === "promise" ? api : undefined, chrome: branch === "callback" ? api : undefined});
+            const error = new Error("Invalid arguments");
+
+            const callback = jest.fn(() => {
+                throw error;
+            });
+
+            const promise = jest.fn(() => {
+                throw error;
+            });
+
+            await expect(callBrowserMethod({callback, promise})).rejects.toBe(error);
+            expect(callback).toHaveBeenCalledTimes(branch === "callback" ? 1 : 0);
+            expect(promise).toHaveBeenCalledTimes(branch === "promise" ? 1 : 0);
+        });
+
+        test("rejects when no extension API exists without invoking either branch", async () => {
+            setGlobals({browser: undefined, chrome: undefined});
+            const callback = jest.fn(() => {});
+            const promise = jest.fn(async () => undefined);
+
+            await expect(callBrowserMethod({callback, promise})).rejects.toThrow("WebExtension API not available");
+            expect(callback).not.toHaveBeenCalled();
+            expect(promise).not.toHaveBeenCalled();
         });
     });
 });

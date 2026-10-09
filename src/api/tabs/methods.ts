@@ -1,5 +1,5 @@
 import {browser} from "../browser";
-import {callWithPromise} from "../utils";
+import {callBrowserMethod, callWithPromise} from "../utils";
 
 type Tab = chrome.tabs.Tab;
 type Port = chrome.runtime.Port;
@@ -86,11 +86,9 @@ export const setTabZoomSettings = (tabId: number, zoomSettings: ZoomSettings): P
     callWithPromise(cb => tabs().setZoomSettings(tabId, zoomSettings, () => cb()));
 
 export const ungroupTab = (tabIds: number | [number, ...number[]]): Promise<void> =>
-    callWithPromise(cb => {
-        const api = browser();
-
-        // Firefox's browser.tabs.ungroup is Promise-only; chrome keeps callback support.
-        return api === globalThis.browser ? api.tabs.ungroup(tabIds) : api.tabs.ungroup(tabIds, () => cb());
+    callBrowserMethod<void>({
+        callback: (api, done) => api.tabs.ungroup(tabIds, done),
+        promise: api => api.tabs.ungroup(tabIds),
     });
 
 export const updateTab = (tabId: number, updateProperties: UpdateProperties): Promise<Tab | undefined> =>

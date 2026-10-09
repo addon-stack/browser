@@ -10,6 +10,7 @@ import availabilityApis from "../codegen/availability/apis.mjs";
 
 const directory = await mkdtemp(join(tmpdir(), "browser-tree-shaking-"));
 const packageEntry = fileURLToPath(new URL("../dist/index.js", import.meta.url)).replaceAll("\\", "/");
+const utilsEntry = fileURLToPath(new URL("../dist/utils.js", import.meta.url)).replaceAll("\\", "/");
 
 const consumers = [
     {exportName: "onTabGroupRemoved", namespace: "tabGroups", eventName: "onRemoved"},
@@ -470,6 +471,76 @@ try {
                     delete api[namespace];
                     assert.equal(check(), false);
                 }
+            }
+
+            console.log(`Verified ${exportName} consumer tree shaking and lazy access (${Buffer.byteLength(source)} bytes minified).`);
+        }
+
+        for (const exportName of ["callWithPromise", "callBrowserMethod", "ungroupTab", "launchWebAuthFlow"]) {
+            const isUtility = exportName.startsWith("call");
+            await writeFile(entry, `import {${exportName}} from ${JSON.stringify(isUtility ? utilsEntry : packageEntry)};\nexport const run = ${exportName};\n`);
+
+            await build({
+                config: false,
+                entry: {consumer: entry},
+                outDir: join(directory, "dist"),
+                format: ["esm"],
+                outExtension: () => ({js: ".mjs"}),
+                platform: "browser",
+                target: "es2022",
+                bundle: true,
+                minify: true,
+                dts: false,
+                sourcemap: false,
+                silent: true,
+            });
+
+            const output = join(directory, "dist/consumer.mjs");
+            const source = await readFile(output, "utf8");
+            assert.doesNotMatch(source, /addListener|removeListener|console\.error|getBrowserInfo\(|userAgent|createBrowserHarness/);
+
+            if (exportName === "callWithPromise") {
+                assert.doesNotMatch(source, /\.callback\b|\.promise\b|getBrowserInfo/, "Unused callBrowserMethod survived tree shaking");
+            } else {
+                assert.match(source, /\.callback\b/);
+                assert.match(source, /\.promise\b/);
+            }
+
+            assert.doesNotMatch(source, /\.getAuthToken\b|\.group\b|\.query\b/);
+            assert.doesNotMatch(source, exportName === "ungroupTab" ? /\.identity\b/ : /\.tabs\b/);
+            assert.doesNotMatch(source, exportName === "launchWebAuthFlow" ? /\.tabs\b/ : /\.identity\b/);
+            setGlobals({});
+            const url = pathToFileURL(output);
+            url.searchParams.set("utility", exportName);
+            const {run} = await import(url.href);
+            const api = {runtime: {id: "utils"}};
+            setGlobals({chrome: api});
+
+            if (exportName === "callWithPromise") {
+                assert.equal(await run(done => done(7)), 7);
+            } else if (exportName === "callBrowserMethod") {
+                assert.equal(await run({callback: (selected, done) => {
+                    assert.equal(selected, api);
+                    done(7);
+                }, promise: () => {
+                    throw new Error("Unexpected Promise branch");
+                }}), 7);
+            } else if (exportName === "ungroupTab") {
+                api.tabs = {ungroup(ids, done) {
+                    assert.equal(this, api.tabs);
+                    assert.equal(ids, 7);
+                    done();
+                }};
+
+                await run(7);
+            } else {
+                api.identity = {launchWebAuthFlow(details, done) {
+                    assert.equal(this, api.identity);
+                    assert.equal(details.url, "https://example.test/oauth");
+                    done("https://example.test/redirect");
+                }};
+
+                assert.equal(await run({url: "https://example.test/oauth"}), "https://example.test/redirect");
             }
 
             console.log(`Verified ${exportName} consumer tree shaking and lazy access (${Buffer.byteLength(source)} bytes minified).`);

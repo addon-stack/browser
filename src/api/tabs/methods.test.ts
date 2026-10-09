@@ -1,6 +1,6 @@
 import {afterEach, beforeEach, describe, expect, test} from "@jest/globals";
 
-import {type BrowserHarness, createBrowserHarness, createTabFixture, installBrowserGlobals} from "../../testing";
+import {type BrowserHarness, createBrowserHarness, createTabFixture, installBrowserGlobals, installGlobals} from "../../testing";
 import * as api from "./methods";
 
 const url = "https://example.test/existing";
@@ -197,4 +197,21 @@ describe.each(["chrome", "firefox"] as const)("tab methods in %s", profile => {
         await expect(api.openOrCreateTabByUrl(url)).rejects.toThrow("Creation failed");
         expect(harness.tabs.values).toEqual([]);
     });
+});
+
+test.each(["chrome", "firefox"] as const)("ungroupTab supports shared %s namespaces", async profile => {
+    const harness = createBrowserHarness();
+    const nativeApi = profile === "chrome" ? harness.chrome : harness.browser;
+    const restore = installGlobals({browser: nativeApi, chrome: nativeApi});
+    harness.tabs.ungroup.setResult(undefined);
+
+    try {
+        const pending = api.ungroupTab([7, 8]);
+
+        expect(harness.tabs.ungroup.calls).toHaveLength(1);
+        expect(harness.tabs.ungroup.calls[0].invocation).toBe(profile === "chrome" ? "callback" : "promise");
+        await expect(pending).resolves.toBeUndefined();
+    } finally {
+        restore();
+    }
 });

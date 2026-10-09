@@ -9,6 +9,7 @@ import {promisify} from "node:util";
 
 import {build} from "tsup";
 
+import {createAuthFixture} from "./auth-fixture.mjs";
 import {createManifest, help, parseOptions, scenarioIds, selectSuites, validateReport} from "./config.mjs";
 import {createNetworkFixture, writeResources} from "./fixtures.mjs";
 import {inspectBrowser, launchChromium} from "./runners/chromium.mjs";
@@ -39,9 +40,10 @@ async function runProfile(suite, profile, browserInfo, temporary) {
     let received = false;
 
     const networkFixture = createNetworkFixture();
+    const authFixture = createAuthFixture();
 
     const server = createServer(async (request, response) => {
-        if (networkFixture(request, response)) {
+        if (networkFixture(request, response) || authFixture(request, response)) {
             return;
         }
 

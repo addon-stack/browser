@@ -121,7 +121,11 @@ const responseUrl = await launchWebAuthFlow({
 
 This wrapper uses the callback form in Chrome-style runtimes to avoid callbackless Manifest V2 flows hanging, and the Promise form in Firefox where callbacks are not accepted.
 
-`LaunchWebAuthFlowDetails` also accepts `redirect_uri` for Firefox. This option is Firefox-only, supported since Firefox 63; loopback redirect URIs are supported since Firefox 86.
+Pass `redirect_uri` as a query parameter of `details.url`, as shown above. It is not a separate
+`LaunchWebAuthFlowDetails` property: Firefox rejects such a property before starting the flow.
+Firefox accepts its generated redirect URL or, from Firefox 86, the special loopback URL
+`http://127.0.0.1/mozoauth2/<subdomain-of-getIdentityRedirectUrl()>`. Arbitrary callback URLs are not supported.
+See [Firefox redirect URL setup](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/identity#getting_the_redirect_url).
 
 <a name="getAuthToken"></a>
 
