@@ -4,6 +4,7 @@ import jsonc from "eslint-plugin-jsonc";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import globals from "globals";
 import tseslint from "typescript-eslint";
+
 import project from "./scripts/eslint/file-naming.mjs";
 
 const codeFiles = ["**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx}"];
@@ -44,6 +45,7 @@ export default tseslint.config(
             parserOptions: {ecmaFeatures: {jsx: true}},
         },
         rules: {
+            curly: ["error", "all"],
             "project/padding-around-multiline": "error",
             // Explicit layout rules keep the existing style, without enabling an unrelated preset.
             "@stylistic/array-bracket-spacing": ["error", "never"],
@@ -94,7 +96,15 @@ export default tseslint.config(
             "@stylistic/type-annotation-spacing": "error",
             "@stylistic/type-generic-spacing": "error",
             "@stylistic/type-named-tuple-spacing": "error",
-            "simple-import-sort/imports": ["error", {groups: [["^\\u0000", "^node:", "^@?\\w", "^", "^\\."]]}],
+            "simple-import-sort/imports": ["error", {
+                // Include the optional side-effect marker when grouping imports by path.
+                groups: [
+                    ["^\\u0000?node:"],
+                    ["^\\u0000?@?\\w"],
+                    ["^"],
+                    ["^\\u0000?\\."],
+                ],
+            }],
             "simple-import-sort/exports": "error",
         },
     },
