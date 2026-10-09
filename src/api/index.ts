@@ -26,6 +26,7 @@ export * from "./scripting";
 export * from "./search";
 export * from "./sidebar";
 export * from "./tab-capture";
+export * from "./tab-groups";
 export * from "./tabs";
 export * from "./top-sites";
 export * from "./user-scripts";

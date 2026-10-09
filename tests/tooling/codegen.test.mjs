@@ -12,7 +12,7 @@ import {generateEvents} from "../../codegen/events/generate.mjs";
 import {renderGeneratedFiles} from "../../codegen/generate.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
-const basicNamespaces = ["alarms", "audio", "bookmarks", "commands", "context-menus", "cookies", "declarative-net-request", "downloads", "history", "identity", "idle", "management", "permissions", "runtime", "tab-capture"];
+const basicNamespaces = ["alarms", "audio", "bookmarks", "commands", "context-menus", "cookies", "declarative-net-request", "downloads", "history", "identity", "idle", "management", "permissions", "runtime", "tab-capture", "tab-groups"];
 const generatedNamespaces = ["action", ...basicNamespaces, "notifications", "tabs", "web-request", "windows", "web-navigation"];
 const availabilityNamespaces = [...generatedNamespaces, "browsing-data", "document-scan", "extension", "i18n", "offscreen", "scripting", "search", "sidebar", "top-sites", "user-scripts"];
 
@@ -395,4 +395,21 @@ test("rejects colliding availability aliases", () => {
     expect(() => renderGeneratedFiles(generateAvailability([
         {namespace: "declarativeNetRequest", alias: "Tabs"}, {namespace: "tabs"},
     ]))).toThrow("Duplicate generated export");
+});
+
+test("imports portable event types once, sorted after runtime imports", () => {
+    const [result] = generateEvents([{
+        namespace: "tabGroups",
+        typeImports: ["TabGroupRemoveInfo", "TabGroup", "TabGroup"],
+        events: {onTabGroupRemoved: {event: "onRemoved", callbackType: "(group: TabGroup, info?: TabGroupRemoveInfo) => void"}},
+    }]);
+
+    expect(result.source).toContain('import type {TabGroup, TabGroupRemoveInfo} from "./types";');
+    expect(result.source.match(/import type/g)).toHaveLength(1);
+    expect(result.source).toContain('from "../utils";\n\nimport type');
+    expect(result.source).toContain("handleListener(browser().tabGroups.onRemoved, callback)");
+});
+
+test.each([null, "TabGroup", ["../types"], ["TabGroup;"], [42]])("rejects invalid event type imports %j", typeImports => {
+    expect(() => generateEvents([{namespace: "tabGroups", typeImports, events: {onTabGroupCreated: "onCreated"}}])).toThrow();
 });

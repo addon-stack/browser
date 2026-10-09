@@ -77,6 +77,7 @@ older `@types/chrome` should update it to the same range to avoid mixing global 
 - [sidebar](docs/sidebar.md) — Unified helpers for Chrome Side Panel (MV3) and Firefox/Opera `sidebarAction`.
 - [storage](https://github.com/addon-stack/storage) — via separate package: [@addon-core/storage](https://www.npmjs.com/package/@addon-core/storage)
 - [tabCapture](docs/tab-capture.md)
+- [tabGroups](docs/tab-groups.md) — Read, update and move tab groups, with native event subscriptions.
 - [tabs](docs/tabs.md)
 - [topSites](docs/top-sites.md) — Most-visited sites with optional Firefox query settings.
 - [userScripts](docs/user-scripts.md)
@@ -187,6 +188,5 @@ These commonly used WebExtensions/Chrome Extension APIs are not wrapped here yet
 - system.cpu
 - system.memory
 - system.storage
-- tabGroups
 - tts
 - ttsEngine

@@ -15,6 +15,7 @@ import notificationsEvents from "./notifications.mjs";
 import permissionsEvents from "./permissions.mjs";
 import runtimeEvents from "./runtime.mjs";
 import tabCaptureEvents from "./tab-capture.mjs";
+import tabGroupsEvents from "./tab-groups.mjs";
 import tabsEvents from "./tabs.mjs";
 import webNavigationEvents from "./web-navigation.mjs";
 import webRequestEvents from "./web-request.mjs";
@@ -38,6 +39,7 @@ export default [
     permissionsEvents,
     runtimeEvents,
     tabCaptureEvents,
+    tabGroupsEvents,
     tabsEvents,
     webNavigationEvents,
     webRequestEvents,

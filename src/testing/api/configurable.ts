@@ -92,6 +92,11 @@ export type ActionConfigurableApi = Pick<
     | "setTitle"
 >;
 
+export type TabGroupsConfigurableApi = Pick<
+    typeof chrome.tabGroups,
+    "get" | "query" | "update" | "move" | "onCreated" | "onUpdated" | "onMoved" | "onRemoved"
+>;
+
 export type BookmarksConfigurableApi = Pick<
     typeof chrome.bookmarks,
     | "create" | "get" | "getChildren" | "getRecent" | "getSubTree" | "getTree"
@@ -449,6 +454,7 @@ export interface ConfigurableBrowserApi {
     search: SearchConfigurableApi;
     sidePanel: SidePanelConfigurableApi;
     tabCapture: TabCaptureConfigurableApi;
+    tabGroups: TabGroupsConfigurableApi;
     tabs: TabsConfigurableApi;
     topSites: TopSitesConfigurableApi;
     userScripts: UserScriptsConfigurableApi;
@@ -488,6 +494,7 @@ export interface ConfigurableBrowserControls {
     readonly search: BrowserNamespaceHarness<SearchConfigurableApi>;
     readonly sidePanel: BrowserNamespaceHarness<SidePanelConfigurableApi>;
     readonly tabCapture: BrowserNamespaceHarness<TabCaptureConfigurableApi>;
+    readonly tabGroups: BrowserNamespaceHarness<TabGroupsConfigurableApi>;
     readonly tabs: BrowserNamespaceHarness<TabsConfigurableApi>;
     readonly topSites: BrowserNamespaceHarness<TopSitesConfigurableApi>;
     readonly userScripts: BrowserNamespaceHarness<UserScriptsConfigurableApi>;

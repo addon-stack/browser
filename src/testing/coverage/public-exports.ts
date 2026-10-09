@@ -24,6 +24,14 @@ const entries = (
  * deliberate test failure instead of an implicit fake implementation.
  */
 export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
+    ...entries("tabGroups", "method-wrapper", "behavioral", ["isAvailableTabGroups"]),
+    ...entries("tabGroups", "interface", "declaration", ["TabGroup", "TabGroupRemoveInfo"]),
+    ...entries("tabGroups", "method-wrapper", "configurable", [
+        "getTabGroup", "queryTabGroups", "updateTabGroup", "moveTabGroup",
+    ]),
+    ...entries("tabGroups", "event-wrapper", "event", [
+        "onTabGroupCreated", "onTabGroupUpdated", "onTabGroupMoved", "onTabGroupRemoved",
+    ]),
     ...entries("declarativeNetRequest", "method-wrapper", "behavioral", ["isAvailableDnr"]),
     ...entries("declarativeNetRequest", "interface", "declaration", ["DnrRulesMatchedDetails", "DnrTestMatchOptions"]),
     ...entries("declarativeNetRequest", "method-wrapper", "configurable", [
@@ -507,10 +515,10 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ]),
 ] as const;
 
-export const TYPE_ONLY_ROOT_EXPORTS = ["BrowserGuess", "DnrRulesMatchedDetails", "DnrTestMatchOptions", "LaunchWebAuthFlowDetails", "SearchEngine", "SearchTargetOptions", "TopSite", "TopSitesOptions", "WindowEventFilter"] as const;
+export const TYPE_ONLY_ROOT_EXPORTS = ["BrowserGuess", "DnrRulesMatchedDetails", "DnrTestMatchOptions", "LaunchWebAuthFlowDetails", "SearchEngine", "SearchTargetOptions", "TabGroup", "TabGroupRemoveInfo", "TopSite", "TopSitesOptions", "WindowEventFilter"] as const;
 
-export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 416;
-export const EXPECTED_ROOT_RUNTIME_EXPORT_COUNT = 407;
+export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 427;
+export const EXPECTED_ROOT_RUNTIME_EXPORT_COUNT = 416;
 
 export const getPublicExportCoverage = (name: string): PublicExportCoverageEntry | undefined =>
     PUBLIC_EXPORT_COVERAGE.find(entry => entry.name === name);

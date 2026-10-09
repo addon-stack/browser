@@ -26,6 +26,22 @@ describe.each(["chrome", "firefox"] as const)("tab methods in %s", profile => {
         expect(harness.tabs.query.calls[0]?.args).toEqual([{}]);
     });
 
+    test.each([7, [7, 8] as [number, ...number[]]].map(tabIds => [tabIds] as const))("ungroupTab preserves IDs %j and uses the facade's invocation style", async tabIds => {
+        const native = harness.tabs.ungroup;
+        native.setResult(undefined);
+        await expect(api.ungroupTab(tabIds)).resolves.toBeUndefined();
+        expect(native.calls[0].args).toEqual([tabIds]);
+        expect(native.calls[0].args[0]).toBe(tabIds);
+        expect(native.calls[0].invocation).toBe(profile === "firefox" ? "promise" : "callback");
+        expect(native.calls[0].callbackCalls).toEqual(profile === "firefox" ? [] : [[]]);
+    });
+
+    test("ungroupTab retains native failure", async () => {
+        harness.tabs.ungroup.failNext(new Error("No tab with id: 999"));
+        await expect(api.ungroupTab(999)).rejects.toThrow("No tab with id: 999");
+        expect(harness.chrome.runtime.lastError).toBeUndefined();
+    });
+
     test("queryTabIds preserves numeric IDs including zero and skips absent IDs", async () => {
         harness.tabs.query.setResult([
             createTabFixture({id: 0}),

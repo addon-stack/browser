@@ -12,6 +12,7 @@ const directory = await mkdtemp(join(tmpdir(), "browser-tree-shaking-"));
 const packageEntry = fileURLToPath(new URL("../dist/index.js", import.meta.url)).replaceAll("\\", "/");
 
 const consumers = [
+    {exportName: "onTabGroupRemoved", namespace: "tabGroups", eventName: "onRemoved"},
     {exportName: "onDnrRuleMatchedDebug", namespace: "declarativeNetRequest", eventName: "onRuleMatchedDebug"},
     {exportName: "onActionClicked", eventName: "onClicked"},
     {exportName: "onActionUserSettingsChanged", eventName: "onUserSettingsChanged"},
@@ -474,7 +475,7 @@ try {
             console.log(`Verified ${exportName} consumer tree shaking and lazy access (${Buffer.byteLength(source)} bytes minified).`);
         }
 
-        for (const exportName of ["querySearch", "searchInNewTab", "getTopSites", "getBookmarks", "getDnrDynamicRules"]) {
+        for (const exportName of ["querySearch", "searchInNewTab", "getTopSites", "getBookmarks", "getDnrDynamicRules", "getTabGroup"]) {
             await writeFile(entry, `import {${exportName}} from ${JSON.stringify(packageEntry)};\nexport const run = ${exportName};\n`);
 
             await build({
@@ -494,7 +495,7 @@ try {
 
             const output = join(directory, "dist/consumer.mjs");
             const source = await readFile(output, "utf8");
-            const namespace = {getTopSites: "topSites", getBookmarks: "bookmarks", getDnrDynamicRules: "declarativeNetRequest"}[exportName] ?? "search";
+            const namespace = {getTabGroup: "tabGroups", getTopSites: "topSites", getBookmarks: "bookmarks", getDnrDynamicRules: "declarativeNetRequest"}[exportName] ?? "search";
             assert.match(source, namespace === "declarativeNetRequest" ? /\.getDynamicRules\b/ : namespace !== "search" ? /\.get\b/ : /\.query\b/);
             assert.doesNotMatch(source, /\.updateDynamicRules\b|\.getSessionRules\b|\.testMatchOutcome\b|\.onRuleMatchedDebug\b/);
             assert.doesNotMatch(source, /\.search\(|\.find\b|\.some\b|isDefault|\.engine\b|createBrowserHarness/);
@@ -516,6 +517,16 @@ try {
                 }}}});
 
                 assert.equal(await run(), rules);
+            } else if (namespace === "tabGroups") {
+                const group = {id: 7, windowId: 1, color: "blue", collapsed: false};
+
+                setGlobals({chrome: {runtime: {}, tabGroups: {get(id, callback) {
+                    assert.equal(id, 7);
+                    callback(group);
+                }}}});
+
+                assert.equal(await run(7), group);
+                assert.doesNotMatch(source, /\.(?:update|move|onCreated|onRemoved)\b/);
             } else if (namespace === "bookmarks") {
                 const nodes = [{id: "node", title: "Example", syncing: false}];
 

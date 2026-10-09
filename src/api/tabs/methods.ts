@@ -86,7 +86,12 @@ export const setTabZoomSettings = (tabId: number, zoomSettings: ZoomSettings): P
     callWithPromise(cb => tabs().setZoomSettings(tabId, zoomSettings, () => cb()));
 
 export const ungroupTab = (tabIds: number | [number, ...number[]]): Promise<void> =>
-    callWithPromise(cb => tabs().ungroup(tabIds, () => cb()));
+    callWithPromise(cb => {
+        const api = browser();
+
+        // Firefox's browser.tabs.ungroup is Promise-only; chrome keeps callback support.
+        return api === globalThis.browser ? api.tabs.ungroup(tabIds) : api.tabs.ungroup(tabIds, () => cb());
+    });
 
 export const updateTab = (tabId: number, updateProperties: UpdateProperties): Promise<Tab | undefined> =>
     callWithPromise(cb => tabs().update(tabId, updateProperties, cb));

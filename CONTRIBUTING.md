@@ -145,7 +145,7 @@ See the list of not-yet-covered APIs in the "Not yet covered" section of `README
 Event descriptions live in `codegen/events/apis/`:
 
 - Basic subscriptions: `alarms`, `audio`, `bookmarks`, `commands`, `context-menus`, `cookies`, `declarative-net-request`, `downloads`, `history`, `identity`, `idle`, `management`,
-  `notifications`, `permissions`, `runtime`, `tab-capture`, and `tabs`.
+  `notifications`, `permissions`, `runtime`, `tab-capture`, `tab-groups`, and `tabs`.
 - Specialized or mixed subscriptions: `action`, `web-request`, `windows`, and `web-navigation`.
 
 Each namespace has its own `.mjs` description. `codegen/events/apis/index.mjs` explicitly imports these
@@ -173,6 +173,8 @@ An event may be a native event name, or an object such as
 Basic event descriptions may also specify `callbackType` when browser payloads differ from `@types/chrome`.
 For example, `bookmarks.onChanged` makes `title` optional because Firefox can send a URL-only change.
 This changes only the callback type; the generated subscription still forwards the native payload unchanged.
+A namespace may declare `typeImports: ["TabGroup", "TabGroupRemoveInfo"]` to import reusable callback
+types from its handwritten `./types.ts`. Tab Groups uses this for optional Chromium metadata and Firefox removal details.
 Unknown templates and invalid descriptions fail generation before any files are written.
 
 Templates live in `codegen/events/templates/`:

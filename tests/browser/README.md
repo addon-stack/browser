@@ -134,6 +134,24 @@ omit the port because Firefox does not support ports in match patterns. No DNR s
 external website. The suite is included automatically in the existing Chromium and Firefox CI jobs.
 Safari, Edge and Opera are not launched; Safari's different history result has unit and type coverage.
 
+## Tab Groups coverage
+
+Select `--api tab-groups`. Three scenarios run across two permission profiles in Chromium and Firefox:
+
+- **Lifecycle:** group existing tabs, get and query groups, change title/color/collapsed state, move within
+  a window and between windows, ungroup, and reject operations on missing groups. Native reads verify
+  membership, destination index and persisted state. Ungrouping also checks the existing Tabs wrapper
+  against Firefox's Promise-only native method and Chromium's callback support. Chromium's shared filter and Firefox's absent shared
+  result field are checked separately.
+- **Events:** all four subscriptions, Chromium's removed/created events for transfers versus Firefox's
+  moved event, Firefox removal information for both ordinary removal and window closure, and cleanup.
+  Native event observers confirm that each production subscription stops receiving events after unsubscribe.
+- **Permissions:** without `tabGroups`, availability is false and all four methods and subscriptions fail.
+
+Positive profiles grant only `tabGroups`. Scenarios create their own windows with `about:blank` tabs and
+close them in `finally`; they do not touch personal profiles or navigate external sites. The common CI
+commands include the suite automatically. Edge, Opera and Safari are not launched by these runners.
+
 ## Add another API
 
 1. Add `api/<namespace>/index.ts` exporting a `BrowserSuite` and one or more `.scenario.ts` files.

@@ -24,6 +24,7 @@ export default [
     {namespace: "search"},
     {namespace: "sidebar", template: "sidebar"},
     {namespace: "tabCapture"},
+    {namespace: "tabGroups"},
     {namespace: "tabs"},
     {namespace: "topSites"},
     {namespace: "userScripts"},

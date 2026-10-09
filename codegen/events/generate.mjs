@@ -15,7 +15,7 @@ const templates = new Map([
 ]);
 
 export function generateEvents(specs) {
-    return specs.map(({namespace, template = "basic", events}) => {
+    return specs.map(({namespace, template = "basic", events, typeImports = []}) => {
         assert.match(namespace, /^[a-z][a-zA-Z0-9]*$/, "Invalid event namespace");
         assert.ok(templates.has(template), `Unknown event template: ${template}`);
         assert.ok(events && typeof events === "object" && !Array.isArray(events), "Expected an events object");
@@ -25,6 +25,16 @@ export function generateEvents(specs) {
         const utilities = new Set();
         const imports = new Set();
         let usesBrowser = false;
+
+        assert.ok(Array.isArray(typeImports), "Expected a typeImports array");
+
+        for (const name of typeImports) {
+            assert.match(name, /^[A-Z][a-zA-Z0-9]*$/, "Invalid local event type import");
+        }
+
+        if (typeImports.length) {
+            imports.add(`import type {${[...new Set(typeImports)].sort().join(", ")}} from "./types";`);
+        }
 
         for (const [exportName, description] of Object.entries(events)) {
             assert.match(exportName, /^on[A-Z][a-zA-Z0-9]*$/, `Invalid event export: ${exportName}`);

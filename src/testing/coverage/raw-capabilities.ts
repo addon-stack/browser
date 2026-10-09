@@ -84,6 +84,8 @@ const propertyCapabilities = (
  * never synthesize an unlisted browser capability.
  */
 export const RAW_CAPABILITY_COVERAGE: readonly RawCapabilityEntry[] = [
+    ...methodCapabilities("tabGroups", "configurable", callbackInvocation, ["get", "query", "update", "move"]),
+    ...eventCapabilities("tabGroups", ["onCreated", "onUpdated", "onMoved", "onRemoved"]),
     ...methodCapabilities("declarativeNetRequest", "configurable", callbackInvocation, [
         "getDynamicRules", "updateDynamicRules", "getSessionRules", "updateSessionRules",
         "getEnabledRulesets", "updateEnabledRulesets", "getDisabledRuleIds", "updateStaticRules",
@@ -415,8 +417,8 @@ export const RAW_CAPABILITY_COVERAGE: readonly RawCapabilityEntry[] = [
         "sendMessage",
         "setZoom",
         "setZoomSettings",
-        "ungroup",
     ]),
+    ...methodCapabilities("tabs", "configurable", {chrome: "callback", browser: "promise"}, ["ungroup"]),
     ...eventCapabilities("tabs", [
         "onActivated",
         "onAttached",
