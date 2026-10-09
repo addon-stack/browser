@@ -2,8 +2,10 @@ import {existsSync, readdirSync, readFileSync} from "node:fs";
 import {isBuiltin} from "node:module";
 import {dirname, relative, resolve, sep} from "node:path";
 import {fileURLToPath} from "node:url";
+
 import {describe, expect, test} from "@jest/globals";
 import ts from "typescript";
+
 import {assertPortableTestingGraph} from "../../scripts/testing-boundary.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
@@ -37,15 +39,21 @@ const dependencies = sourceFiles.flatMap(file => {
     const ast = ts.createSourceFile(file, readFileSync(file, "utf8"), ts.ScriptTarget.Latest, true);
 
     return ast.statements.flatMap(statement => {
-        if ((!ts.isImportDeclaration(statement) && !ts.isExportDeclaration(statement)) || !statement.moduleSpecifier) return [];
+        if ((!ts.isImportDeclaration(statement) && !ts.isExportDeclaration(statement)) || !statement.moduleSpecifier) {
+            return [];
+        }
 
         const specifier = statement.moduleSpecifier.text;
 
-        if (isBuiltin(specifier)) return [{from: projectPath(file), to: specifier, typeOnly: false}];
+        if (isBuiltin(specifier)) {
+            return [{from: projectPath(file), to: specifier, typeOnly: false}];
+        }
 
         const resolved = ts.resolveModuleName(specifier, file, compilerOptions, ts.sys).resolvedModule;
 
-        if (!resolved) throw new Error(`Unresolved testing dependency: ${projectPath(file)} -> ${specifier}`);
+        if (!resolved) {
+            throw new Error(`Unresolved testing dependency: ${projectPath(file)} -> ${specifier}`);
+        }
 
         const clause = ts.isImportDeclaration(statement) ? statement.importClause : statement;
         const bindings = ts.isImportDeclaration(statement) ? clause?.namedBindings : statement.exportClause;
@@ -199,22 +207,32 @@ describe("test-kit source and test layout", () => {
         const graph = new Map(sourceFiles.map(file => [projectPath(file), []]));
 
         for (const edge of dependencies) {
-            if (!edge.typeOnly && graph.has(edge.to)) graph.get(edge.from).push(edge.to);
+            if (!edge.typeOnly && graph.has(edge.to)) {
+                graph.get(edge.from).push(edge.to);
+            }
         }
 
         const visited = new Set();
 
         const visit = (file, path = []) => {
-            if (path.includes(file)) throw new Error(`Test-kit import cycle: ${[...path, file].join(" -> ")}`);
+            if (path.includes(file)) {
+                throw new Error(`Test-kit import cycle: ${[...path, file].join(" -> ")}`);
+            }
 
-            if (visited.has(file)) return;
+            if (visited.has(file)) {
+                return;
+            }
 
-            for (const dependency of graph.get(file)) visit(dependency, [...path, file]);
+            for (const dependency of graph.get(file)) {
+                visit(dependency, [...path, file]);
+            }
 
             visited.add(file);
         };
 
-        for (const file of graph.keys()) visit(file);
+        for (const file of graph.keys()) {
+            visit(file);
+        }
     });
 
     test("typechecks every relocated TS test without adding consumer fixtures to the source build", () => {

@@ -1,4 +1,5 @@
 import {afterEach, beforeEach, describe, expect, jest, test} from "@jest/globals";
+
 import {type BrowserHarness, createBrowserHarness, installBrowserGlobals} from "../../testing";
 import {
     BrowserFamily,
@@ -249,7 +250,9 @@ describe("browser detection", () => {
 
     test.each(["reject", "empty"] as const)("falls back to low entropy brands for %s high entropy hints", async mode => {
         const getHighEntropyValues = async () => {
-            if (mode === "reject") throw new Error("Hints unavailable");
+            if (mode === "reject") {
+                throw new Error("Hints unavailable");
+            }
 
             return {fullVersionList: []};
         };
@@ -278,7 +281,9 @@ describe("browser detection", () => {
 
     test.each(["false", "throw", "missing"] as const)("falls back to generic Chromium when Brave detection is %s", async mode => {
         const brave = mode === "missing" ? {} : {isBrave: async () => {
-            if (mode === "throw") throw new Error("Brave unavailable");
+            if (mode === "throw") {
+                throw new Error("Brave unavailable");
+            }
 
             return false;
         }};

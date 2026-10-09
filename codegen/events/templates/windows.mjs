@@ -11,7 +11,9 @@ export function renderWindowsEvent({namespace, exportName, eventName}) {
     const listener = safeListener(callback);
     const args: Parameters<typeof chrome.${namespace}.${eventName}.addListener> = [listener];
 
-    if (filter) args.push(filter);
+    if (filter) {
+        args.push(filter);
+    }
 
     event.addListener(...args);
 

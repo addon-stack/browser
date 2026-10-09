@@ -5,6 +5,7 @@ import {createContextRegistry} from "../model/contexts";
 import {type BrowserEventHarness, type BrowserMethod, createBrowserEvent, createBrowserMethod} from "../primitives";
 import {cloneRecord} from "../primitives/clone";
 import type {RuntimeLastErrorController} from "../primitives/last-error";
+
 import type {RuntimeTestApi} from "../types";
 
 type ListenerArgs<TEvent extends {addListener(listener: (...args: never[]) => unknown, ...args: never[]): unknown}> =
@@ -143,9 +144,13 @@ export const createRuntimeHarness = (
         new Error('Browser method "runtime.sendMessage" message channel closed before a response was received.');
 
     const closeMessageChannels = (): void => {
-        for (const channel of [...messageChannels]) channel.close();
+        for (const channel of [...messageChannels]) {
+            channel.close();
+        }
 
-        for (const listener of [...channelCloseListeners]) listener();
+        for (const listener of [...channelCloseListeners]) {
+            listener();
+        }
     };
 
     const dispatchMessage = (message: unknown): Promise<unknown> =>
@@ -163,7 +168,9 @@ export const createRuntimeHarness = (
             };
 
             const settle = (callback: () => void): void => {
-                if (settled) return;
+                if (settled) {
+                    return;
+                }
 
                 settled = true;
                 messageChannels.delete(channel);
@@ -179,7 +186,9 @@ export const createRuntimeHarness = (
             };
 
             const finishWithoutResponse = (): void => {
-                if (settled || !dispatchFinished || pendingResponses > 0 || heldOpen) return;
+                if (settled || !dispatchFinished || pendingResponses > 0 || heldOpen) {
+                    return;
+                }
 
                 if (errors.length === 1) {
                     rejectFirst(errors[0]);
@@ -253,17 +262,25 @@ export const createRuntimeHarness = (
         });
 
     const isMessageOptions = (value: unknown): boolean => {
-        if (value === undefined) return true;
+        if (value === undefined) {
+            return true;
+        }
 
-        if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+        if (!value || typeof value !== "object" || Array.isArray(value)) {
+            return false;
+        }
 
         return Object.keys(value).every(key => key === "includeTlsChannelId");
     };
 
     const messageFromSendArguments = (args: readonly unknown[]): unknown => {
-        if (args.length < 2) return args[0];
+        if (args.length < 2) {
+            return args[0];
+        }
 
-        if (args.length === 2 && isMessageOptions(args[1])) return args[0];
+        if (args.length === 2 && isMessageOptions(args[1])) {
+            return args[0];
+        }
 
         return args[1];
     };
@@ -274,7 +291,9 @@ export const createRuntimeHarness = (
         const args = callback ? rawArgs.slice(0, -1) : rawArgs;
         const response = dispatchMessage(messageFromSendArguments(args));
 
-        if (!callback) return response;
+        if (!callback) {
+            return response;
+        }
 
         void response.then(
             value => {

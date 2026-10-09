@@ -1,7 +1,9 @@
 import fs from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
+
 import {afterEach, describe, expect, jest, test} from "@jest/globals";
+
 import {removeBrowserTemporaryDirectory} from "./cleanup.mjs";
 
 afterEach(() => jest.restoreAllMocks());

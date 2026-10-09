@@ -1,4 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
+
 import {coversOrigin, createUrlMatcher, parseMatchPattern} from "../../../../src/testing/matching/match-patterns";
 
 describe("URL match-pattern subset", () => {

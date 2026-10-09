@@ -1,4 +1,5 @@
 import {expect, test} from "@jest/globals";
+
 import {selectExtensionPageContext} from "./context-selection.mjs";
 
 const expected = {tabId: 8, frameId: 0, documentId: "ready-document", url: "chrome-extension://test/page.html"};

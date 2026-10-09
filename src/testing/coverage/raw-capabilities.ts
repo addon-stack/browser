@@ -492,7 +492,9 @@ export const RAW_CAPABILITY_COVERAGE: readonly RawCapabilityEntry[] = [
         return {...entry, contextCoverage: "stateful", contextInvocation: "dual"} as const;
     }
 
-    if (entry.path === "runtime.onMessage") return {...entry, contextCoverage: "event"} as const;
+    if (entry.path === "runtime.onMessage") {
+        return {...entry, contextCoverage: "event"} as const;
+    }
 
     return entry;
 });

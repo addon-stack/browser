@@ -3,6 +3,7 @@ import {createStorageAreaState, storageAreaNames} from "../model/storage";
 import {type BrowserEventHarness, type BrowserMethod, createBrowserEvent, createBrowserMethod} from "../primitives";
 import {cloneRecord} from "../primitives/clone";
 import type {RuntimeLastErrorController} from "../primitives/last-error";
+
 import type {StorageAreaTestApi, StorageTestApi} from "../types";
 
 type Changes = Record<string, chrome.storage.StorageChange>;
@@ -49,10 +50,14 @@ export const createStorageHarness = (
 
     const observe = (event: Promise<void>, currentGeneration: number): void => {
         const observed = event.catch(error => {
-            if (currentGeneration === generation) failures.push(error);
+            if (currentGeneration === generation) {
+                failures.push(error);
+            }
         }).finally(() => pending.delete(observed));
 
-        if (currentGeneration === generation) pending.add(observed);
+        if (currentGeneration === generation) {
+            pending.add(observed);
+        }
     };
 
     const areas = Object.fromEntries(storageAreaNames.map(area => {
@@ -61,13 +66,17 @@ export const createStorageHarness = (
         const changed = createBrowserEvent<[Changes]>();
 
         const notify = (changes: Changes): void => {
-            if (Object.keys(changes).length === 0) return;
+            if (Object.keys(changes).length === 0) {
+                return;
+            }
 
             // State is committed before listeners run. A listener cannot turn a successful write into an API error.
             const current = generation;
             observe(changed.emit(cloneRecord(changes)), current);
 
-            if (current === generation) observe(onChanged.emit(cloneRecord(changes), area), current);
+            if (current === generation) {
+                observe(onChanged.emit(cloneRecord(changes), area), current);
+            }
         };
 
         const method = <K extends keyof AreaMethods, R>(
@@ -82,7 +91,9 @@ export const createStorageHarness = (
                 try {
                     result = operation(...raw);
                 } catch (error) {
-                    if (callback) return lastError.runWithLastError(error, () => callback());
+                    if (callback) {
+                        return lastError.runWithLastError(error, () => callback());
+                    }
 
                     throw error;
                 }
@@ -140,14 +151,20 @@ export const createStorageHarness = (
             });
 
             try {
-                while (pending.size > 0) await Promise.race([Promise.all([...pending]), cancelled]);
+                while (pending.size > 0) {
+                    await Promise.race([Promise.all([...pending]), cancelled]);
+                }
 
                 const errors = failures;
                 failures = [];
 
-                if (errors.length === 1) throw errors[0];
+                if (errors.length === 1) {
+                    throw errors[0];
+                }
 
-                if (errors.length > 1) throw new AggregateError(errors, "Storage change listeners failed.");
+                if (errors.length > 1) {
+                    throw new AggregateError(errors, "Storage change listeners failed.");
+                }
             } finally {
                 cancelFlushes.delete(cancel);
             }
@@ -155,7 +172,9 @@ export const createStorageHarness = (
         reset() {
             generation++;
 
-            for (const cancel of cancelFlushes) cancel();
+            for (const cancel of cancelFlushes) {
+                cancel();
+            }
 
             cancelFlushes.clear();
             pending.clear();

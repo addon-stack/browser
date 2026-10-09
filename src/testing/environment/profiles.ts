@@ -108,11 +108,17 @@ export const profileGlobals = (harness: BrowserProfileTarget, profile: Exclude<B
 };
 
 export const sidebarDefaultForProfile = (profile: BrowserProfile): SidebarFlavor => {
-    if (profile === "firefox") return "firefoxSidebarAction";
+    if (profile === "firefox") {
+        return "firefoxSidebarAction";
+    }
 
-    if (profile === "opera") return "operaSidebarAction";
+    if (profile === "opera") {
+        return "operaSidebarAction";
+    }
 
-    if (profile === "chrome") return "sidePanel";
+    if (profile === "chrome") {
+        return "sidePanel";
+    }
 
     return "none";
 };

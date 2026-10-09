@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+
 import checkContexts from "./contexts.cjs";
 import checkMessaging from "./messaging.cjs";
 import checkNodeScripting from "./node-scripting.cjs";

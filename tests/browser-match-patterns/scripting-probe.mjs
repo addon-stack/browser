@@ -2,14 +2,19 @@
 export async function scriptingTargetsProbe(api, tabId, frames) {
     const child = frames.find(frame => frame.frameId !== 0);
 
-    if (!child) throw new Error("Scripting probe requires a loaded child frame");
+    if (!child) {
+        throw new Error("Scripting probe requires a loaded child frame");
+    }
 
     const entries = [];
 
     const call = (injection, style) => style === "promise" ? api.scripting.executeScript(injection) : new Promise((resolve, reject) => {
         api.scripting.executeScript(injection, results => {
-            if (api.runtime.lastError) reject(new Error(api.runtime.lastError.message));
-            else resolve(results);
+            if (api.runtime.lastError) {
+                reject(new Error(api.runtime.lastError.message));
+            } else {
+                resolve(results);
+            }
         });
     });
 
@@ -26,7 +31,9 @@ export async function scriptingTargetsProbe(api, tabId, frames) {
             const results = await call({target, func: input => ({url: globalThis.location.href, input}), args: ["probe"]}, style);
             const includesMain = results.some(result => result.frameId === 0);
 
-            if (includesMain && results[0].frameId !== 0) throw new Error("Main frame result must come first");
+            if (includesMain && results[0].frameId !== 0) {
+                throw new Error("Main frame result must come first");
+            }
 
             entries.push({style, target, results: [...results].sort((a, b) => a.frameId - b.frameId)});
         }
@@ -43,7 +50,9 @@ export async function scriptingTargetsProbe(api, tabId, frames) {
                 failed = true;
             }
 
-            if (!failed) throw new Error(`Scripting accepted invalid target ${JSON.stringify(target)}`);
+            if (!failed) {
+                throw new Error(`Scripting accepted invalid target ${JSON.stringify(target)}`);
+            }
 
             entries.push({style, target, failed});
         }
@@ -56,12 +65,16 @@ export async function scriptingTargetsProbe(api, tabId, frames) {
 export async function scriptingOutcomesProbe(api, tabId) {
     const cases = [
         ["throw-child", () => {
-            if (globalThis.location.pathname === "/frame") throw new Error("SCRIPT_CHILD_BOOM");
+            if (globalThis.location.pathname === "/frame") {
+                throw new Error("SCRIPT_CHILD_BOOM");
+            }
 
             return "main-ok";
         }],
         ["reject-child", async () => {
-            if (globalThis.location.pathname === "/frame") throw new Error("SCRIPT_CHILD_REJECT");
+            if (globalThis.location.pathname === "/frame") {
+                throw new Error("SCRIPT_CHILD_REJECT");
+            }
 
             return "main-ok";
         }],
@@ -113,8 +126,11 @@ export async function scriptingPersistenceProbe(api, tabId) {
 
     const call = (injection, style) => style === "promise" ? api.scripting.executeScript(injection) : new Promise((resolve, reject) => {
         api.scripting.executeScript(injection, results => {
-            if (api.runtime.lastError) reject(new Error(api.runtime.lastError.message));
-            else resolve(results);
+            if (api.runtime.lastError) {
+                reject(new Error(api.runtime.lastError.message));
+            } else {
+                resolve(results);
+            }
         });
     });
 

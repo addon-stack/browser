@@ -1,6 +1,7 @@
 import {spawn} from "node:child_process";
 import {createRequire} from "node:module";
 import {fileURLToPath} from "node:url";
+
 import {generate} from "../codegen/generate.mjs";
 
 const require = createRequire(import.meta.url);
@@ -15,7 +16,9 @@ const children = [
 let stopping = false;
 
 function stop(code) {
-    if (stopping) return;
+    if (stopping) {
+        return;
+    }
 
     stopping = true;
     process.exitCode = code;

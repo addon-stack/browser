@@ -47,7 +47,9 @@ export const createBrowserMemoryState = (options: BrowserMemoryStateOptions): Br
         windows = new Map();
 
         for (const window of initialWindows) {
-            if (typeof window.id !== "number") continue;
+            if (typeof window.id !== "number") {
+                continue;
+            }
 
             const copy = cloneRecord(window);
             delete copy.tabs;
@@ -55,7 +57,9 @@ export const createBrowserMemoryState = (options: BrowserMemoryStateOptions): Br
         }
 
         for (const tab of initialTabs) {
-            if (typeof tab.id !== "number") continue;
+            if (typeof tab.id !== "number") {
+                continue;
+            }
 
             tabs.set(tab.id, cloneRecord(tab));
 
@@ -74,7 +78,9 @@ export const createBrowserMemoryState = (options: BrowserMemoryStateOptions): Br
             tabRemovedListeners.add(listener);
         },
         removeTab(tabId) {
-            if (!tabs.delete(tabId)) return [];
+            if (!tabs.delete(tabId)) {
+                return [];
+            }
 
             const errors: unknown[] = [];
 
@@ -127,14 +133,18 @@ export const createBrowserMemoryState = (options: BrowserMemoryStateOptions): Br
             if (typeof requestedId === "number") {
                 const existing = windows.get(requestedId);
 
-                if (existing) return existing;
+                if (existing) {
+                    return existing;
+                }
             }
 
             const id = typeof windowId === "number" ? windowId : state.nextWindowId();
             const window = createWindowFixture({focused: windows.size === 0, id, tabs: undefined});
             windows.set(id, window);
 
-            if (window.focused) lastFocusedWindowId = id;
+            if (window.focused) {
+                lastFocusedWindowId = id;
+            }
 
             return window;
         },

@@ -1,4 +1,5 @@
 import {afterEach, beforeEach, describe, expect, jest, test} from "@jest/globals";
+
 import {type BrowserHarness, createBrowserHarness, installBrowserGlobals} from "../../testing";
 import {onAlarm} from "./events";
 

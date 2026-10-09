@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+
 import {renderActionEvent} from "./templates/action.mjs";
 import {renderBasicEvent} from "./templates/basic.mjs";
 import {renderWebNavigationEvent} from "./templates/web-navigation.mjs";
@@ -43,12 +44,20 @@ export function generateEvents(specs) {
             const result = render({namespace, exportName, eventName});
             usesBrowser ||= result.usesBrowser === true;
 
-            for (const utility of result.utilities) utilities.add(utility);
+            for (const utility of result.utilities) {
+                utilities.add(utility);
+            }
 
-            for (const statement of result.imports ?? []) imports.add(statement);
+            for (const statement of result.imports ?? []) {
+                imports.add(statement);
+            }
 
             functions.push(result.source);
         }
+
+        const sortedImports = [...imports].sort();
+        const typesImports = sortedImports.filter(statement => / from "\.{1,2}\/(?:[^"]*\/)?types(?:\.[cm]?[jt]s)?";$/.test(statement));
+        const regularImports = sortedImports.filter(statement => !typesImports.includes(statement));
 
         return {
             namespace,
@@ -59,7 +68,8 @@ export function generateEvents(specs) {
                 "",
                 ...(usesBrowser ? ['import {browser} from "../browser";'] : []),
                 `import {${[...utilities].sort().join(", ")}} from "../utils";`,
-                ...[...imports].sort(),
+                ...regularImports,
+                ...(typesImports.length ? ["", ...typesImports] : []),
                 "",
                 functions.join("\n\n"),
                 "",

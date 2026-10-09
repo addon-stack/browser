@@ -1,4 +1,5 @@
 import {afterEach, beforeEach, describe, expect, jest, test} from "@jest/globals";
+
 import {installGlobals} from "../../src/testing";
 
 type AvailabilityGlobals = Partial<Record<"chrome" | "browser" | "opr", unknown>>;
@@ -30,7 +31,9 @@ export function describeNamespaceAvailability(namespace: string, isAvailable: ()
         test.each(["chrome", "browser"])("detects the namespace through the %s global without probing methods", globalName => {
             const api = new Proxy({id: "availability-test"}, {
                 get(target, property) {
-                    if (property === "id") return target.id;
+                    if (property === "id") {
+                        return target.id;
+                    }
 
                     throw new Error("Namespace checks must not access methods");
                 },

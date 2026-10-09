@@ -3,6 +3,7 @@ import {realpathSync} from "node:fs";
 import {mkdir, readFile, writeFile} from "node:fs/promises";
 import {dirname, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
+
 import generateAvailability from "./availability/index.mjs";
 import generateEvents from "./events/index.mjs";
 
@@ -48,10 +49,14 @@ export async function generate({check = false} = {}) {
         try {
             current = await readFile(path, "utf8");
         } catch (error) {
-            if (error.code !== "ENOENT") throw error;
+            if (error.code !== "ENOENT") {
+                throw error;
+            }
         }
 
-        if (current === source) continue;
+        if (current === source) {
+            continue;
+        }
 
         if (check) {
             stale.push(relativePath);

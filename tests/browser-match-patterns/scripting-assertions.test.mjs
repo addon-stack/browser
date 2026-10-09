@@ -1,4 +1,5 @@
 import {expect, test} from "@jest/globals";
+
 import {checkScriptingOutcomes} from "./scripting-assertions.mjs";
 
 const fixture = () => ["promise", "callback"].flatMap(style => [
@@ -18,15 +19,25 @@ test("accepts measured native outcomes only", () => {
 test.each(["lastError", "missing", "value", "error-field", "order", "void-missing-field", "void-undefined", "date-value", "regexp-value"])("rejects changed native outcome: %s", kind => {
     const entries = fixture();
 
-    if (kind === "lastError") entries[0].lastError = "unexpected";
+    if (kind === "lastError") {
+        entries[0].lastError = "unexpected";
+    }
 
-    if (kind === "missing") entries.pop();
+    if (kind === "missing") {
+        entries.pop();
+    }
 
-    if (kind === "value") entries[0].results[1].result = "wrong";
+    if (kind === "value") {
+        entries[0].results[1].result = "wrong";
+    }
 
-    if (kind === "error-field") entries[0].results[1].error = "new native error field";
+    if (kind === "error-field") {
+        entries[0].results[1].error = "new native error field";
+    }
 
-    if (kind === "order") entries.reverse();
+    if (kind === "order") {
+        entries.reverse();
+    }
 
     if (kind === "void-missing-field") {
         const result = entries.find(entry => entry.scenario === "void").results[0];
@@ -34,11 +45,17 @@ test.each(["lastError", "missing", "value", "error-field", "order", "void-missin
         result.hasResult = false;
     }
 
-    if (kind === "void-undefined") entries.find(entry => entry.scenario === "void").results[0].result = undefined;
+    if (kind === "void-undefined") {
+        entries.find(entry => entry.scenario === "void").results[0].result = undefined;
+    }
 
-    if (kind === "date-value") entries.find(entry => entry.scenario === "date").results[0].result = "2020-01-02T03:04:05.000Z";
+    if (kind === "date-value") {
+        entries.find(entry => entry.scenario === "date").results[0].result = "2020-01-02T03:04:05.000Z";
+    }
 
-    if (kind === "regexp-value") entries.find(entry => entry.scenario === "regexp").results[0].result = "/probe/gi";
+    if (kind === "regexp-value") {
+        entries.find(entry => entry.scenario === "regexp").results[0].result = "/probe/gi";
+    }
 
     expect(() => checkScriptingOutcomes(entries)).toThrow();
 });

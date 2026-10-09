@@ -149,10 +149,15 @@ test.each(["tab", "window", "setTabs", "setWindows"])("%s deletion disposes cont
     const harness = makeHarness();
     const context = harness.contexts.create({kind: "contentScript", tabId: 7, url: "https://example.test/"});
 
-    if (mode === "tab") await harness.chrome.tabs.remove(7);
-    else if (mode === "window") await harness.chrome.windows.remove(1);
-    else if (mode === "setTabs") harness.tabs.set([createTabFixture({id: 8, windowId: 2})]);
-    else harness.windows.set([{id: 2, focused: true, alwaysOnTop: false, incognito: false}]);
+    if (mode === "tab") {
+        await harness.chrome.tabs.remove(7);
+    } else if (mode === "window") {
+        await harness.chrome.windows.remove(1);
+    } else if (mode === "setTabs") {
+        harness.tabs.set([createTabFixture({id: 8, windowId: 2})]);
+    } else {
+        harness.windows.set([{id: 2, focused: true, alwaysOnTop: false, incognito: false}]);
+    }
 
     expect(context.disposed).toBe(true);
     expect(harness.contexts.list()).toEqual([]);
@@ -342,10 +347,15 @@ test.each(["tabs", "windows", "setTabs", "setWindows"])("%s removal finishes des
         throw new Error("cleanup fault");
     });
 
-    if (mode === "tabs") await expect(harness.browser.tabs.remove([7, 8])).rejects.toThrow("context cleanup failed");
-    else if (mode === "windows") await expect(harness.browser.windows.remove(1)).rejects.toThrow("context cleanup failed");
-    else if (mode === "setTabs") expect(() => harness.tabs.set([])).toThrow("context cleanup failed");
-    else expect(() => harness.windows.set([])).toThrow("context cleanup failed");
+    if (mode === "tabs") {
+        await expect(harness.browser.tabs.remove([7, 8])).rejects.toThrow("context cleanup failed");
+    } else if (mode === "windows") {
+        await expect(harness.browser.windows.remove(1)).rejects.toThrow("context cleanup failed");
+    } else if (mode === "setTabs") {
+        expect(() => harness.tabs.set([])).toThrow("context cleanup failed");
+    } else {
+        expect(() => harness.windows.set([])).toThrow("context cleanup failed");
+    }
 
     expect(one.disposed).toBe(true);
     expect(two.disposed).toBe(true);

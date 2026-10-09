@@ -3,6 +3,7 @@
 
 import {browser} from "../browser";
 import {handleListener, safeListener} from "../utils";
+
 import type {WindowEventFilter} from "./types";
 
 export const onWindowBoundsChanged = (
@@ -19,7 +20,9 @@ export const onWindowCreated = (
     const listener = safeListener(callback);
     const args: Parameters<typeof chrome.windows.onCreated.addListener> = [listener];
 
-    if (filter) args.push(filter);
+    if (filter) {
+        args.push(filter);
+    }
 
     event.addListener(...args);
 
@@ -34,7 +37,9 @@ export const onWindowFocusChanged = (
     const listener = safeListener(callback);
     const args: Parameters<typeof chrome.windows.onFocusChanged.addListener> = [listener];
 
-    if (filter) args.push(filter);
+    if (filter) {
+        args.push(filter);
+    }
 
     event.addListener(...args);
 
@@ -49,7 +54,9 @@ export const onWindowRemoved = (
     const listener = safeListener(callback);
     const args: Parameters<typeof chrome.windows.onRemoved.addListener> = [listener];
 
-    if (filter) args.push(filter);
+    if (filter) {
+        args.push(filter);
+    }
 
     event.addListener(...args);
 

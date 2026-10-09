@@ -1,4 +1,5 @@
 import {afterEach, describe, expect, jest, test} from "@jest/globals";
+
 import {installAvailabilityGlobals} from "../../../tests/api/availability";
 import {isAvailableSidebar} from "./availability";
 import {canCloseSidebar, canOpenSidebar} from "./methods";

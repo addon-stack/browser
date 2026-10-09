@@ -642,7 +642,9 @@ export const createConfigurableNamespaces = (options: ConfigurableNamespacesOpti
             continue;
         }
 
-        if (entry.kind !== "method") continue;
+        if (entry.kind !== "method") {
+            continue;
+        }
 
         const invocation = options.facade === "chrome" ? entry.chromeInvocation : entry.browserInvocation;
 
@@ -723,7 +725,9 @@ export const createConfigurableNamespaces = (options: ConfigurableNamespacesOpti
         ): BrowserEventHarness<TArgs, TRegistrationArgs> {
             const event = events.get(path);
 
-            if (!event) throw new Error(`Unknown configurable browser event "${path}".`);
+            if (!event) {
+                throw new Error(`Unknown configurable browser event "${path}".`);
+            }
 
             return event as unknown as BrowserEventHarness<TArgs, TRegistrationArgs>;
         },
@@ -735,17 +739,25 @@ export const createConfigurableNamespaces = (options: ConfigurableNamespacesOpti
         ): BrowserMethod<TApi, TResult> {
             const method = methods.get(path);
 
-            if (!method) throw new Error(`Unknown configurable browser method "${path}".`);
+            if (!method) {
+                throw new Error(`Unknown configurable browser method "${path}".`);
+            }
 
             return method as BrowserMethod<TApi, TResult>;
         },
         operaSidebarActionApi: apiNamespaces.operaSidebarAction as unknown as OperaSidebarActionConfigurableApi,
         reset(): void {
-            for (const method of methods.values()) method.reset();
+            for (const method of methods.values()) {
+                method.reset();
+            }
 
-            for (const event of events.values()) event.reset();
+            for (const event of events.values()) {
+                event.reset();
+            }
 
-            for (const entry of entries) setCapability(entry.path, true);
+            for (const entry of entries) {
+                setCapability(entry.path, true);
+            }
         },
         setCapability,
         sidebarActionApi: apiNamespaces.sidebarAction as unknown as FirefoxSidebarActionConfigurableApi,

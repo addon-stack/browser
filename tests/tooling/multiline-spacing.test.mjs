@@ -1,6 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
 import {Linter} from "eslint";
 import tseslint from "typescript-eslint";
+
 import paddingAroundMultiline from "../../scripts/eslint/padding-around-multiline.mjs";
 
 const linter = new Linter();

@@ -1,5 +1,6 @@
-import type {SidebarAction} from "../../types";
 import {browser} from "../browser";
+
+import type {SidebarAction} from "../../types";
 
 // Available in Firefox and Opera; Opera takes precedence when both are present.
 export const sidebarAction = (): SidebarAction | undefined =>

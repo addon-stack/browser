@@ -1,5 +1,7 @@
 import {createContext, runInContext} from "node:vm";
+
 import {expect, test} from "@jest/globals";
+
 import {CLOCK_DRIVER} from "../../../../src/testing/node/clock-driver";
 
 test("runOne drains guest microtasks before a second timer can run", () => {

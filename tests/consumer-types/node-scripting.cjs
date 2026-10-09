@@ -71,7 +71,9 @@ module.exports = async function checkNodeScripting(production, testing, nodeTest
         const results = await production.executeScript({
             target: {tabId: 7, allFrames: true},
             func: async prefix => {
-                if (globalThis.document.title === "child") throw new Error("child failed");
+                if (globalThis.document.title === "child") {
+                    throw new Error("child failed");
+                }
 
                 return prefix + globalThis.document.title;
             },

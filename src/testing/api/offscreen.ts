@@ -3,6 +3,7 @@ import {createContextLifetime} from "../model/context-lifetime";
 import {type BrowserMethod, createBrowserMethod} from "../primitives";
 import {cloneRecord} from "../primitives/clone";
 import type {RuntimeLastErrorController} from "../primitives/last-error";
+
 import type {OffscreenTestApi} from "../types";
 
 export interface BrowserOffscreenHarness {
@@ -33,12 +34,18 @@ const validateCreation = (input: chrome.offscreen.CreateParameters, base: string
         throw failure("createDocument", "expected url, reasons and justification parameters.");
     }
 
-    if (typeof input.url !== "string" || input.url.trim() === "") throw failure("createDocument", "url must be a non-empty extension URL or path.");
+    if (typeof input.url !== "string" || input.url.trim() === "") {
+        throw failure("createDocument", "url must be a non-empty extension URL or path.");
+    }
 
-    if (typeof input.justification !== "string") throw failure("createDocument", "justification must be a string.");
+    if (typeof input.justification !== "string") {
+        throw failure("createDocument", "justification must be a string.");
+    }
 
     if (!Array.isArray(input.reasons) || input.reasons.length === 0 ||
-        input.reasons.some(reason => !reasons.has(reason))) throw failure("createDocument", "reasons must be a non-empty array of supported reasons.");
+        input.reasons.some(reason => !reasons.has(reason))) {
+        throw failure("createDocument", "reasons must be a non-empty array of supported reasons.");
+    }
 
     let url: URL;
 
@@ -71,7 +78,9 @@ export const createOffscreenHarness = (
     const currentContext = (method: string): BrowserContext | undefined => {
         const found = contexts.list({kinds: ["offscreen"]});
 
-        if (found.length > 1) throw failure(method, "multiple offscreen contexts are registered; expected a single document.");
+        if (found.length > 1) {
+            throw failure(method, "multiple offscreen contexts are registered; expected a single document.");
+        }
 
         return found[0] && contexts.get(found[0].contextId);
     };
@@ -88,7 +97,9 @@ export const createOffscreenHarness = (
         const owner = scope;
 
         const assertActive = (): void => {
-            if (owner.lifetime.disposed) throw failure(method, "operation cancelled by reset.");
+            if (owner.lifetime.disposed) {
+                throw failure(method, "operation cancelled by reset.");
+            }
         };
 
         // Observe even late gate rejections, but never let late completion mutate a reset registry.
@@ -101,9 +112,13 @@ export const createOffscreenHarness = (
     const create = (input: chrome.offscreen.CreateParameters): Promise<void> => run("createDocument", async assertActive => {
         const {parameters, url} = validateCreation(input, getBaseUrl());
 
-        if (creating) throw failure("createDocument", "document creation is already in progress.");
+        if (creating) {
+            throw failure("createDocument", "document creation is already in progress.");
+        }
 
-        if (closing || currentContext("createDocument")) throw failure("createDocument", "only a single offscreen document may be created.");
+        if (closing || currentContext("createDocument")) {
+            throw failure("createDocument", "only a single offscreen document may be created.");
+        }
 
         const token = Symbol();
         creating = token;
@@ -112,22 +127,32 @@ export const createOffscreenHarness = (
             await beforeCreate.api(parameters);
             assertActive();
 
-            if (currentContext("createDocument")) throw failure("createDocument", "only a single offscreen document may be created.");
+            if (currentContext("createDocument")) {
+                throw failure("createDocument", "only a single offscreen document may be created.");
+            }
 
             contexts.create({kind: "offscreen", url});
         } finally {
-            if (creating === token) creating = undefined;
+            if (creating === token) {
+                creating = undefined;
+            }
         }
     });
 
     const close = (): Promise<void> => run("closeDocument", async assertActive => {
-        if (creating) throw failure("closeDocument", "document creation is still in progress.");
+        if (creating) {
+            throw failure("closeDocument", "document creation is still in progress.");
+        }
 
-        if (closing) throw failure("closeDocument", "document closure is already in progress.");
+        if (closing) {
+            throw failure("closeDocument", "document closure is already in progress.");
+        }
 
         const context = currentContext("closeDocument");
 
-        if (!context) throw failure("closeDocument", "no current offscreen document.");
+        if (!context) {
+            throw failure("closeDocument", "no current offscreen document.");
+        }
 
         const token = Symbol();
         closing = token;
@@ -137,19 +162,28 @@ export const createOffscreenHarness = (
             assertActive();
 
             // Handle identity matters: reset/replacement can reuse a deterministic contextId.
-            if (contexts.get(context.info.contextId) !== context || context.disposed) throw failure("closeDocument", "target context was disposed or replaced.");
+            if (contexts.get(context.info.contextId) !== context || context.disposed) {
+                throw failure("closeDocument", "target context was disposed or replaced.");
+            }
 
             const documentId = context.info.documentId;
 
-            if (documentId && contexts.documents.get(documentId)) contexts.documents.remove(documentId);
-            else contexts.remove(context.info.contextId); // Incomplete native fixtures may not have a document.
+            if (documentId && contexts.documents.get(documentId)) {
+                contexts.documents.remove(documentId);
+            } else {
+                contexts.remove(context.info.contextId);
+            } // Incomplete native fixtures may not have a document.
         } finally {
-            if (closing === token) closing = undefined;
+            if (closing === token) {
+                closing = undefined;
+            }
         }
     });
 
     const respond = <T>(response: Promise<T>, callback?: (value: T) => void): Promise<T> | undefined => {
-        if (!callback) return response;
+        if (!callback) {
+            return response;
+        }
 
         void response.then(value => callback(value), error => lastError.runWithLastError(error, () => callback(undefined as T)));
 
@@ -185,7 +219,9 @@ export const createOffscreenHarness = (
             creating = closing = undefined;
             previous.dispose();
 
-            for (const method of [createDocument, closeDocument, hasDocument, beforeCreate, beforeClose]) method.reset();
+            for (const method of [createDocument, closeDocument, hasDocument, beforeCreate, beforeClose]) {
+                method.reset();
+            }
         },
     };
 };

@@ -103,6 +103,8 @@ export default tseslint.config(
                     ["^\\u0000?@?\\w"],
                     ["^"],
                     ["^\\u0000?\\."],
+                    // Keep imports from local types files in the final group.
+                    ["^\\u0000?(?:(?:\\.{1,2}/|@/|~/|/|#)(?:.*/)?)?types(?:\\.[cm]?[jt]s)?\\u0000?$"],
                 ],
             }],
             "simple-import-sort/exports": "error",

@@ -4,6 +4,7 @@ import type {BrowserMemoryState} from "../model/browser-state";
 import {missingEntityError} from "../model/errors";
 import {type BrowserEventHarness, type BrowserMethod, createBrowserEvent, createBrowserMethod} from "../primitives";
 import type {RuntimeLastErrorController} from "../primitives/last-error";
+
 import type {TabsTestApi} from "../types";
 
 type ListenerArgs<TEvent extends {addListener(listener: (...args: never[]) => unknown, ...args: never[]): unknown}> =
@@ -129,9 +130,13 @@ export const createTabsHarness = (
             const index = properties.index ?? existing.length;
 
             for (const tab of existing) {
-                if (tab.index >= index) tab.index += 1;
+                if (tab.index >= index) {
+                    tab.index += 1;
+                }
 
-                if (properties.active !== false) tab.active = false;
+                if (properties.active !== false) {
+                    tab.active = false;
+                }
             }
 
             const tab = createTabFixture({
@@ -311,13 +316,17 @@ export const createTabsHarness = (
         callback: "last",
         implementation: ((queryInfo: chrome.tabs.QueryInfo, callback?: (tabs: chrome.tabs.Tab[]) => void) => {
             for (const key of Object.keys(queryInfo)) {
-                if (!supportedQueryFields.has(key)) throw new Error(`tabs.query filter "${key}" is not supported`);
+                if (!supportedQueryFields.has(key)) {
+                    throw new Error(`tabs.query filter "${key}" is not supported`);
+                }
             }
 
             const urls = typeof queryInfo.url === "string" ? [queryInfo.url] : queryInfo.url;
             const matchesUrl = urls === undefined ? undefined : createUrlMatcher(urls, "tabs.query");
 
-            if (queryInfo.title) assertExactPattern("title", queryInfo.title);
+            if (queryInfo.title) {
+                assertExactPattern("title", queryInfo.title);
+            }
 
             const currentWindowId = state.currentWindowId();
             const requestedWindowId = queryInfo.windowId === -2 ? currentWindowId : queryInfo.windowId;
@@ -326,51 +335,83 @@ export const createTabsHarness = (
                 .filter(tab => {
                     const window = state.windows.get(tab.windowId);
 
-                    if (queryInfo.status !== undefined && tab.status !== queryInfo.status) return false;
+                    if (queryInfo.status !== undefined && tab.status !== queryInfo.status) {
+                        return false;
+                    }
 
                     if (
                         queryInfo.lastFocusedWindow !== undefined &&
                         (tab.windowId === state.lastFocusedWindowId) !== queryInfo.lastFocusedWindow
-                    )
+                    ) {
                         return false;
+                    }
 
-                    if (requestedWindowId !== undefined && tab.windowId !== requestedWindowId) return false;
+                    if (requestedWindowId !== undefined && tab.windowId !== requestedWindowId) {
+                        return false;
+                    }
 
-                    if (queryInfo.windowType !== undefined && window?.type !== queryInfo.windowType) return false;
+                    if (queryInfo.windowType !== undefined && window?.type !== queryInfo.windowType) {
+                        return false;
+                    }
 
-                    if (queryInfo.active !== undefined && tab.active !== queryInfo.active) return false;
+                    if (queryInfo.active !== undefined && tab.active !== queryInfo.active) {
+                        return false;
+                    }
 
-                    if (queryInfo.index !== undefined && tab.index !== queryInfo.index) return false;
+                    if (queryInfo.index !== undefined && tab.index !== queryInfo.index) {
+                        return false;
+                    }
 
                     if (
                         queryInfo.currentWindow !== undefined &&
                         (tab.windowId === currentWindowId) !== queryInfo.currentWindow
-                    )
+                    ) {
                         return false;
+                    }
 
-                    if (queryInfo.highlighted !== undefined && tab.highlighted !== queryInfo.highlighted) return false;
-
-                    if (queryInfo.discarded !== undefined && tab.discarded !== queryInfo.discarded) return false;
-
-                    if (queryInfo.frozen !== undefined && tab.frozen !== queryInfo.frozen) return false;
-
-                    if (queryInfo.autoDiscardable !== undefined && tab.autoDiscardable !== queryInfo.autoDiscardable)
+                    if (queryInfo.highlighted !== undefined && tab.highlighted !== queryInfo.highlighted) {
                         return false;
+                    }
 
-                    if (queryInfo.pinned !== undefined && tab.pinned !== queryInfo.pinned) return false;
-
-                    if (queryInfo.splitViewId !== undefined && tab.splitViewId !== queryInfo.splitViewId) return false;
-
-                    if (queryInfo.audible !== undefined && Boolean(tab.audible) !== queryInfo.audible) return false;
-
-                    if (queryInfo.muted !== undefined && Boolean(tab.mutedInfo?.muted) !== queryInfo.muted)
+                    if (queryInfo.discarded !== undefined && tab.discarded !== queryInfo.discarded) {
                         return false;
+                    }
 
-                    if (queryInfo.groupId !== undefined && tab.groupId !== queryInfo.groupId) return false;
+                    if (queryInfo.frozen !== undefined && tab.frozen !== queryInfo.frozen) {
+                        return false;
+                    }
 
-                    if (queryInfo.title !== undefined && tab.title !== queryInfo.title) return false;
+                    if (queryInfo.autoDiscardable !== undefined && tab.autoDiscardable !== queryInfo.autoDiscardable) {
+                        return false;
+                    }
 
-                    if (matchesUrl && (!tab.url || !matchesUrl(tab.url))) return false;
+                    if (queryInfo.pinned !== undefined && tab.pinned !== queryInfo.pinned) {
+                        return false;
+                    }
+
+                    if (queryInfo.splitViewId !== undefined && tab.splitViewId !== queryInfo.splitViewId) {
+                        return false;
+                    }
+
+                    if (queryInfo.audible !== undefined && Boolean(tab.audible) !== queryInfo.audible) {
+                        return false;
+                    }
+
+                    if (queryInfo.muted !== undefined && Boolean(tab.mutedInfo?.muted) !== queryInfo.muted) {
+                        return false;
+                    }
+
+                    if (queryInfo.groupId !== undefined && tab.groupId !== queryInfo.groupId) {
+                        return false;
+                    }
+
+                    if (queryInfo.title !== undefined && tab.title !== queryInfo.title) {
+                        return false;
+                    }
+
+                    if (matchesUrl && (!tab.url || !matchesUrl(tab.url))) {
+                        return false;
+                    }
 
                     return true;
                 })
@@ -420,14 +461,18 @@ export const createTabsHarness = (
             for (const id of tabIds) {
                 const tab = state.tabs.get(id);
 
-                if (!tab) continue;
+                if (!tab) {
+                    continue;
+                }
 
                 cleanupErrors.push(...state.removeTab(id));
                 state.reindexTabs(tab.windowId);
                 ignoreAutoEventError(events.onRemoved.emit(id, {isWindowClosing: false, windowId: tab.windowId}));
             }
 
-            if (cleanupErrors.length > 0) throw new AggregateError(cleanupErrors, "tabs.remove context cleanup failed");
+            if (cleanupErrors.length > 0) {
+                throw new AggregateError(cleanupErrors, "tabs.remove context cleanup failed");
+            }
 
             callback?.();
         }) as typeof chrome.tabs.remove,
@@ -504,13 +549,17 @@ export const createTabsHarness = (
 
             if (properties.active) {
                 for (const other of state.tabs.values()) {
-                    if (other.windowId === tab.windowId) other.active = other.id === tab.id;
+                    if (other.windowId === tab.windowId) {
+                        other.active = other.id === tab.id;
+                    }
                 }
             }
 
             Object.assign(tab, properties);
 
-            if (typeof properties.highlighted === "boolean") tab.selected = properties.highlighted;
+            if (typeof properties.highlighted === "boolean") {
+                tab.selected = properties.highlighted;
+            }
 
             const result = state.cloneTab(tab);
             callback?.(result);
@@ -644,25 +693,35 @@ export const createTabsHarness = (
             const cleanupErrors: unknown[] = [];
 
             for (const tab of tabs) {
-                if (typeof tab.id !== "number") throw new Error("A test tab must have a numeric id");
+                if (typeof tab.id !== "number") {
+                    throw new Error("A test tab must have a numeric id");
+                }
             }
 
             for (const id of state.tabs.keys()) {
-                if (!ids.has(id)) cleanupErrors.push(...state.removeTab(id));
+                if (!ids.has(id)) {
+                    cleanupErrors.push(...state.removeTab(id));
+                }
             }
 
             state.tabs.clear();
 
             for (const tab of tabs) {
-                if (typeof tab.id !== "number") throw new Error("A test tab must have a numeric id");
+                if (typeof tab.id !== "number") {
+                    throw new Error("A test tab must have a numeric id");
+                }
 
                 state.ensureWindow(tab.windowId);
                 state.tabs.set(tab.id, state.cloneTab(tab));
             }
 
-            for (const windowId of new Set(tabs.map(tab => tab.windowId))) state.reindexTabs(windowId);
+            for (const windowId of new Set(tabs.map(tab => tab.windowId))) {
+                state.reindexTabs(windowId);
+            }
 
-            if (cleanupErrors.length > 0) throw new AggregateError(cleanupErrors, "tabs.set context cleanup failed");
+            if (cleanupErrors.length > 0) {
+                throw new AggregateError(cleanupErrors, "tabs.set context cleanup failed");
+            }
         },
     };
 };

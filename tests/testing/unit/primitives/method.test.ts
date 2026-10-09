@@ -1,4 +1,5 @@
 import {describe, expect, jest, test} from "@jest/globals";
+
 import {createBrowserMethod} from "../../../../src/testing/primitives";
 
 type SyncApi = (value: string) => number;

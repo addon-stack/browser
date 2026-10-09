@@ -1,4 +1,5 @@
 import {createContext, Script} from "node:vm";
+
 import type {BrowserScriptExecutor} from "../api";
 import type {BrowserScriptTarget} from "../model";
 import {coverageError, missingCoverageHelper, nodeError} from "./diagnostics";
@@ -23,13 +24,21 @@ const serializeData = (value: unknown): string => {
     const ancestors = new Set<object>();
 
     const validate = (input: unknown, depth: number): void => {
-        if (depth > 100) throw nodeError("globals/args exceed the supported nesting depth (100)");
+        if (depth > 100) {
+            throw nodeError("globals/args exceed the supported nesting depth (100)");
+        }
 
-        if (input === null || typeof input === "string" || typeof input === "boolean" || (typeof input === "number" && Number.isFinite(input))) return;
+        if (input === null || typeof input === "string" || typeof input === "boolean" || (typeof input === "number" && Number.isFinite(input))) {
+            return;
+        }
 
-        if (typeof input !== "object") throw nodeError("globals/args must contain only JSON data; functions and non-finite values are unsupported");
+        if (typeof input !== "object") {
+            throw nodeError("globals/args must contain only JSON data; functions and non-finite values are unsupported");
+        }
 
-        if (ancestors.has(input)) throw nodeError("globals/args must not contain cycles");
+        if (ancestors.has(input)) {
+            throw nodeError("globals/args must not contain cycles");
+        }
 
         const prototype = Object.getPrototypeOf(input);
 
@@ -40,11 +49,15 @@ const serializeData = (value: unknown): string => {
         ancestors.add(input);
 
         for (const key of Reflect.ownKeys(input)) {
-            if (Array.isArray(input) && key === "length") continue;
+            if (Array.isArray(input) && key === "length") {
+                continue;
+            }
 
             const descriptor = Object.getOwnPropertyDescriptor(input, key)!;
 
-            if (typeof key === "symbol" || !("value" in descriptor)) throw nodeError("globals/args must not contain symbols or accessors");
+            if (typeof key === "symbol" || !("value" in descriptor)) {
+                throw nodeError("globals/args must not contain symbols or accessors");
+            }
 
             validate(descriptor.value, depth + 1);
         }
@@ -69,14 +82,20 @@ export const createNodeScriptExecutor = (options: NodeScriptExecutorOptions = {}
     const staticGlobals = typeof globals === "function" ? undefined : serializeData(globals);
 
     return ({target, script, signal}) => {
-        if (signal.aborted) return Promise.reject(nodeError("execution aborted", signal.reason));
+        if (signal.aborted) {
+            return Promise.reject(nodeError("execution aborted", signal.reason));
+        }
 
-        if (script.kind !== "function") throw nodeError("files are unsupported; provide a function or a different executor");
+        if (script.kind !== "function") {
+            throw nodeError("files are unsupported; provide a function or a different executor");
+        }
 
         const globalsText = staticGlobals ?? serializeData((globals as (target: BrowserScriptTarget) => Readonly<Record<string, unknown>>)(target));
         const argsText = serializeData(script.args);
 
-        if (signal.aborted) return Promise.reject(nodeError("execution aborted", signal.reason));
+        if (signal.aborted) {
+            return Promise.reject(nodeError("execution aborted", signal.reason));
+        }
 
         const context = createContext(Object.create(null), {
             name: `addon-core:${target.documentId}`,
@@ -97,7 +116,9 @@ export const createNodeScriptExecutor = (options: NodeScriptExecutorOptions = {}
         setup.runInContext(context, runOptions);
         const fn = new Script(`(${script.source})`, {filename: `addon-core-script-${target.documentId}.js`}).runInContext(context, runOptions) as unknown;
 
-        if (typeof fn !== "function") throw nodeError("serialized source must evaluate to a function expression");
+        if (typeof fn !== "function") {
+            throw nodeError("serialized source must evaluate to a function expression");
+        }
 
         context[functionKey] = fn;
 
@@ -114,13 +135,18 @@ export const createNodeScriptExecutor = (options: NodeScriptExecutorOptions = {}
             let settled = false;
 
             const finish = (error?: unknown, value?: unknown, failed = false) => {
-                if (settled) return;
+                if (settled) {
+                    return;
+                }
 
                 settled = true;
                 signal.removeEventListener("abort", abort);
 
-                if (failed) reject(error);
-                else resolve(value);
+                if (failed) {
+                    reject(error);
+                } else {
+                    resolve(value);
+                }
             };
 
             const abort = () => {
@@ -131,10 +157,14 @@ export const createNodeScriptExecutor = (options: NodeScriptExecutorOptions = {}
 
             // Observe even a late rejection after cancellation. There are no host timers or implicit timeouts.
             Promise.resolve(result).then(packet => {
-                if (settled) return;
+                if (settled) {
+                    return;
+                }
 
                 try {
-                    if (typeof packet !== "string") throw nodeError("invalid guest outcome");
+                    if (typeof packet !== "string") {
+                        throw nodeError("invalid guest outcome");
+                    }
 
                     const outcome = JSON.parse(packet) as {kind: string; value?: unknown; name: string; message: string};
 
@@ -147,8 +177,11 @@ export const createNodeScriptExecutor = (options: NodeScriptExecutorOptions = {}
 
                         onScriptError?.({target, name: outcome.name, message: outcome.message});
                         finish(undefined, null);
-                    } else if (outcome.kind === "result") finish(undefined, outcome.value);
-                    else throw nodeError(outcome.message ?? "invalid guest outcome");
+                    } else if (outcome.kind === "result") {
+                        finish(undefined, outcome.value);
+                    } else {
+                        throw nodeError(outcome.message ?? "invalid guest outcome");
+                    }
                 } catch (error) {
                     finish(error, undefined, true);
                 }
@@ -156,7 +189,9 @@ export const createNodeScriptExecutor = (options: NodeScriptExecutorOptions = {}
                 finish(nodeError("guest driver failed", error), undefined, true);
             });
 
-            if (signal.aborted) abort();
+            if (signal.aborted) {
+                abort();
+            }
         });
     };
 };

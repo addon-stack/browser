@@ -1,4 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
+
 import {executeScript} from "../../../../src/api/scripting/methods";
 import {type BrowserScriptExecution, createBrowserHarness, createTabFixture, installBrowserGlobals} from "../../../../src/testing";
 import {createNodeScriptExecutor, type NodeScriptException, type NodeScriptExecutorOptions} from "../../../../src/testing/node";
@@ -103,11 +104,15 @@ describe("Node script executor", () => {
         });
 
         const func: () => string | Promise<string> = asynchronous ? async () => {
-            if (location.pathname === "/frame") throw new Error("child failed");
+            if (location.pathname === "/frame") {
+                throw new Error("child failed");
+            }
 
             return "main-ok";
         } : () => {
-            if (location.pathname === "/frame") throw new Error("child failed");
+            if (location.pathname === "/frame") {
+                throw new Error("child failed");
+            }
 
             return "main-ok";
         };
@@ -261,9 +266,13 @@ describe("Node script executor", () => {
         const operation = harness.chrome.scripting.executeScript({target, func: () => new Promise(() => undefined)});
         const rejected = expect(operation).rejects.toThrow("scripting.executeScript");
 
-        if (kind === "document") harness.contexts.documents.remove("main");
-        else if (kind === "reset") harness.reset();
-        else harness.scripting.cancelExecutions();
+        if (kind === "document") {
+            harness.contexts.documents.remove("main");
+        } else if (kind === "reset") {
+            harness.reset();
+        } else {
+            harness.scripting.cancelExecutions();
+        }
 
         await rejected;
         expect(harness.scripting.pendingExecutions).toBe(0);

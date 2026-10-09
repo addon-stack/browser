@@ -1,4 +1,5 @@
 import {afterEach, beforeEach, describe, expect, jest, test} from "@jest/globals";
+
 import {type BrowserHarness, createBrowserHarness, createTabFixture, installBrowserGlobals} from "../../testing";
 import {onSpecificCommand, onSpecificCommands} from "./custom-events";
 

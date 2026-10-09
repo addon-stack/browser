@@ -43,7 +43,9 @@ const installChromeHarness = (harness: ReturnType<typeof createBrowserHarness>):
 };
 
 afterEach(() => {
-    while (restorers.length > 0) restorers.pop()?.();
+    while (restorers.length > 0) {
+        restorers.pop()?.();
+    }
 });
 
 describe("stateful browser test harness", () => {

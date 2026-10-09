@@ -1,4 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
+
 import {checkMessageResponses} from "./messaging-assertions.mjs";
 
 const report = mode => ["promise", "callback"].map(style => {

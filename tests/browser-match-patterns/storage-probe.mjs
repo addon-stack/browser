@@ -33,14 +33,20 @@ export async function storageProbe(storage) {
     });
 
     const listener = (changes, area) => {
-        if (area !== "local") return;
+        if (area !== "local") {
+            return;
+        }
 
         // Ignore delayed cleanup events from the earlier serialization probes. Event/Promise ordering is not asserted.
         const selected = Object.fromEntries(Object.entries(changes).filter(([key]) => key === "key" || key === "done"));
 
-        if (Object.keys(selected).length > 0) report.changes.push(selected);
+        if (Object.keys(selected).length > 0) {
+            report.changes.push(selected);
+        }
 
-        if (changes.done) finish();
+        if (changes.done) {
+            finish();
+        }
     };
 
     storage.onChanged.addListener(listener);

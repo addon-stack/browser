@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {isBuiltin} from "node:module";
+
 import ts from "typescript";
 
 // Include type-only, dynamic imports and require: an erased import must not hide a Node-only dependency either.
@@ -14,11 +15,16 @@ export function moduleSpecifiers(text, file) {
     };
 
     const visit = node => {
-        if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) add(node.moduleSpecifier);
-        else if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument)) add(node.argument.literal);
-        else if (ts.isExternalModuleReference(node)) add(node.expression);
-        else if (ts.isCallExpression(node) && (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
-            (ts.isIdentifier(node.expression) && node.expression.text === "require"))) add(node.arguments[0]);
+        if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) {
+            add(node.moduleSpecifier);
+        } else if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument)) {
+            add(node.argument.literal);
+        } else if (ts.isExternalModuleReference(node)) {
+            add(node.expression);
+        } else if (ts.isCallExpression(node) && (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
+            (ts.isIdentifier(node.expression) && node.expression.text === "require"))) {
+            add(node.arguments[0]);
+        }
 
         ts.forEachChild(node, visit);
     };
@@ -37,7 +43,9 @@ export function assertPortableTestingGraph(entry, {
     const visited = new Set();
 
     const visit = (file, path) => {
-        if (visited.has(file)) return;
+        if (visited.has(file)) {
+            return;
+        }
 
         visited.add(file);
 

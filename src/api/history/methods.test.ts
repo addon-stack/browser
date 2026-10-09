@@ -1,4 +1,5 @@
 import {afterEach, beforeEach, describe, expect, test} from "@jest/globals";
+
 import {type BrowserHarness, createBrowserHarness, installBrowserGlobals} from "../../testing";
 import {addHistoryUrl, deleteAllHistory, deleteHistoryUrl, deleteRangeHistory, getHistoryVisits, searchHistory} from "./methods";
 

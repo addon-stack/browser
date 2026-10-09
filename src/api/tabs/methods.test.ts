@@ -1,4 +1,5 @@
 import {afterEach, beforeEach, describe, expect, test} from "@jest/globals";
+
 import {type BrowserHarness, createBrowserHarness, createTabFixture, installBrowserGlobals} from "../../testing";
 import * as api from "./methods";
 

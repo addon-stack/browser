@@ -194,11 +194,17 @@ module.exports = () => {
                             }
                         }
 
-                        if (isMajor) return {level: 0};
+                        if (isMajor) {
+                            return {level: 0};
+                        }
 
-                        if (isMinor) return {level: 1};
+                        if (isMinor) {
+                            return {level: 1};
+                        }
 
-                        if (isPatch) return {level: 2};
+                        if (isPatch) {
+                            return {level: 2};
+                        }
 
                         return null;
                     },

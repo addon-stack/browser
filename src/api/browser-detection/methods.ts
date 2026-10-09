@@ -1,5 +1,6 @@
-import type {FirefoxRuntime} from "../../types";
 import {browser} from "../browser";
+
+import type {FirefoxRuntime} from "../../types";
 
 export enum BrowserName {
     Arc = "arc",

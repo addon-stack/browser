@@ -1,4 +1,5 @@
 import {afterEach, describe, expect, test} from "@jest/globals";
+
 import {browser} from "./browser";
 
 // Deliberately partial globals exercise contexts without a complete extension API.
@@ -11,8 +12,11 @@ const installGlobals = (values: {browser: unknown; chrome: unknown}): (() => voi
 
     return () => {
         for (const [name, descriptor] of originals) {
-            if (descriptor) Object.defineProperty(globalThis, name, descriptor);
-            else Reflect.deleteProperty(globalThis, name);
+            if (descriptor) {
+                Object.defineProperty(globalThis, name, descriptor);
+            } else {
+                Reflect.deleteProperty(globalThis, name);
+            }
         }
     };
 };

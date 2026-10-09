@@ -3,7 +3,9 @@ import {mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {fileURLToPath, pathToFileURL} from "node:url";
+
 import {build} from "tsup";
+
 import availabilityApis from "../codegen/availability/apis.mjs";
 
 const directory = await mkdtemp(join(tmpdir(), "browser-tree-shaking-"));
@@ -105,8 +107,11 @@ async function verifyDownloadsConsumer(path, eventName, source) {
         assert.doesNotMatch(source, /download-validation|BlockDownloadError|USER_CANCELED|setTimeout/, "Download validation survived tree shaking");
     } finally {
         for (const [name, descriptor] of [["chrome", originalChrome], ["browser", originalBrowser]]) {
-            if (descriptor) Object.defineProperty(globalThis, name, descriptor);
-            else Reflect.deleteProperty(globalThis, name);
+            if (descriptor) {
+                Object.defineProperty(globalThis, name, descriptor);
+            } else {
+                Reflect.deleteProperty(globalThis, name);
+            }
         }
     }
 }
@@ -155,8 +160,11 @@ async function verifyRuntimeConsumer(path, eventName, source) {
         assert.doesNotMatch(source, /\.(?:connect|connectNative|getContexts|getManifest|getPackageDirectoryEntry|getPlatformInfo|getBrowserInfo|getURL|openOptionsPage|reload|requestUpdateCheck|restart|restartAfterDelay|sendMessage|setUninstallURL)\b/, "Runtime methods survived tree shaking");
     } finally {
         for (const [name, descriptor] of [["chrome", originalChrome], ["browser", originalBrowser]]) {
-            if (descriptor) Object.defineProperty(globalThis, name, descriptor);
-            else Reflect.deleteProperty(globalThis, name);
+            if (descriptor) {
+                Object.defineProperty(globalThis, name, descriptor);
+            } else {
+                Reflect.deleteProperty(globalThis, name);
+            }
         }
     }
 }
@@ -183,9 +191,13 @@ async function verifyAlarmConsumer(path, exportName, source) {
         const mapped = exportName === "onSpecificAlarms";
         let unsubscribe;
 
-        if (mapped) unsubscribe = subscribe({sync: callback, cleanup: callback});
-        else if (filtered) unsubscribe = subscribe("sync", callback);
-        else unsubscribe = subscribe(callback);
+        if (mapped) {
+            unsubscribe = subscribe({sync: callback, cleanup: callback});
+        } else if (filtered) {
+            unsubscribe = subscribe("sync", callback);
+        } else {
+            unsubscribe = subscribe(callback);
+        }
 
         assert.equal(listeners.size, 1);
         const [listener] = listeners;
@@ -194,7 +206,9 @@ async function verifyAlarmConsumer(path, exportName, source) {
             name, scheduledTime: 123456, persistAcrossSessions: false,
         }));
 
-        for (const alarm of alarms) listener(alarm);
+        for (const alarm of alarms) {
+            listener(alarm);
+        }
 
         const expected = mapped ? [alarms[2], alarms[3]] : filtered ? [alarms[2]] : alarms;
         assert.equal(calls.length, expected.length);
@@ -212,8 +226,11 @@ async function verifyAlarmConsumer(path, exportName, source) {
         }
     } finally {
         for (const [name, descriptor] of [["chrome", originalChrome], ["browser", originalBrowser]]) {
-            if (descriptor) Object.defineProperty(globalThis, name, descriptor);
-            else Reflect.deleteProperty(globalThis, name);
+            if (descriptor) {
+                Object.defineProperty(globalThis, name, descriptor);
+            } else {
+                Reflect.deleteProperty(globalThis, name);
+            }
         }
     }
 }
@@ -240,9 +257,13 @@ async function verifyCommandConsumer(path, exportName, source) {
         const mapped = exportName === "onSpecificCommands";
         let unsubscribe;
 
-        if (mapped) unsubscribe = subscribe({sync: callback, cleanup: callback});
-        else if (filtered) unsubscribe = subscribe("sync", callback);
-        else unsubscribe = subscribe(callback);
+        if (mapped) {
+            unsubscribe = subscribe({sync: callback, cleanup: callback});
+        } else if (filtered) {
+            unsubscribe = subscribe("sync", callback);
+        } else {
+            unsubscribe = subscribe(callback);
+        }
 
         assert.equal(listeners.size, 1);
         const [listener] = listeners;
@@ -275,8 +296,11 @@ async function verifyCommandConsumer(path, exportName, source) {
         }
     } finally {
         for (const [name, descriptor] of [["chrome", originalChrome], ["browser", originalBrowser]]) {
-            if (descriptor) Object.defineProperty(globalThis, name, descriptor);
-            else Reflect.deleteProperty(globalThis, name);
+            if (descriptor) {
+                Object.defineProperty(globalThis, name, descriptor);
+            } else {
+                Reflect.deleteProperty(globalThis, name);
+            }
         }
     }
 }
@@ -401,7 +425,9 @@ try {
             assert.doesNotMatch(source, new RegExp(`\\b(?:${eventNames.join("|")})\\b`), "Event wrappers survived availability tree shaking");
             assert.doesNotMatch(source, /addListener|removeListener|callWithPromise|\.query\b|\.getContexts\b|\.setIcon\b|createBrowserHarness|generateAvailability/);
 
-            if (namespace !== "action") assert.doesNotMatch(source, /\.getManifest\b/);
+            if (namespace !== "action") {
+                assert.doesNotMatch(source, /\.getManifest\b/);
+            }
 
             // Import without any extension globals; namespace selection must remain lazy.
             setGlobals({});
@@ -444,8 +470,11 @@ try {
         }
     } finally {
         for (const [name, descriptor] of originals) {
-            if (descriptor) Object.defineProperty(globalThis, name, descriptor);
-            else Reflect.deleteProperty(globalThis, name);
+            if (descriptor) {
+                Object.defineProperty(globalThis, name, descriptor);
+            } else {
+                Reflect.deleteProperty(globalThis, name);
+            }
         }
     }
 } finally {

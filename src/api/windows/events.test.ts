@@ -1,6 +1,8 @@
 import {afterEach, beforeEach, describe, expect, jest, test} from "@jest/globals";
+
 import {type BrowserHarness, createBrowserHarness, createWindowFixture, installBrowserGlobals} from "../../testing";
 import * as api from "./events";
+
 import type {WindowEventFilter} from "./types";
 
 const filter: WindowEventFilter = {windowTypes: ["normal", "popup"]};

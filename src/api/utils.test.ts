@@ -1,4 +1,5 @@
 import {afterEach, describe, expect, jest, test} from "@jest/globals";
+
 import {type BrowserTestApi, createBrowserEvent, installGlobals} from "../testing";
 import {createListenerErrorCapture} from "../testing/environment/listener-errors";
 import {callWithPromise, checkLastError, handleListener, safeListener} from "./utils";

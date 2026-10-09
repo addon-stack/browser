@@ -7,6 +7,7 @@ import {mkdir, mkdtemp, writeFile} from "node:fs/promises";
 import {createServer} from "node:http";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
+
 import {createBrowserHarness, createTabFixture} from "../../dist/testing/index.js";
 import {createNodeScriptExecutor, createNodeScriptRuntime} from "../../dist/testing/node/index.js";
 import {removeBrowserTemporaryDirectory} from "./cleanup.mjs";
@@ -53,7 +54,9 @@ const server = createServer(async (request, response) => {
     if (request.method === "POST") {
         let body = "";
 
-        for await (const chunk of request) body += chunk;
+        for await (const chunk of request) {
+            body += chunk;
+        }
 
         try {
             const result = JSON.parse(body);
@@ -66,7 +69,9 @@ const server = createServer(async (request, response) => {
             results.set(result.name, result);
             response.end("ok");
 
-            if (results.size === profiles.length) complete();
+            if (results.size === profiles.length) {
+                complete();
+            }
         } catch (error) {
             response.writeHead(400).end();
             fail(error);
@@ -88,7 +93,9 @@ async function probe(config) {
         const deadline = Date.now() + 10000;
 
         while ((await chrome.tabs.get(tab.id)).status !== "complete") {
-            if (Date.now() > deadline) throw new Error("Local test tab did not load");
+            if (Date.now() > deadline) {
+                throw new Error("Local test tab did not load");
+            }
 
             await new Promise(resolveDelay => setTimeout(resolveDelay, 25));
         }
@@ -144,7 +151,9 @@ async function probe(config) {
         });
 
         const readyListener = (message, sender, respond) => {
-            if (message?.probe !== "extension-page-ready" || sender.url !== extensionUrl) return;
+            if (message?.probe !== "extension-page-ready" || sender.url !== extensionUrl) {
+                return;
+            }
 
             respond("ready"); markReady(sender);
         };
@@ -156,7 +165,9 @@ async function probe(config) {
             extensionTab = await chrome.tabs.create({url: extensionUrl, active: false});
             const sender = await pageReady;
 
-            if (sender.tab?.id !== extensionTab.id) throw new Error("Extension ready message came from an unexpected tab");
+            if (sender.tab?.id !== extensionTab.id) {
+                throw new Error("Extension ready message came from an unexpected tab");
+            }
 
             report.extensionPage = {tabId: sender.tab.id, frameId: sender.frameId, documentId: sender.documentId, url: extensionUrl};
             report.extensionMessages = await messageResponsesProbe(chrome, {namespace: "tabs", tabId: extensionTab.id, label: "extension-page"});
@@ -170,7 +181,9 @@ async function probe(config) {
         }
 
         while ((await chrome.tabs.get(extensionTab.id)).status !== "complete") {
-            if (Date.now() > deadline) throw new Error("Extension context tab did not load");
+            if (Date.now() > deadline) {
+                throw new Error("Extension context tab did not load");
+            }
 
             await new Promise(resolveDelay => setTimeout(resolveDelay, 25));
         }
@@ -394,7 +407,9 @@ try {
         assert.equal(checkMessageResponses(result.extensionMessages, "extension-page"), promiseListeners);
         assert.equal(result.extensionTargeted.length, 2);
 
-        for (const scenarios of result.extensionTargeted) assert.equal(checkMessageResponses(scenarios, "extension-page"), promiseListeners);
+        for (const scenarios of result.extensionTargeted) {
+            assert.equal(checkMessageResponses(scenarios, "extension-page"), promiseListeners);
+        }
 
         console.log(`${profile.name}: Promise listeners=${promiseListeners}; empty replies=null; silent callback=lastError; extension-tab delivery verified.`);
         // The browser-report timeout no longer protects us after `finished` resolves. Bound the fake's probe too:
@@ -451,10 +466,12 @@ try {
             assert.equal(entry.closedChannel, true, "Native offscreen closure must reject the held request");
             assert.equal(entry.frames.length, 2, "Both frames must answer");
 
-            for (const [index, replies] of entry.frames.entries()) for (const reply of [replies.byFrame, replies.byDocument]) {
-                assert.equal(reply.label, "worker", "A content-frame relay must reach the worker listener");
-                assert.equal(reply.sender.frameId, result.messageFrames[index].frameId);
-                assert.equal(reply.sender.documentId, result.messageFrames[index].documentId);
+            for (const [index, replies] of entry.frames.entries()) {
+                for (const reply of [replies.byFrame, replies.byDocument]) {
+                    assert.equal(reply.label, "worker", "A content-frame relay must reach the worker listener");
+                    assert.equal(reply.sender.frameId, result.messageFrames[index].frameId);
+                    assert.equal(reply.sender.documentId, result.messageFrames[index].documentId);
+                }
             }
         }
 

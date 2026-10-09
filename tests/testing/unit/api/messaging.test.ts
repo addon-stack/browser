@@ -1,4 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
+
 import {type BrowserContextMessaging, createBrowserHarness, createTabFixture} from "../../../../src/testing";
 
 const fixture = () => {
@@ -23,14 +24,19 @@ const deferred = () => {
 };
 
 const send = (view: BrowserContextMessaging, facade: "chrome" | "browser", callback: boolean, message: unknown): Promise<unknown> => {
-    if (!callback) return view[facade].runtime.sendMessage(message);
+    if (!callback) {
+        return view[facade].runtime.sendMessage(message);
+    }
 
     return new Promise((resolve, reject) => {
         expect(view[facade].runtime.sendMessage(message, response => {
             const error = view[facade].runtime.lastError;
 
-            if (error) reject(new Error(error.message));
-            else resolve(response);
+            if (error) {
+                reject(new Error(error.message));
+            } else {
+                resolve(response);
+            }
         })).toBeUndefined();
     });
 };
@@ -77,10 +83,12 @@ describe("context-bound messaging", () => {
         const other = harness.contexts.create({kind: "contentScript", tabId: 8, url: "https://other.test/"});
         const received: string[] = [];
 
-        for (const context of [main, child, other]) context.onMessage.on((_message, _sender, respond) => {
-            received.push(context.info.documentId!);
-            respond(context.info.documentId);
-        });
+        for (const context of [main, child, other]) {
+            context.onMessage.on((_message, _sender, respond) => {
+                received.push(context.info.documentId!);
+                respond(context.info.documentId);
+            });
+        }
 
         await expect(worker.chrome.tabs.sendMessage(7, {}, {frameId: 3})).resolves.toBe(child.info.documentId);
         expect(received).toEqual([child.info.documentId]);
@@ -116,8 +124,11 @@ describe("context-bound messaging", () => {
                 const error = worker.chrome.runtime.lastError;
                 expect(page.chrome.runtime.lastError).toBeUndefined();
 
-                if (error) reject(new Error(error.message));
-                else resolve(response);
+                if (error) {
+                    reject(new Error(error.message));
+                } else {
+                    resolve(response);
+                }
             })).toBeUndefined();
         }) : worker.browser.tabs.sendMessage(7, "ping", {frameId: 3});
 
@@ -314,11 +325,17 @@ describe("context channel responses and teardown", () => {
         const pending = page.chrome.runtime.sendMessage({});
         const cancelled = expect(pending).rejects.toThrow("message channel closed");
 
-        if (cause === "sender") harness.contexts.remove("page");
-        else if (cause === "receiver") harness.contexts.remove("worker");
-        else if (cause === "root-close") harness.runtime.closeMessageChannels();
-        else if (cause === "context-close") harness.messaging.closeChannels("worker");
-        else harness.reset();
+        if (cause === "sender") {
+            harness.contexts.remove("page");
+        } else if (cause === "receiver") {
+            harness.contexts.remove("worker");
+        } else if (cause === "root-close") {
+            harness.runtime.closeMessageChannels();
+        } else if (cause === "context-close") {
+            harness.messaging.closeChannels("worker");
+        } else {
+            harness.reset();
+        }
 
         await cancelled;
         expect(harness.messaging.pendingChannels).toEqual([]);

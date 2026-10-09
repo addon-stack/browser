@@ -1,4 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
+
 import {isAvailableScripting} from "../../../src/api/scripting/availability";
 import {executeScript} from "../../../src/api/scripting/methods";
 import {createBrowserHarness, createTabFixture, installBrowserGlobals} from "../../../src/testing";

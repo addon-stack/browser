@@ -8,7 +8,9 @@ import {createBrowserHarness, createTabFixture, installBrowserGlobals, installGl
 const restorers: Array<() => void> = [];
 
 afterEach(() => {
-    while (restorers.length > 0) restorers.pop()?.();
+    while (restorers.length > 0) {
+        restorers.pop()?.();
+    }
 });
 
 describe("transactional browser globals", () => {

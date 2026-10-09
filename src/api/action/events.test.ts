@@ -1,4 +1,5 @@
 import {afterEach, beforeEach, describe, expect, jest, test} from "@jest/globals";
+
 import {type BrowserTestApi, createBrowserEvent, createTabFixture, installGlobals} from "../../testing";
 import {onActionClicked, onActionUserSettingsChanged} from "./events";
 

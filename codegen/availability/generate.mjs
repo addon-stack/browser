@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+
 import {renderActionAvailability} from "./templates/action.mjs";
 import {renderBasicAvailability} from "./templates/basic.mjs";
 import {renderSidebarAvailability} from "./templates/sidebar.mjs";

@@ -1,4 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
+
 import {type BrowserScriptExecution, createBrowserHarness, createTabFixture} from "../../../../src/testing";
 import {createNodeScriptRuntime, type NodeScriptRuntimeOptions} from "../../../../src/testing/node";
 
@@ -178,9 +179,13 @@ describe("guest virtual clock", () => {
         const {harness, runtime, clock, execute} = setup();
         const rejected = expect(execute("() => new Promise(resolve => setTimeout(resolve, 300))")).rejects.toThrow();
 
-        if (action === "remove") harness.contexts.documents.remove("main");
-        else if (action === "reset") harness.reset();
-        else runtime.dispose();
+        if (action === "remove") {
+            harness.contexts.documents.remove("main");
+        } else if (action === "reset") {
+            harness.reset();
+        } else {
+            runtime.dispose();
+        }
 
         await rejected;
         expect(runtime.realmCount).toBe(0);
@@ -191,7 +196,9 @@ describe("guest virtual clock", () => {
             clock.runAll();
             expect(clock.now).toBe(0);
 
-            if (action === "remove") harness.contexts.documents.create({documentId: "main", tabId: 7, url: "https://new.test/"});
+            if (action === "remove") {
+                harness.contexts.documents.create({documentId: "main", tabId: 7, url: "https://new.test/"});
+            }
 
             const pending = execute("() => new Promise(resolve => setTimeout(() => resolve('new'), 1))");
             clock.advance(1);
@@ -263,9 +270,13 @@ describe("guest virtual clock", () => {
     test("invalid advances and budgets leave time unchanged", () => {
         const {runtime, clock} = setup();
 
-        for (const value of [-1, 0.5, NaN, Infinity, 8640000000000001]) expect(() => clock.advance(value)).toThrow("advance");
+        for (const value of [-1, 0.5, NaN, Infinity, 8640000000000001]) {
+            expect(() => clock.advance(value)).toThrow("advance");
+        }
 
-        for (const value of [0, -1, 0.5, NaN, Infinity]) expect(() => clock.runAll({maxTimers: value})).toThrow("maxTimers");
+        for (const value of [0, -1, 0.5, NaN, Infinity]) {
+            expect(() => clock.runAll({maxTimers: value})).toThrow("maxTimers");
+        }
 
         expect(clock.now).toBe(0);
         runtime.dispose();

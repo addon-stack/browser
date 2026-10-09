@@ -1,6 +1,8 @@
 import {fileURLToPath} from "node:url";
+
 import {describe, expect, test} from "@jest/globals";
 import {ESLint} from "eslint";
+
 import config from "../../eslint.config.js";
 
 const cwd = fileURLToPath(new URL("../../", import.meta.url));

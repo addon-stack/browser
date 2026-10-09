@@ -1,4 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
+
 import {assertSupportedBrowser, browserSmokeError, inspectBrowser} from "./launcher.mjs";
 
 describe("browser smoke launcher diagnostics", () => {

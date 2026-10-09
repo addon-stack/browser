@@ -12,7 +12,9 @@ const installChromeHarness = (harness: ReturnType<typeof createBrowserHarness>):
 };
 
 afterEach(() => {
-    while (restorers.length > 0) restorers.pop()?.();
+    while (restorers.length > 0) {
+        restorers.pop()?.();
+    }
 });
 
 describe.each(["chrome", "firefox"] as const)("generated runtime message wrapper in %s", profile => {
@@ -239,7 +241,9 @@ describe("stateful runtime messaging", () => {
         let holdOpen = false;
 
         harness.runtime.events.onMessage.on((_message, _sender, sendResponse) => {
-            if (holdOpen) return true;
+            if (holdOpen) {
+                return true;
+            }
 
             sendResponse("settled response");
         });

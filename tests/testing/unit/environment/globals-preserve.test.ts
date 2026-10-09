@@ -6,7 +6,9 @@ const restorers: Array<() => void> = [];
 afterEach(() => {
     jest.restoreAllMocks();
 
-    while (restorers.length > 0) restorers.pop()?.();
+    while (restorers.length > 0) {
+        restorers.pop()?.();
+    }
 });
 
 const descriptors = () => Object.fromEntries(
@@ -90,7 +92,9 @@ test("failed installation rolls back preceding descriptors and harness profile c
     const original = Reflect.defineProperty;
 
     const define = jest.spyOn(Reflect, "defineProperty").mockImplementation((target, key, descriptor) => {
-        if (target === globalThis && key === "safari") return false;
+        if (target === globalThis && key === "safari") {
+            return false;
+        }
 
         return original(target, key, descriptor);
     });

@@ -37,7 +37,9 @@ export const parseMatchPattern = (pattern: string, api: string): MatchPattern =>
 
     const parts = /^([^:]+):\/\/([^/]*)(\/.*)$/.exec(pattern);
 
-    if (!parts) throw patternError(pattern, api, "expected <scheme>://<host>/<path>");
+    if (!parts) {
+        throw patternError(pattern, api, "expected <scheme>://<host>/<path>");
+    }
 
     const [, scheme, authority, path] = parts;
 
@@ -54,14 +56,18 @@ export const parseMatchPattern = (pattern: string, api: string): MatchPattern =>
     const base = {schemes, path, pathParts: path.split("*")};
 
     if (scheme === "file") {
-        if (authority) throw patternError(pattern, api, "only hostless file:/// patterns are supported", true);
+        if (authority) {
+            throw patternError(pattern, api, "only hostless file:/// patterns are supported", true);
+        }
 
         return {...base, host: {kind: "any", name: ""}, port: "*"};
     }
 
     const hostPort = /^(\[[^\]]+\]|[^:]+)(?::([^:]*))?$/.exec(authority);
 
-    if (!hostPort) throw patternError(pattern, api, "missing or malformed host/port");
+    if (!hostPort) {
+        throw patternError(pattern, api, "missing or malformed host/port");
+    }
 
     const [, hostText, portText = "*"] = hostPort;
 
@@ -79,12 +85,16 @@ export const parseMatchPattern = (pattern: string, api: string): MatchPattern =>
 
     const port = portText === "*" ? "*" : String(Number(portText));
 
-    if (hostText === "*") return {...base, host: {kind: "any", name: ""}, port};
+    if (hostText === "*") {
+        return {...base, host: {kind: "any", name: ""}, port};
+    }
 
     const subdomains = hostText.startsWith("*.");
     const rawHost = subdomains ? hostText.slice(2) : hostText;
 
-    if (!rawHost || /[*@?#%]/.test(rawHost)) throw patternError(pattern, api, "invalid host or host wildcard");
+    if (!rawHost || /[*@?#%]/.test(rawHost)) {
+        throw patternError(pattern, api, "invalid host or host wildcard");
+    }
 
     let name: string;
 
@@ -95,7 +105,9 @@ export const parseMatchPattern = (pattern: string, api: string): MatchPattern =>
         throw patternError(pattern, api, "invalid hostname");
     }
 
-    if (!name) throw patternError(pattern, api, "empty hostname");
+    if (!name) {
+        throw patternError(pattern, api, "empty hostname");
+    }
 
     if (subdomains && isIpAddress(name)) {
         throw patternError(pattern, api, "subdomain wildcards on IP addresses are not supported", true);
@@ -111,13 +123,19 @@ const matchesHost = (host: Host, name: string): boolean =>
 
 const matchesPath = (pattern: MatchPattern, value: string): boolean => {
     // Chromium also matches /foo/* against /foo, not only /foo/ and its descendants.
-    if (pattern.path.endsWith("/*") && value === pattern.path.slice(0, -2)) return true;
+    if (pattern.path.endsWith("/*") && value === pattern.path.slice(0, -2)) {
+        return true;
+    }
 
     const parts = pattern.pathParts;
 
-    if (parts.length === 1) return value === parts[0];
+    if (parts.length === 1) {
+        return value === parts[0];
+    }
 
-    if (!value.startsWith(parts[0])) return false;
+    if (!value.startsWith(parts[0])) {
+        return false;
+    }
 
     let offset = parts[0].length;
 
@@ -125,7 +143,9 @@ const matchesPath = (pattern: MatchPattern, value: string): boolean => {
     for (const part of parts.slice(1, -1)) {
         const next = value.indexOf(part, offset);
 
-        if (next === -1) return false;
+        if (next === -1) {
+            return false;
+        }
 
         offset = next + part.length;
     }
@@ -138,7 +158,9 @@ const matchesPath = (pattern: MatchPattern, value: string): boolean => {
 export const matchesUrl = (pattern: MatchPattern, value: URL): boolean => {
     const scheme = value.protocol.slice(0, -1) as Scheme;
 
-    if (!pattern.schemes.includes(scheme)) return false;
+    if (!pattern.schemes.includes(scheme)) {
+        return false;
+    }
 
     const port = value.port || (scheme === "https" ? "443" : scheme === "http" ? "80" : "");
     // URL.search is empty for both no query and a bare '?'; the serialized URL preserves the distinction.
@@ -170,15 +192,25 @@ export const createUrlMatcher = (patterns: readonly string[], api: string): ((ur
 
 export const coversOrigin = (granted: MatchPattern, requested: MatchPattern): boolean => {
     // This is set containment, not matching a representative URL. Host permission paths are ignored.
-    if (!requested.schemes.every(scheme => granted.schemes.includes(scheme))) return false;
+    if (!requested.schemes.every(scheme => granted.schemes.includes(scheme))) {
+        return false;
+    }
 
-    if (granted.port !== "*" && granted.port !== requested.port) return false;
+    if (granted.port !== "*" && granted.port !== requested.port) {
+        return false;
+    }
 
-    if (granted.host.kind === "any") return true;
+    if (granted.host.kind === "any") {
+        return true;
+    }
 
-    if (requested.host.kind === "any") return false;
+    if (requested.host.kind === "any") {
+        return false;
+    }
 
-    if (requested.host.kind === "subdomains" && granted.host.kind !== "subdomains") return false;
+    if (requested.host.kind === "subdomains" && granted.host.kind !== "subdomains") {
+        return false;
+    }
 
     return matchesHost(granted.host, requested.host.name);
 };

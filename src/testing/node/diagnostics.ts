@@ -1,7 +1,9 @@
 export const nodeError = (message: string, cause?: unknown): Error => new Error(`Node script executor: ${message}`, {cause});
 
 export const missingCoverageHelper = (source: string, name: string, message: string): string | undefined => {
-    if (name !== "ReferenceError") return undefined;
+    if (name !== "ReferenceError") {
+        return undefined;
+    }
 
     const helper = /^(cov_[\w$]+) is not defined$/.exec(message)?.[1];
 

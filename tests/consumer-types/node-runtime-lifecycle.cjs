@@ -29,8 +29,11 @@ module.exports = async function checkRuntimeLifecycle(production, testing, nodeT
 
             const pending = style === "promise" ? harness.browser.scripting.executeScript(wait) : new Promise((resolve, reject) => {
                 harness.chrome.scripting.executeScript(wait, result => {
-                    if (harness.runtime.lastError) reject(new Error(harness.runtime.lastError.message));
-                    else resolve(result);
+                    if (harness.runtime.lastError) {
+                        reject(new Error(harness.runtime.lastError.message));
+                    } else {
+                        resolve(result);
+                    }
                 });
             });
 

@@ -1,4 +1,5 @@
 import {afterEach, describe, expect, test} from "@jest/globals";
+
 import {containsPermissions, getAllPermissions, removePermissions, requestPermissions} from "../../../src/api/permissions";
 import {onInstalled} from "../../../src/api/runtime";
 import {executeScript, insertCss} from "../../../src/api/scripting/methods";
@@ -14,7 +15,9 @@ import {
 const restorers: Array<() => void> = [];
 
 afterEach(() => {
-    while (restorers.length) restorers.pop()?.();
+    while (restorers.length) {
+        restorers.pop()?.();
+    }
 });
 
 describe.each(["chrome", "firefox"] as const)("match patterns through real wrappers: %s", profile => {
@@ -230,12 +233,16 @@ describe.each(["chrome", "firefox"] as const)("match patterns through real wrapp
 
         // Representative application code; these are real package wrappers, not module mocks.
         const unsubscribe = onInstalled(async () => {
-            if (!(await containsPermissions({origins: ["https://shop.example.com/*"]}))) return;
+            if (!(await containsPermissions({origins: ["https://shop.example.com/*"]}))) {
+                return;
+            }
 
             const tabs = await queryTabs({url: "https://*.example.com/*", status: "complete", discarded: false});
 
             for (const tab of tabs) {
-                if (tab.id === undefined) continue;
+                if (tab.id === undefined) {
+                    continue;
+                }
 
                 const target = {tabId: tab.id};
                 await insertCss({target, files: ["content.css"]});

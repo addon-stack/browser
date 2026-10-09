@@ -1,4 +1,5 @@
 import {afterEach, describe, expect, jest, test} from "@jest/globals";
+
 import {installAvailabilityGlobals} from "../../../tests/api/availability";
 import {isAvailableAction} from "./availability";
 
