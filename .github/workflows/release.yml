@@ -33,19 +33,19 @@ jobs:
 
   release:
     name: Release & Publish
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: ci
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
 
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: 'npm'
 
       - name: Update npm
