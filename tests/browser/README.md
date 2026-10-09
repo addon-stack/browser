@@ -12,6 +12,7 @@ tests/browser/
 ├── extension/                # shared background entrypoint and base manifests
 └── api/
     ├── index.ts              # explicit suite registry
+    ├── bookmarks/            # node lifecycle, native events, missing permission
     ├── top-sites/            # basic retrieval, Firefox options, missing permission
     └── search/
         ├── index.ts          # browsers, permission profiles, scenarios
@@ -57,9 +58,12 @@ Browser startup/installation errors and a 60-second scenario timeout fail the co
 Processes, sockets and temporary directories are cleaned up on completion, failure and handled interruption.
 
 Chromium loads an unpacked MV3 service worker. Firefox loads an MV3 background script and installs the temporary addon
-through its loopback-only debugger, using `getRoot` and `installTemporaryAddon`. This follows the installation flow in
-[Mozilla web-ext](https://github.com/mozilla/web-ext/blob/master/src/firefox/remote.js); the small client handles only those
-requests. Debugger preferences are written only to the disposable profile, and signing requirements are unchanged.
+through its loopback-only debugger. Installation uses the `getRoot` / `installTemporaryAddon` flow from
+[Mozilla web-ext](https://github.com/mozilla/web-ext/blob/master/src/firefox/remote.js). Before installing the extension,
+the client uses the parent-process console to check Firefox's `places-browser-init-complete` notification, including
+the already-initialized case. This prevents first-run bookmark import from overwriting scenario data. The readiness
+check has a ten-second deadline; it does not replace native APIs or change bookmark permissions. Debugger preferences
+are written only to the disposable profile, and signing requirements are unchanged.
 
 ## Search coverage
 
@@ -90,6 +94,23 @@ npm run test:browser -- --browser firefox --api top-sites --binary /path/to/fire
 
 The shared CI commands include this suite. These runners cover Chromium and Firefox;
 they do not launch Edge, Opera or Safari.
+
+## Bookmarks coverage
+
+The `bookmarks` suite runs three scenarios across two permission profiles:
+
+- **Lifecycle:** all eleven wrappers, string and array IDs, tree/subtree/children, recent items,
+  string and object search, creation, update, move and both deletion methods. Native reads verify changes;
+  nonempty-folder deletion and deleted-ID lookup must reject. Firefox creates a separator and retains its
+  `type`; Chromium must reject that Firefox-only option.
+- **Events:** native operations deliver created/changed/moved/removed payloads to production subscriptions;
+  unsubscription stops delivery. Chromium-only sorting/import event availability is checked, but those
+  UI-driven events are not triggered by the runner (their wrapper contracts have unit coverage).
+- **Permissions:** the separate profile without `bookmarks` must report unavailable and reject tree access.
+
+Each positive scenario creates its own temporary folder and removes it in `finally`. No existing bookmarks
+are edited and no bookmark URL is navigated. Use `--api bookmarks` to run only this suite. The shared CI
+commands run it automatically in Chromium and Firefox; Edge, Opera and Safari are not launched.
 
 ## Add another API
 

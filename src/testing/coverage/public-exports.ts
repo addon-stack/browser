@@ -24,6 +24,15 @@ const entries = (
  * deliberate test failure instead of an implicit fake implementation.
  */
 export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
+    ...entries("bookmarks", "method-wrapper", "behavioral", ["isAvailableBookmarks"]),
+    ...entries("bookmarks", "method-wrapper", "configurable", [
+        "getBookmarks", "getBookmarkTree", "getBookmarkSubTree", "getBookmarkChildren", "getRecentBookmarks",
+        "searchBookmarks", "createBookmark", "updateBookmark", "moveBookmark", "removeBookmark", "removeBookmarkTree",
+    ]),
+    ...entries("bookmarks", "event-wrapper", "event", [
+        "onBookmarkCreated", "onBookmarkRemoved", "onBookmarkChanged", "onBookmarkMoved",
+        "onBookmarkChildrenReordered", "onBookmarksImportBegan", "onBookmarksImportEnded",
+    ]),
     ...entries("action", "method-wrapper", "behavioral", ["isAvailableAction"]),
     ...entries("action", "method-wrapper", "configurable", [
         "disableAction",
@@ -491,8 +500,8 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
 
 export const TYPE_ONLY_ROOT_EXPORTS = ["BrowserGuess", "LaunchWebAuthFlowDetails", "SearchEngine", "SearchTargetOptions", "TopSite", "TopSitesOptions", "WindowEventFilter"] as const;
 
-export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 380;
-export const EXPECTED_ROOT_RUNTIME_EXPORT_COUNT = 373;
+export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 399;
+export const EXPECTED_ROOT_RUNTIME_EXPORT_COUNT = 392;
 
 export const getPublicExportCoverage = (name: string): PublicExportCoverageEntry | undefined =>
     PUBLIC_EXPORT_COVERAGE.find(entry => entry.name === name);

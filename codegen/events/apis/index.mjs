@@ -1,6 +1,7 @@
 import actionEvents from "./action.mjs";
 import alarmsEvents from "./alarms.mjs";
 import audioEvents from "./audio.mjs";
+import bookmarksEvents from "./bookmarks.mjs";
 import commandsEvents from "./commands.mjs";
 import contextMenusEvents from "./context-menus.mjs";
 import cookiesEvents from "./cookies.mjs";
@@ -22,6 +23,7 @@ export default [
     actionEvents,
     alarmsEvents,
     audioEvents,
+    bookmarksEvents,
     commandsEvents,
     contextMenusEvents,
     cookiesEvents,

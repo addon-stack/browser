@@ -1,9 +1,9 @@
-export function renderBasicEvent({namespace, exportName, eventName}) {
+export function renderBasicEvent({namespace, exportName, eventName, callbackType}) {
     return {
         usesBrowser: true,
         utilities: ["handleListener"],
         source: `export const ${exportName} = (
-    callback: Parameters<typeof chrome.${namespace}.${eventName}.addListener>[0]
+    callback: ${callbackType ?? `Parameters<typeof chrome.${namespace}.${eventName}.addListener>[0]`}
 ): (() => void) => {
     return handleListener(browser().${namespace}.${eventName}, callback);
 };`,

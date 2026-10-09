@@ -34,14 +34,19 @@ export function generateEvents(specs) {
                 `Invalid event description for ${exportName}`
             );
 
-            const {event: eventName, template: templateName = template} = typeof description === "string"
+            const {event: eventName, template: templateName = template, callbackType} = typeof description === "string"
                 ? {event: description}
                 : description;
 
             assert.match(eventName, /^on[A-Z][a-zA-Z0-9]*$/, `Invalid event name for ${exportName}`);
             const render = templates.get(templateName);
             assert.ok(render, `Unknown event template: ${templateName}`);
-            const result = render({namespace, exportName, eventName});
+
+            if (callbackType !== undefined) {
+                assert.ok(templateName === "basic" && typeof callbackType === "string" && callbackType.trim(), `Invalid callback type for ${exportName}`);
+            }
+
+            const result = render({namespace, exportName, eventName, callbackType});
             usesBrowser ||= result.usesBrowser === true;
 
             for (const utility of result.utilities) {

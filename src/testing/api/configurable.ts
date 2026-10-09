@@ -92,6 +92,14 @@ export type ActionConfigurableApi = Pick<
     | "setTitle"
 >;
 
+export type BookmarksConfigurableApi = Pick<
+    typeof chrome.bookmarks,
+    | "create" | "get" | "getChildren" | "getRecent" | "getSubTree" | "getTree"
+    | "move" | "remove" | "removeTree" | "search" | "update"
+    | "onCreated" | "onRemoved" | "onChanged" | "onMoved"
+    | "onChildrenReordered" | "onImportBegan" | "onImportEnded"
+>;
+
 export type BrowserActionConfigurableApi = Pick<
     typeof chrome.browserAction,
     | "disable"
@@ -410,6 +418,7 @@ export interface ConfigurableBrowserApi {
     action: ActionConfigurableApi;
     alarms: AlarmsConfigurableApi;
     audio: AudioConfigurableApi;
+    bookmarks: BookmarksConfigurableApi;
     browserAction: BrowserActionConfigurableApi;
     browsingData: BrowsingDataConfigurableApi;
     commands: CommandsConfigurableApi;
@@ -443,6 +452,7 @@ export interface ConfigurableBrowserControls {
     readonly action: BrowserNamespaceHarness<ActionConfigurableApi>;
     readonly alarms: BrowserNamespaceHarness<AlarmsConfigurableApi>;
     readonly audio: BrowserNamespaceHarness<AudioConfigurableApi>;
+    readonly bookmarks: BrowserNamespaceHarness<BookmarksConfigurableApi>;
     readonly browserAction: BrowserNamespaceHarness<BrowserActionConfigurableApi>;
     readonly browsingData: BrowserNamespaceHarness<BrowsingDataConfigurableApi>;
     readonly commands: BrowserNamespaceHarness<CommandsConfigurableApi>;
@@ -517,6 +527,8 @@ const NO_RESULT_METHODS = new Set([
     "audio.setActiveDevices",
     "audio.setMute",
     "audio.setProperties",
+    "bookmarks.remove",
+    "bookmarks.removeTree",
     "browserAction.disable",
     "browserAction.enable",
     "browserAction.setBadgeBackgroundColor",

@@ -18,7 +18,9 @@ async function run(): Promise<void> {
             await scenario.run(config);
             results.push({id: scenario.id, status: "passed"});
         } catch (error) {
-            results.push({id: scenario.id, status: "failed", error: error instanceof Error ? error.stack : String(error)});
+            // Firefox stacks can be empty or omit the native error's message.
+            const details = error instanceof Error ? [String(error), error.stack].filter(Boolean).join("\n") : String(error);
+            results.push({id: scenario.id, status: "failed", error: details});
         }
     }
 

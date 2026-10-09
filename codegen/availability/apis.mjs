@@ -2,6 +2,7 @@ export default [
     {namespace: "action", template: "action"},
     {namespace: "alarms"},
     {namespace: "audio"},
+    {namespace: "bookmarks"},
     {namespace: "browsingData"},
     {namespace: "commands"},
     {namespace: "contextMenus"},

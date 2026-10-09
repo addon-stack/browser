@@ -35,8 +35,7 @@ async function connect(port) {
     }
 }
 
-// Firefox RDP uses UTF-8 byte-length-prefixed JSON. Only two sequential requests are needed:
-// root.getRoot -> addonsActor.installTemporaryAddon (the same flow used by Mozilla web-ext).
+// Firefox RDP uses UTF-8 byte-length-prefixed JSON.
 async function* packets(socket) {
     let buffer = Buffer.alloc(0);
 
@@ -110,6 +109,62 @@ export async function installTemporaryExtension(port, addonPath) {
 
         if (!root.addonsActor) {
             throw new Error("Firefox debugger has no addonsActor");
+        }
+
+        // A fresh profile imports default bookmarks asynchronously and replaces existing
+        // nodes. Wait for Places initialization before the extension creates test data.
+        // BrowserGlue's test notification also handles initialization already completed.
+        const {processDescriptor} = await request("root", "getProcess", {id: 0});
+
+        if (!processDescriptor?.actor) {
+            throw new Error("Firefox debugger has no parent process descriptor");
+        }
+
+        const {process: target} = await request(processDescriptor.actor, "getTarget");
+
+        if (!target?.consoleActor) {
+            throw new Error("Firefox debugger has no parent console actor");
+        }
+
+        const deadline = Date.now() + 10000;
+
+        while (true) {
+            const {resultID} = await request(target.consoleActor, "evaluateJSAsync", {
+                text: `(() => {
+                    let ready = false;
+                    const observer = () => { ready = true; };
+                    Services.obs.addObserver(observer, "places-browser-init-complete");
+                    try {
+                        Components.classes["@mozilla.org/browser/browserglue;1"]
+                            .getService(Components.interfaces.nsIObserver)
+                            .observe(null, "browser-glue-test", "places-browser-init-complete");
+                    } finally {
+                        Services.obs.removeObserver(observer, "places-browser-init-complete");
+                    }
+                    return ready;
+                })()`,
+            });
+
+            let evaluation;
+
+            do {
+                const {value} = await messages.next();
+                evaluation = value;
+            } while (evaluation?.from !== target.consoleActor || evaluation.type !== "evaluationResult" || evaluation.resultID !== resultID);
+
+            if (evaluation.hasException || evaluation.topLevelAwaitRejected || typeof evaluation.result !== "boolean") {
+                throw new Error(`Firefox Places initialization failed: ${evaluation.exceptionMessage ?? JSON.stringify(evaluation)}`);
+            }
+
+            if (evaluation.result) {
+                break;
+            }
+
+            if (Date.now() >= deadline) {
+                throw new Error("Firefox Places initialization timed out");
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 50));
         }
 
         const installed = await request(root.addonsActor, "installTemporaryAddon", {addonPath});

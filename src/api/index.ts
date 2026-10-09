@@ -1,6 +1,7 @@
 export * from "./action";
 export * from "./alarms";
 export * from "./audio";
+export * from "./bookmarks";
 export * from "./browser";
 export * from "./browser-detection";
 export * from "./browsing-data";

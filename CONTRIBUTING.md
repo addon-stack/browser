@@ -144,7 +144,7 @@ See the list of not-yet-covered APIs in the "Not yet covered" section of `README
 
 Event descriptions live in `codegen/events/apis/`:
 
-- Basic subscriptions: `alarms`, `audio`, `commands`, `context-menus`, `cookies`, `downloads`, `history`, `identity`, `idle`, `management`,
+- Basic subscriptions: `alarms`, `audio`, `bookmarks`, `commands`, `context-menus`, `cookies`, `downloads`, `history`, `identity`, `idle`, `management`,
   `notifications`, `permissions`, `runtime`, `tab-capture`, and `tabs`.
 - Specialized or mixed subscriptions: `action`, `web-request`, `windows`, and `web-navigation`.
 
@@ -170,6 +170,9 @@ not rewrite custom listeners. Namespaces without custom listeners do not need th
 into one module per namespace. A description's `template` selects the default (`basic` when omitted).
 An event may be a native event name, or an object such as
 `{event: "onActionIgnored", template: "basic"}` to override that default for one event.
+Basic event descriptions may also specify `callbackType` when browser payloads differ from `@types/chrome`.
+For example, `bookmarks.onChanged` makes `title` optional because Firefox can send a URL-only change.
+This changes only the callback type; the generated subscription still forwards the native payload unchanged.
 Unknown templates and invalid descriptions fail generation before any files are written.
 
 Templates live in `codegen/events/templates/`:

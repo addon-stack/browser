@@ -18,6 +18,8 @@ const consumers = [
     {exportName: "onSpecificAlarm", eventName: "onAlarm", namespace: "alarms"},
     {exportName: "onSpecificAlarms", eventName: "onAlarm", namespace: "alarms"},
     {exportName: "onAudioLevelChanged", eventName: "onLevelChanged", namespace: "audio"},
+    {exportName: "onBookmarkCreated", eventName: "onCreated", namespace: "bookmarks"},
+    {exportName: "onBookmarksImportBegan", eventName: "onImportBegan", namespace: "bookmarks"},
     {exportName: "onCommand", eventName: "onCommand", namespace: "commands"},
     {exportName: "onSpecificCommand", eventName: "onCommand", namespace: "commands"},
     {exportName: "onSpecificCommands", eventName: "onCommand", namespace: "commands"},
@@ -53,6 +55,7 @@ const eventNames = [
     "onSignInChanged", "onStateChanged", "onDisabled", "onEnabled", "onInstalled", "onUninstalled", "onAdded", "onStatusChanged", "onCommand", "onAlarm",
     "onConnect", "onConnectExternal", "onMessageExternal", "onRestartRequired", "onStartup", "onSuspend",
     "onSuspendCanceled", "onUpdateAvailable", "onUserScriptConnect", "onUserScriptMessage", "onDeterminingFilename",
+    "onChildrenReordered", "onImportBegan", "onImportEnded",
 ];
 
 async function verifyDownloadsConsumer(path, eventName, source) {
@@ -469,7 +472,7 @@ try {
             console.log(`Verified ${exportName} consumer tree shaking and lazy access (${Buffer.byteLength(source)} bytes minified).`);
         }
 
-        for (const exportName of ["querySearch", "searchInNewTab", "getTopSites"]) {
+        for (const exportName of ["querySearch", "searchInNewTab", "getTopSites", "getBookmarks"]) {
             await writeFile(entry, `import {${exportName}} from ${JSON.stringify(packageEntry)};\nexport const run = ${exportName};\n`);
 
             await build({
@@ -489,10 +492,11 @@ try {
 
             const output = join(directory, "dist/consumer.mjs");
             const source = await readFile(output, "utf8");
-            const namespace = exportName === "getTopSites" ? "topSites" : "search";
-            assert.match(source, namespace === "topSites" ? /\.get\b/ : /\.query\b/);
+            const namespace = {getTopSites: "topSites", getBookmarks: "bookmarks"}[exportName] ?? "search";
+            assert.match(source, namespace !== "search" ? /\.get\b/ : /\.query\b/);
             assert.doesNotMatch(source, /\.search\(|\.find\b|\.some\b|isDefault|\.engine\b|createBrowserHarness/);
-            assert.doesNotMatch(source, namespace === "topSites" ? /\.query\b/ : /\.get\b/);
+            assert.doesNotMatch(source, namespace !== "search" ? /\.query\b/ : /\.get\b/);
+            assert.doesNotMatch(source, /\.getTree\b|\.getSubTree\b|\.getChildren\b|\.getRecent\b|\.removeTree\b/);
             const unrelated = availabilityApis.map(api => api.namespace).filter(name => name !== namespace && name !== "runtime");
             assert.doesNotMatch(source, new RegExp(`\\.(?:${unrelated.join("|")})\\b`));
             setGlobals({});
@@ -501,7 +505,16 @@ try {
             const {run} = await import(url.href);
             const calls = [];
 
-            if (namespace === "topSites") {
+            if (namespace === "bookmarks") {
+                const nodes = [{id: "node", title: "Example", syncing: false}];
+
+                setGlobals({chrome: {runtime: {}, bookmarks: {get(ids, callback) {
+                    assert.equal(ids, "node");
+                    callback(nodes);
+                }}}});
+
+                assert.equal(await run("node"), nodes);
+            } else if (namespace === "topSites") {
                 const sites = [{url: "https://example.test/", title: "Example"}];
 
                 setGlobals({chrome: {runtime: {}, topSites: {get(callback) {

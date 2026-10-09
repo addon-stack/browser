@@ -54,6 +54,7 @@ older `@types/chrome` should update it to the same range to avoid mixing global 
 - [action](docs/action.md) — MV2/MV3 compatible; under the hood uses `chrome.action` (MV3) or `chrome.browserAction` (MV2) automatically.
 - [alarms](docs/alarms.md)
 - [audio](docs/audio.md)
+- [bookmarks](docs/bookmarks.md) — Bookmark trees, native editing and event subscriptions.
 - [browsingData](docs/browsing-data.md)
 - [commands](docs/commands.md)
 - [contextMenus](docs/context-menus.md)
@@ -169,7 +170,6 @@ See the [browser test guide](tests/browser/README.md) for setup, per-API scenari
 
 These commonly used WebExtensions/Chrome Extension APIs are not wrapped here yet (Chrome OS–only APIs are intentionally omitted). If you’d like to contribute, please see [CONTRIBUTING.md](CONTRIBUTING.md) and open an issue/PR.
 
-- bookmarks
 - contentSettings
 - declarativeContent
 - declarativeNetRequest (and declarativeNetRequestFeedback)

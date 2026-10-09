@@ -84,6 +84,13 @@ const propertyCapabilities = (
  * never synthesize an unlisted browser capability.
  */
 export const RAW_CAPABILITY_COVERAGE: readonly RawCapabilityEntry[] = [
+    ...methodCapabilities("bookmarks", "configurable", callbackInvocation, [
+        "create", "get", "getChildren", "getRecent", "getSubTree", "getTree",
+        "move", "remove", "removeTree", "search", "update",
+    ]),
+    ...eventCapabilities("bookmarks", [
+        "onCreated", "onRemoved", "onChanged", "onMoved", "onChildrenReordered", "onImportBegan", "onImportEnded",
+    ]),
     ...["local", "sync", "session", "managed"].flatMap(area => [
         ...methodCapabilities(`storage.${area}`, "stateful", {chrome: "dual", browser: "dual"}, ["get", "set", "remove", "clear", "getKeys"], {
             get: ["all", "string", "string[]", "defaults"],

@@ -1,7 +1,7 @@
 const assert = require("node:assert/strict");
 
 const names = [
-    "isAvailableAction", "isAvailableAlarms", "isAvailableAudio", "isAvailableBrowsingData", "isAvailableCommands",
+    "isAvailableAction", "isAvailableAlarms", "isAvailableAudio", "isAvailableBookmarks", "isAvailableBrowsingData", "isAvailableCommands",
     "isAvailableContextMenus", "isAvailableCookies", "isAvailableDocumentScan", "isAvailableDownloads", "isAvailableExtension",
     "isAvailableHistory", "isAvailableI18n", "isAvailableIdentity", "isAvailableIdle", "isAvailableManagement",
     "isAvailableNotifications", "isAvailableOffscreen", "isAvailablePermissions", "isAvailableRuntime", "isAvailableScripting", "isAvailableSearch",

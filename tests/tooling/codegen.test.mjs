@@ -12,7 +12,7 @@ import {generateEvents} from "../../codegen/events/generate.mjs";
 import {renderGeneratedFiles} from "../../codegen/generate.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
-const basicNamespaces = ["alarms", "audio", "commands", "context-menus", "cookies", "downloads", "history", "identity", "idle", "management", "permissions", "runtime", "tab-capture"];
+const basicNamespaces = ["alarms", "audio", "bookmarks", "commands", "context-menus", "cookies", "downloads", "history", "identity", "idle", "management", "permissions", "runtime", "tab-capture"];
 const generatedNamespaces = ["action", ...basicNamespaces, "notifications", "tabs", "web-request", "windows", "web-navigation"];
 const availabilityNamespaces = [...generatedNamespaces, "browsing-data", "document-scan", "extension", "i18n", "offscreen", "scripting", "search", "sidebar", "top-sites", "user-scripts"];
 
@@ -355,7 +355,17 @@ test("combines the default template and per-event overrides into one module", ()
     expect(source).not.toContain("chrome.webRequest.onActionIgnored.addListener>[1]");
 });
 
-test.each([null, 3, [], {}, {event: "onCreated", template: "unknown"}])("rejects an invalid event description: %p", description => {
+test("a basic event can declare a cross-browser callback type without changing its native subscription", () => {
+    const [result] = generateEvents([{
+        namespace: "bookmarks",
+        events: {onBookmarkChanged: {event: "onChanged", callbackType: "(id: string, info: {title?: string; url?: string}) => void"}},
+    }]);
+
+    expect(result.source).toContain("callback: (id: string, info: {title?: string; url?: string}) => void");
+    expect(result.source).toContain("handleListener(browser().bookmarks.onChanged, callback)");
+});
+
+test.each([null, 3, [], {}, {event: "onCreated", template: "unknown"}, {event: "onCreated", callbackType: ""}, {event: "onCreated", callbackType: 42}, {event: "onCreated", template: "windows", callbackType: "() => void"}])("rejects an invalid event description: %p", description => {
     expect(() => generateEvents([{namespace: "tabs", events: {onTabCreated: description}}])).toThrow();
 });
 

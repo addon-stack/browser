@@ -2,6 +2,18 @@
 // API shape instead of redeclaring that value. Firefox-only members below still
 // require runtime feature detection; this is a cross-browser type superset.
 declare namespace chrome {
+    namespace bookmarks {
+        interface BookmarkTreeNode {
+            /** Firefox only. Chromium does not expose this field. */
+            type?: "bookmark" | "folder" | "separator";
+        }
+
+        interface CreateDetails {
+            /** Firefox only. Chromium rejects this option; it is forwarded unchanged. */
+            type?: "bookmark" | "folder" | "separator";
+        }
+    }
+
     /** Firefox-only options and result fields; Chromium only supports get() without options. */
     namespace topSites {
         interface MostVisitedURL {
