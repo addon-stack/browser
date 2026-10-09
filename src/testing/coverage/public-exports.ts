@@ -24,6 +24,15 @@ const entries = (
  * deliberate test failure instead of an implicit fake implementation.
  */
 export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
+    ...entries("declarativeNetRequest", "method-wrapper", "behavioral", ["isAvailableDnr"]),
+    ...entries("declarativeNetRequest", "interface", "declaration", ["DnrRulesMatchedDetails", "DnrTestMatchOptions"]),
+    ...entries("declarativeNetRequest", "method-wrapper", "configurable", [
+        "getDnrDynamicRules", "updateDnrDynamicRules", "getDnrSessionRules", "updateDnrSessionRules",
+        "getDnrEnabledRulesets", "updateDnrEnabledRulesets", "getDnrDisabledRuleIds", "updateDnrStaticRules",
+        "getDnrAvailableStaticRuleCount", "getDnrMatchedRules", "setDnrExtensionActionOptions", "testDnrMatchOutcome",
+        "getDnrRegexSupport",
+    ]),
+    ...entries("declarativeNetRequest", "event-wrapper", "event", ["onDnrRuleMatchedDebug"]),
     ...entries("bookmarks", "method-wrapper", "behavioral", ["isAvailableBookmarks"]),
     ...entries("bookmarks", "method-wrapper", "configurable", [
         "getBookmarks", "getBookmarkTree", "getBookmarkSubTree", "getBookmarkChildren", "getRecentBookmarks",
@@ -498,10 +507,10 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ]),
 ] as const;
 
-export const TYPE_ONLY_ROOT_EXPORTS = ["BrowserGuess", "LaunchWebAuthFlowDetails", "SearchEngine", "SearchTargetOptions", "TopSite", "TopSitesOptions", "WindowEventFilter"] as const;
+export const TYPE_ONLY_ROOT_EXPORTS = ["BrowserGuess", "DnrRulesMatchedDetails", "DnrTestMatchOptions", "LaunchWebAuthFlowDetails", "SearchEngine", "SearchTargetOptions", "TopSite", "TopSitesOptions", "WindowEventFilter"] as const;
 
-export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 399;
-export const EXPECTED_ROOT_RUNTIME_EXPORT_COUNT = 392;
+export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 416;
+export const EXPECTED_ROOT_RUNTIME_EXPORT_COUNT = 407;
 
 export const getPublicExportCoverage = (name: string): PublicExportCoverageEntry | undefined =>
     PUBLIC_EXPORT_COVERAGE.find(entry => entry.name === name);

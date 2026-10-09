@@ -5,6 +5,7 @@ import bookmarksEvents from "./bookmarks.mjs";
 import commandsEvents from "./commands.mjs";
 import contextMenusEvents from "./context-menus.mjs";
 import cookiesEvents from "./cookies.mjs";
+import dnrEvents from "./declarative-net-request.mjs";
 import downloadsEvents from "./downloads.mjs";
 import historyEvents from "./history.mjs";
 import identityEvents from "./identity.mjs";
@@ -27,6 +28,7 @@ export default [
     commandsEvents,
     contextMenusEvents,
     cookiesEvents,
+    dnrEvents,
     downloadsEvents,
     historyEvents,
     identityEvents,

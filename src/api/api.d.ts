@@ -362,6 +362,21 @@ declare namespace opr {
 }
 
 declare namespace chrome {
+    namespace declarativeNetRequest {
+        interface TestMatchOptions {
+            /** Firefox only. Requires the extensions.dnr.feedback preference. */
+            includeOtherExtensions?: boolean;
+        }
+
+        interface MatchedRule {
+            /** Firefox only, when matching rules from other extensions. */
+            extensionId?: string;
+        }
+
+        /** Firefox only. Chromium rejects this options argument. */
+        function testMatchOutcome(request: TestMatchRequestDetails, options: TestMatchOptions): Promise<TestMatchOutcomeResult>;
+    }
+
     namespace tabs {
         /**
          * Removes CSS that was previously injected by insertCSS.

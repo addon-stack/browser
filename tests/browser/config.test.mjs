@@ -29,7 +29,7 @@ describe("browser suite configuration", () => {
         const negative = createManifest(template, denied, "firefox", "http://127.0.0.1:2346");
         expect(positive.permissions).toEqual(["search"]);
         expect(negative.permissions).toEqual([]);
-        expect(negative.host_permissions).toEqual(["http://127.0.0.1:2346/*"]);
+        expect(negative.host_permissions).toEqual(["http://127.0.0.1/*"]);
         expect(template.permissions).toEqual(["search"]);
         expect(profile.permissions).toEqual(["search"]);
     });

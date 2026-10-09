@@ -7,6 +7,7 @@ export default [
     {namespace: "commands"},
     {namespace: "contextMenus"},
     {namespace: "cookies"},
+    {namespace: "declarativeNetRequest", alias: "Dnr"},
     {namespace: "documentScan"},
     {namespace: "downloads"},
     {namespace: "extension"},

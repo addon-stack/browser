@@ -12,6 +12,7 @@ const directory = await mkdtemp(join(tmpdir(), "browser-tree-shaking-"));
 const packageEntry = fileURLToPath(new URL("../dist/index.js", import.meta.url)).replaceAll("\\", "/");
 
 const consumers = [
+    {exportName: "onDnrRuleMatchedDebug", namespace: "declarativeNetRequest", eventName: "onRuleMatchedDebug"},
     {exportName: "onActionClicked", eventName: "onClicked"},
     {exportName: "onActionUserSettingsChanged", eventName: "onUserSettingsChanged"},
     {exportName: "onAlarm", eventName: "onAlarm", namespace: "alarms"},
@@ -45,6 +46,7 @@ const consumers = [
 ];
 
 const eventNames = [
+    "onRuleMatchedDebug",
     "onActivated", "onAttached", "onCreated", "onDetached", "onHighlighted", "onMoved", "onRemoved",
     "onReplaced", "onUpdated", "onZoomChange", "onAuthRequired", "onBeforeRedirect", "onBeforeRequest",
     "onBeforeSendHeaders", "onCompleted", "onErrorOccurred", "onHeadersReceived", "onResponseStarted",
@@ -389,8 +391,8 @@ try {
     };
 
     try {
-        for (const {namespace} of availabilityApis) {
-            const exportName = `isAvailable${namespace[0].toUpperCase()}${namespace.slice(1)}`;
+        for (const {namespace, alias} of availabilityApis) {
+            const exportName = `isAvailable${alias ?? namespace[0].toUpperCase() + namespace.slice(1)}`;
 
             await writeFile(entry, [
                 `import {${exportName}} from ${JSON.stringify(packageEntry)};`,
@@ -472,7 +474,7 @@ try {
             console.log(`Verified ${exportName} consumer tree shaking and lazy access (${Buffer.byteLength(source)} bytes minified).`);
         }
 
-        for (const exportName of ["querySearch", "searchInNewTab", "getTopSites", "getBookmarks"]) {
+        for (const exportName of ["querySearch", "searchInNewTab", "getTopSites", "getBookmarks", "getDnrDynamicRules"]) {
             await writeFile(entry, `import {${exportName}} from ${JSON.stringify(packageEntry)};\nexport const run = ${exportName};\n`);
 
             await build({
@@ -492,8 +494,9 @@ try {
 
             const output = join(directory, "dist/consumer.mjs");
             const source = await readFile(output, "utf8");
-            const namespace = {getTopSites: "topSites", getBookmarks: "bookmarks"}[exportName] ?? "search";
-            assert.match(source, namespace !== "search" ? /\.get\b/ : /\.query\b/);
+            const namespace = {getTopSites: "topSites", getBookmarks: "bookmarks", getDnrDynamicRules: "declarativeNetRequest"}[exportName] ?? "search";
+            assert.match(source, namespace === "declarativeNetRequest" ? /\.getDynamicRules\b/ : namespace !== "search" ? /\.get\b/ : /\.query\b/);
+            assert.doesNotMatch(source, /\.updateDynamicRules\b|\.getSessionRules\b|\.testMatchOutcome\b|\.onRuleMatchedDebug\b/);
             assert.doesNotMatch(source, /\.search\(|\.find\b|\.some\b|isDefault|\.engine\b|createBrowserHarness/);
             assert.doesNotMatch(source, namespace !== "search" ? /\.query\b/ : /\.get\b/);
             assert.doesNotMatch(source, /\.getTree\b|\.getSubTree\b|\.getChildren\b|\.getRecent\b|\.removeTree\b/);
@@ -505,7 +508,15 @@ try {
             const {run} = await import(url.href);
             const calls = [];
 
-            if (namespace === "bookmarks") {
+            if (namespace === "declarativeNetRequest") {
+                const rules = [{id: 1, action: {type: "block"}, condition: {urlFilter: "example.test"}}];
+
+                setGlobals({chrome: {runtime: {}, declarativeNetRequest: {getDynamicRules(callback) {
+                    callback(rules);
+                }}}});
+
+                assert.equal(await run(), rules);
+            } else if (namespace === "bookmarks") {
                 const nodes = [{id: "node", title: "Example", syncing: false}];
 
                 setGlobals({chrome: {runtime: {}, bookmarks: {get(ids, callback) {

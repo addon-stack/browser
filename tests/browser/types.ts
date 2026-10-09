@@ -15,6 +15,8 @@ export interface BrowserProfile {
     id: string;
     permissions: string[];
     scenarios: BrowserScenario[];
+    resources?: Record<string, unknown>;
+    firefoxPreferences?: Record<string, boolean | string | number>;
     manifest?: Partial<Record<BrowserName, Record<string, unknown>>>;
 }
 

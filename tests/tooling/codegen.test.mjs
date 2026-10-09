@@ -12,7 +12,7 @@ import {generateEvents} from "../../codegen/events/generate.mjs";
 import {renderGeneratedFiles} from "../../codegen/generate.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
-const basicNamespaces = ["alarms", "audio", "bookmarks", "commands", "context-menus", "cookies", "downloads", "history", "identity", "idle", "management", "permissions", "runtime", "tab-capture"];
+const basicNamespaces = ["alarms", "audio", "bookmarks", "commands", "context-menus", "cookies", "declarative-net-request", "downloads", "history", "identity", "idle", "management", "permissions", "runtime", "tab-capture"];
 const generatedNamespaces = ["action", ...basicNamespaces, "notifications", "tabs", "web-request", "windows", "web-navigation"];
 const availabilityNamespaces = [...generatedNamespaces, "browsing-data", "document-scan", "extension", "i18n", "offscreen", "scripting", "search", "sidebar", "top-sites", "user-scripts"];
 
@@ -377,4 +377,22 @@ test("rejects duplicate output paths and invalid module names", () => {
 
     expect(() => renderGeneratedFiles([{namespace: "tabs", name: "index", exports: [], source: ""}]))
         .toThrow("Namespace indexes are maintained manually");
+});
+
+test("availability aliases change only the exported name", () => {
+    const modules = generateAvailability([{namespace: "declarativeNetRequest", alias: "Dnr"}]);
+    expect(modules[0].exports).toEqual(["isAvailableDnr"]);
+    const files = renderGeneratedFiles(modules);
+    expect([...files.keys()]).toEqual(["src/api/declarative-net-request/availability.ts"]);
+    expect(files.values().next().value).toContain("browser().declarativeNetRequest");
+});
+
+test.each(["", "dnr", "Dnr()", "../Dnr", 42, null])("rejects invalid availability alias %j", alias => {
+    expect(() => generateAvailability([{namespace: "declarativeNetRequest", alias}])).toThrow();
+});
+
+test("rejects colliding availability aliases", () => {
+    expect(() => renderGeneratedFiles(generateAvailability([
+        {namespace: "declarativeNetRequest", alias: "Tabs"}, {namespace: "tabs"},
+    ]))).toThrow("Duplicate generated export");
 });

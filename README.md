@@ -59,6 +59,7 @@ older `@types/chrome` should update it to the same range to avoid mixing global 
 - [commands](docs/commands.md)
 - [contextMenus](docs/context-menus.md)
 - [cookies](docs/cookies.md)
+- [declarativeNetRequest](docs/declarative-net-request.md) — Dnr methods for native rules, regex support and debug events.
 - [documentScan](docs/document-scan.md)
 - [downloads](docs/downloads.md)
 - [extension](docs/extension.md)
@@ -172,7 +173,6 @@ These commonly used WebExtensions/Chrome Extension APIs are not wrapped here yet
 
 - contentSettings
 - declarativeContent
-- declarativeNetRequest (and declarativeNetRequestFeedback)
 - desktopCapture
 - devtools.* (inspectedWindow, network, panels)
 - dns

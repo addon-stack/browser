@@ -8,6 +8,7 @@ export * from "./browsing-data";
 export * from "./commands";
 export * from "./context-menus";
 export * from "./cookies";
+export * from "./declarative-net-request";
 export * from "./document-scan";
 export * from "./downloads";
 export * from "./env";

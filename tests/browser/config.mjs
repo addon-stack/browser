@@ -53,7 +53,14 @@ export function createManifest(template, profile, browser, base) {
     const manifest = {...template, ...profile.manifest?.[browser]};
     // Permissions belong to the profile, not a growing union of every API's requirements.
     manifest.permissions = [...profile.permissions];
-    manifest.host_permissions = [...new Set([...(manifest.host_permissions ?? []), `${new URL(base).origin}/*`])];
+    const origin = new URL(base);
+
+    // Firefox match patterns cannot contain a port, even for a loopback fixture.
+    if (browser === "firefox") {
+        origin.port = "";
+    }
+
+    manifest.host_permissions = [...new Set([...(manifest.host_permissions ?? []), `${origin.origin}/*`])];
 
     return manifest;
 }

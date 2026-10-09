@@ -144,7 +144,7 @@ See the list of not-yet-covered APIs in the "Not yet covered" section of `README
 
 Event descriptions live in `codegen/events/apis/`:
 
-- Basic subscriptions: `alarms`, `audio`, `bookmarks`, `commands`, `context-menus`, `cookies`, `downloads`, `history`, `identity`, `idle`, `management`,
+- Basic subscriptions: `alarms`, `audio`, `bookmarks`, `commands`, `context-menus`, `cookies`, `declarative-net-request`, `downloads`, `history`, `identity`, `idle`, `management`,
   `notifications`, `permissions`, `runtime`, `tab-capture`, and `tabs`.
 - Specialized or mixed subscriptions: `action`, `web-request`, `windows`, and `web-navigation`.
 
@@ -246,10 +246,12 @@ When adding another event namespace, add its description under `codegen/events/a
 
 ### Generated availability checks
 
-`codegen/availability/apis.mjs` explicitly lists all 29 native API modules, including modules without events.
+`codegen/availability/apis.mjs` explicitly lists all native API modules, including modules without events.
 Descriptions contain `namespace` and an optional `template` (`basic` by default). Export names are derived as
 `isAvailable` plus the namespace with its first letter capitalized; the rest of its camelCase is preserved.
-For example, `userScripts` produces `isAvailableUserScripts`. There is no `exportName` override.
+For example, `userScripts` produces `isAvailableUserScripts`. An optional PascalCase `alias` abbreviates
+that suffix when needed: `{namespace: "declarativeNetRequest", alias: "Dnr"}` produces `isAvailableDnr`.
+The alias does not change the native namespace or output directory. There is no `exportName` override.
 Utility modules (`browser`, `browser-detection`, `env`, and `utils`) are not native API namespaces.
 
 `codegen/availability/generate.mjs` renders one `availability.ts` per description. Its templates live in

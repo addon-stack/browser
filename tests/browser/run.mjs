@@ -10,6 +10,7 @@ import {promisify} from "node:util";
 import {build} from "tsup";
 
 import {createManifest, help, parseOptions, scenarioIds, selectSuites, validateReport} from "./config.mjs";
+import {createNetworkFixture, writeResources} from "./fixtures.mjs";
 import {inspectBrowser, launchChromium} from "./runners/chromium.mjs";
 import {removeBrowserTemporaryDirectory} from "./runners/cleanup.mjs";
 import {inspectFirefox, launchFirefox} from "./runners/firefox.mjs";
@@ -37,7 +38,13 @@ async function runProfile(suite, profile, browserInfo, temporary) {
     void reported.catch(() => undefined);
     let received = false;
 
+    const networkFixture = createNetworkFixture();
+
     const server = createServer(async (request, response) => {
+        if (networkFixture(request, response)) {
+            return;
+        }
+
         if (request.method === "GET" && request.url === "/fixture") {
             response.setHeader("Content-Type", "text/html");
             response.end("<!doctype html><title>Browser API fixture</title>");
@@ -97,6 +104,7 @@ async function runProfile(suite, profile, browserInfo, temporary) {
         const browserProfile = join(workspace, "profile");
         await mkdir(extension, {recursive: true});
         await mkdir(browserProfile);
+        await writeResources(extension, profile.resources);
         const template = JSON.parse(await readFile(join(directory, `extension/manifest.${options.browser}.json`), "utf8"));
         await writeFile(join(extension, "manifest.json"), JSON.stringify(createManifest(template, profile, options.browser, base), null, 2));
 
@@ -107,7 +115,7 @@ async function runProfile(suite, profile, browserInfo, temporary) {
         });
 
         const launch = options.browser === "chromium" ? launchChromium : launchFirefox;
-        browser = await launch({binary: browserInfo.path, profile: browserProfile, extension});
+        browser = await launch({binary: browserInfo.path, profile: browserProfile, extension, preferences: profile.firefoxPreferences});
         console.log(`Running ${suite.id}/${profile.id}: ${scenarioIds(profile, options.browser).join(", ")}`);
 
         const report = await Promise.race([

@@ -84,6 +84,13 @@ const propertyCapabilities = (
  * never synthesize an unlisted browser capability.
  */
 export const RAW_CAPABILITY_COVERAGE: readonly RawCapabilityEntry[] = [
+    ...methodCapabilities("declarativeNetRequest", "configurable", callbackInvocation, [
+        "getDynamicRules", "updateDynamicRules", "getSessionRules", "updateSessionRules",
+        "getEnabledRulesets", "updateEnabledRulesets", "getDisabledRuleIds", "updateStaticRules",
+        "getAvailableStaticRuleCount", "getMatchedRules", "setExtensionActionOptions", "testMatchOutcome",
+        "isRegexSupported",
+    ]),
+    ...eventCapabilities("declarativeNetRequest", ["onRuleMatchedDebug"]),
     ...methodCapabilities("bookmarks", "configurable", callbackInvocation, [
         "create", "get", "getChildren", "getRecent", "getSubTree", "getTree",
         "move", "remove", "removeTree", "search", "update",

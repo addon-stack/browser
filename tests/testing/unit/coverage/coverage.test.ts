@@ -200,7 +200,7 @@ describe("testing coverage matrices", () => {
     test("classifies every raw capability path once", () => {
         const paths = RAW_CAPABILITY_COVERAGE.map(entry => entry.path);
 
-        expect(paths).toHaveLength(356);
+        expect(paths).toHaveLength(370);
         expect(new Set(paths).size).toBe(paths.length);
 
         expect(
@@ -218,7 +218,7 @@ describe("testing coverage matrices", () => {
             entry,
         }));
 
-        expect(resolutions).toHaveLength(356);
+        expect(resolutions).toHaveLength(370);
 
         expect(
             resolutions

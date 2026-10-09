@@ -22,10 +22,11 @@ export async function inspectFirefox(binary) {
     return {path, version};
 }
 
-export async function launchFirefox({binary, profile, extension}) {
+export async function launchFirefox({binary, profile, extension, preferences: profilePreferences = {}}) {
     const port = await freePort();
 
     const preferences = {
+        ...profilePreferences,
         "devtools.debugger.remote-enabled": true,
         "devtools.debugger.prompt-connection": false,
         "devtools.debugger.force-local": true,

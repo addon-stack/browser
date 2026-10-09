@@ -13,8 +13,8 @@ const templates = new Map([
 export function generateAvailability(specs) {
     return specs.map(spec => {
         assert.ok(spec && typeof spec === "object" && !Array.isArray(spec), "Expected an availability description");
-        assert.ok(Object.keys(spec).every(key => key === "namespace" || key === "template"), "Unknown availability description field");
-        const {namespace, template = "basic"} = spec;
+        assert.ok(Object.keys(spec).every(key => key === "namespace" || key === "template" || key === "alias"), "Unknown availability description field");
+        const {namespace, alias, template = "basic"} = spec;
         assert.match(namespace, /^[a-z][a-zA-Z0-9]*$/, "Invalid availability namespace");
         const render = templates.get(template);
         assert.ok(render, `Unknown availability template: ${template}`);
@@ -23,7 +23,11 @@ export function generateAvailability(specs) {
             assert.equal(namespace, template, `The ${template} availability template requires its own namespace`);
         }
 
-        const exportName = `isAvailable${namespace[0].toUpperCase()}${namespace.slice(1)}`;
+        if (alias !== undefined) {
+            assert.match(alias, /^[A-Z][a-zA-Z0-9]*$/, "Invalid availability alias");
+        }
+
+        const exportName = `isAvailable${alias ?? namespace[0].toUpperCase() + namespace.slice(1)}`;
         const {imports, expression} = render({namespace});
 
         return {

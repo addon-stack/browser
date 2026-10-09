@@ -13,6 +13,7 @@ tests/browser/
 └── api/
     ├── index.ts              # explicit suite registry
     ├── bookmarks/            # node lifecycle, native events, missing permission
+    ├── declarative-net-request/ # static/dynamic/session rules, real network effects, debug event
     ├── top-sites/            # basic retrieval, Firefox options, missing permission
     └── search/
         ├── index.ts          # browsers, permission profiles, scenarios
@@ -112,11 +113,33 @@ Each positive scenario creates its own temporary folder and removes it in `final
 are edited and no bookmark URL is navigated. Use `--api bookmarks` to run only this suite. The shared CI
 commands run it automatically in Chromium and Firefox; Edge, Opera and Safari are not launched.
 
+## Declarative Net Request coverage
+
+Select `--api declarative-net-request`. Three scenarios run in independent permission profiles:
+
+- **Rules and network:** dynamic/session read and update, ID filters, atomic failure rollback,
+  static ruleset and individual rule toggling, available static count, and regex support. An ordinary
+  page sends HTTP requests to a loopback fixture. The server records received requests and echoes
+  headers, verifying real blocking, redirect destinations, request/response header changes and restoration.
+- **Feedback:** hypothetical matching in Chromium and Firefox; Firefox's additional options and feedback
+  preference. Chromium also triggers the real debug event, validates its request/rule metadata, checks
+  matched-rule history, changes badge-count options, and confirms independent unsubscription. Firefox's
+  unsupported feedback members must fail rather than simulate success.
+- **Permissions:** without DNR permission, availability is false and operations/subscriptions fail.
+
+Static JSON rules are declared in the profile's `resources` under `fixtures/`. `firefoxPreferences`
+sets `extensions.dnr.feedback` only in each disposable profile; the normal profile also proves that
+hypothetical matching fails when that preference is disabled. Firefox loopback host permission patterns
+omit the port because Firefox does not support ports in match patterns. No DNR scenario contacts an
+external website. The suite is included automatically in the existing Chromium and Firefox CI jobs.
+Safari, Edge and Opera are not launched; Safari's different history result has unit and type coverage.
+
 ## Add another API
 
 1. Add `api/<namespace>/index.ts` exporting a `BrowserSuite` and one or more `.scenario.ts` files.
 2. Declare supported browsers and separate profiles for different permission sets. Add browser-specific manifest
-   options to the profile only when the API requires them.
+   options to the profile only when the API requires them. Use `resources` for manifest JSON fixtures
+   and `firefoxPreferences` for explicit preferences in the disposable Firefox profile.
 3. Import production functions from the built `dist/index.js` in the scenarios. Use native browser APIs for observations
    and setup, and release scenario-owned tabs, windows and listeners in `finally`.
 4. Register the suite in `api/index.ts`. Shared launchers should not import API-specific code.

@@ -164,6 +164,14 @@ export type CookiesConfigurableApi = Pick<
     "get" | "getAll" | "getAllCookieStores" | "getPartitionKey" | "onChanged" | "remove" | "set"
 >;
 
+export type DeclarativeNetRequestConfigurableApi = Pick<
+    typeof chrome.declarativeNetRequest,
+    | "getDynamicRules" | "updateDynamicRules" | "getSessionRules" | "updateSessionRules"
+    | "getEnabledRulesets" | "updateEnabledRulesets" | "getDisabledRuleIds" | "updateStaticRules"
+    | "getAvailableStaticRuleCount" | "getMatchedRules" | "setExtensionActionOptions"
+    | "testMatchOutcome" | "isRegexSupported" | "onRuleMatchedDebug"
+>;
+
 export type DocumentScanConfigurableApi = Pick<
     typeof chrome.documentScan,
     | "cancelScan"
@@ -424,6 +432,7 @@ export interface ConfigurableBrowserApi {
     commands: CommandsConfigurableApi;
     contextMenus: ContextMenusConfigurableApi;
     cookies: CookiesConfigurableApi;
+    declarativeNetRequest: DeclarativeNetRequestConfigurableApi;
     documentScan: DocumentScanConfigurableApi;
     downloads: DownloadsConfigurableApi;
     extension: ExtensionConfigurableApi;
@@ -458,6 +467,7 @@ export interface ConfigurableBrowserControls {
     readonly commands: BrowserNamespaceHarness<CommandsConfigurableApi>;
     readonly contextMenus: BrowserNamespaceHarness<ContextMenusConfigurableApi>;
     readonly cookies: BrowserNamespaceHarness<CookiesConfigurableApi>;
+    readonly declarativeNetRequest: BrowserNamespaceHarness<DeclarativeNetRequestConfigurableApi>;
     readonly documentScan: BrowserNamespaceHarness<DocumentScanConfigurableApi>;
     readonly downloads: BrowserNamespaceHarness<DownloadsConfigurableApi>;
     readonly extension: BrowserNamespaceHarness<ExtensionConfigurableApi>;
@@ -554,6 +564,11 @@ const NO_RESULT_METHODS = new Set([
     "contextMenus.remove",
     "contextMenus.removeAll",
     "contextMenus.update",
+    "declarativeNetRequest.updateDynamicRules",
+    "declarativeNetRequest.updateSessionRules",
+    "declarativeNetRequest.updateEnabledRulesets",
+    "declarativeNetRequest.updateStaticRules",
+    "declarativeNetRequest.setExtensionActionOptions",
     "downloads.acceptDanger",
     "downloads.cancel",
     "downloads.open",
