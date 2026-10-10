@@ -58,7 +58,9 @@ export const createListenerErrorCapture = (forward?: (...args: unknown[]) => voi
             raw.length = 0;
         },
         setForward(value): void {
-            if (value !== handler) original = (...args) => Reflect.apply(value, console, args);
+            if (value !== handler) {
+                original = (...args) => Reflect.apply(value, console, args);
+            }
         },
     };
 };

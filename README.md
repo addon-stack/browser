@@ -1,11 +1,24 @@
 # @addon-core/browser
 
-A TypeScript promise-based wrapper for Chrome Extension APIs, supporting both Manifest V2 and V3 across Chrome, Opera, Edge, and other Chromium-based browsers.
+**Browser extension APIs, made easier.**
+
+Write cleaner extension code with typed helpers, promise-based calls, and event listeners that are easy to manage. Spend less time on repetitive browser API plumbing and more time building your extension.
+
+Built for Chrome and Chromium-based browsers, with MV2/MV3 compatibility helpers and selected Firefox support.
 
 [![npm version](https://img.shields.io/npm/v/%40addon-core%2Fbrowser.svg?logo=npm&style=for-the-badge)](https://www.npmjs.com/package/@addon-core/browser)
 [![npm downloads](https://img.shields.io/npm/dm/%40addon-core%2Fbrowser.svg?style=for-the-badge&color=blue)](https://www.npmjs.com/package/@addon-core/browser)
 [![CI](https://img.shields.io/github/actions/workflow/status/addon-stack/browser/ci.yml?style=for-the-badge)](https://github.com/addon-stack/browser/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE.md)
+
+## Why this package
+
+- **Less boilerplate, clearer intent.** Concise, consistent helpers like `getActiveTab()` and `createOrUpdateContextMenu()` make everyday extension code easier to write, read, and discover in your editor.
+- **Async code that reads naturally.** Promise-based wrappers let you use `async`/`await` with callback-style Chrome APIs.
+- **Events with easy cleanup.** Every event helper returns an unsubscribe function `() => void`, so you can stop listening as soon as the work is done.
+- **TypeScript at every step.** Types based on `@types/chrome`, including explicit event parameter types, bring editor guidance to API calls and listeners alike.
+- **Compatibility where it matters.** Helpers handle MV2/MV3 and browser differences where applicable, including Action, Tabs MV2 helpers, and Sidebar.
+- **Import what you use.** Named imports, small focused utilities, and a tree-shakable build (`sideEffects: false`) let your bundler leave unused helpers out.
 
 ## Installation
 
@@ -27,69 +40,9 @@ yarn add @addon-core/browser
 pnpm add @addon-core/browser
 ```
 
-## Supported browsers
-
-- Google Chrome (MV2 & MV3)
-- Microsoft Edge (Chromium)
-- Opera (Chromium) — plus sidebar helpers
-- Other Chromium-based browsers (e.g., Brave, Vivaldi, Arc, Yandex, Chromium) — expected to work; behavior aligns with Chrome.
-- Firefox — partial support via compatible helpers (e.g., `sidebarAction`, `runtime.getBrowserInfo`)
-- Apple Safari — limited WebExtensions support; many Chromium-specific APIs are not available, so some helpers won’t work.
-
-## TypeScript compatibility
-
-The package depends on `@types/chrome@^0.3.0`, which owns the global `browser` alias
-(`typeof chrome`). Our declarations extend that shared API shape with Firefox-only
-`sidebarAction` and `runtime.getBrowserInfo`, plus the existing legacy APIs. They do
-not redeclare the `browser` value. The previous type names
-`browser.runtime.BrowserInfo` and `browser.sidebarAction.ImageDataType` remain available.
-
-These declarations are a cross-browser superset, not a guarantee of runtime availability:
-Chrome's `browser` alias does not provide Firefox-only APIs. Keep feature detection
-when calling vendor-specific APIs directly. Applications with an explicit dependency on
-older `@types/chrome` should update it to the same range to avoid mixing global declarations.
-
-## Supported Chrome APIs
-
-- [action](docs/action.md) — MV2/MV3 compatible; under the hood uses `chrome.action` (MV3) or `chrome.browserAction` (MV2) automatically.
-- [alarms](docs/alarms.md)
-- [audio](docs/audio.md)
-- [browsingData](docs/browsing-data.md)
-- [commands](docs/commands.md)
-- [contextMenus](docs/context-menus.md)
-- [cookies](docs/cookies.md)
-- [documentScan](docs/document-scan.md)
-- [downloads](docs/downloads.md)
-- [extension](docs/extension.md)
-- [history](docs/history.md)
-- [i18n](docs/i18n.md)
-- [identity](docs/identity.md) — Chrome full support; Firefox, Edge, and Opera support the portable web auth flow; Safari is not supported.
-- [idle](docs/idle.md)
-- [management](docs/management.md)
-- [notifications](docs/notifications.md)
-- [offscreen](docs/offscreen.md)
-- [permissions](docs/permissions.md)
-- [runtime](docs/runtime.md)
-- [scripting](docs/scripting.md)
-- [sidebar](docs/sidebar.md) — Unified helpers for Chrome Side Panel (MV3) and Firefox/Opera `sidebarAction`.
-- [storage](https://github.com/addon-stack/storage) — via separate package: [@addon-core/storage](https://www.npmjs.com/package/@addon-core/storage)
-- [tabCapture](docs/tab-capture.md)
-- [tabs](docs/tabs.md)
-- [userScripts](docs/user-scripts.md)
-- [webNavigation](docs/web-navigation.md)
-- [webRequest](docs/web-request.md)
-- [windows](docs/windows.md)
-
-## Why this package
-
-- Promise-based wrappers for callback-style Chrome APIs.
-- All event helpers return an unsubscribe function `() => void`.
-- Concise, consistent function names (easier to read and auto-complete).
-- Strong TypeScript types (based on `@types/chrome`) with explicit event parameter types.
-- Tree-shakable build (`sideEffects: false`) and small, focused utilities.
-- MV2/MV3 compatibility handled internally where applicable (e.g., Action, Tabs MV2 helpers, Sidebar cross-browser helpers).
-
 ## Usage examples
+
+A few everyday extension tasks, from toolbar actions to content-script messaging.
 
 ### Action API across MV2 and MV3
 
@@ -100,7 +53,7 @@ await setActionPopup("popup.html");
 await setBadgeText("ON");
 ```
 
-`setActionPopup()` works with `chrome.action` in Manifest V3 and `chrome.browserAction` in Manifest V2.
+Use the same helper across manifest versions: `setActionPopup()` works with `chrome.action` in Manifest V3 and `chrome.browserAction` in Manifest V2.
 
 ### Tabs and events
 
@@ -116,7 +69,7 @@ const off = onTabUpdated((tabId, changeInfo) => {
 });
 ```
 
-Event helpers return an unsubscribe function, making listener lifecycles easy to control.
+Listen for the update you need, then call `off()` to unsubscribe. Every event helper follows the same cleanup pattern.
 
 ### Context menus and tab messaging
 
@@ -140,33 +93,94 @@ const off = onContextMenusClicked(async (info, tab) => {
 });
 ```
 
-`createOrUpdateContextMenu()` avoids duplicate-menu errors during extension reloads, and `sendTabMessage()` keeps the background-to-content-script path promise-based.
+Create or update a menu with one call, then pass the selection to a content script. `createOrUpdateContextMenu()` avoids duplicate-menu errors during extension reloads, and `sendTabMessage()` keeps the background-to-content-script path promise-based.
+
+## Supported Chrome APIs
+
+Explore the API guides for available helpers, examples, and browser-specific details.
+
+- [action](docs/action.md) — MV2/MV3 compatible; under the hood uses `chrome.action` (MV3) or `chrome.browserAction` (MV2) automatically.
+- [alarms](docs/alarms.md)
+- [audio](docs/audio.md)
+- [bookmarks](docs/bookmarks.md) — Bookmark trees, native editing and event subscriptions.
+- [browsingData](docs/browsing-data.md)
+- [commands](docs/commands.md)
+- [contextMenus](docs/context-menus.md)
+- [cookies](docs/cookies.md)
+- [declarativeNetRequest](docs/declarative-net-request.md) — Dnr methods for native rules, regex support and debug events.
+- [documentScan](docs/document-scan.md)
+- [downloads](docs/downloads.md)
+- [extension](docs/extension.md)
+- [history](docs/history.md)
+- [i18n](docs/i18n.md)
+- [identity](docs/identity.md) — Chrome full support; Firefox, Edge, and Opera support the portable web auth flow; Safari is not supported.
+- [idle](docs/idle.md)
+- [management](docs/management.md)
+- [notifications](docs/notifications.md)
+- [offscreen](docs/offscreen.md)
+- [permissions](docs/permissions.md)
+- [runtime](docs/runtime.md)
+- [scripting](docs/scripting.md)
+- [search](docs/search.md) — Default-provider search and Firefox engine selection; Safari limitations and a Tabs API example.
+- [sidebar](docs/sidebar.md) — Unified helpers for Chrome Side Panel (MV3) and Firefox/Opera `sidebarAction`.
+- [storage](https://github.com/addon-stack/storage) — via separate package: [@addon-core/storage](https://www.npmjs.com/package/@addon-core/storage)
+- [tabCapture](docs/tab-capture.md)
+- [tabGroups](docs/tab-groups.md) — Read, update and move tab groups, with native event subscriptions.
+- [tabs](docs/tabs.md)
+- [topSites](docs/top-sites.md) — Most-visited sites with optional Firefox query settings.
+- [userScripts](docs/user-scripts.md)
+- [webNavigation](docs/web-navigation.md)
+- [webRequest](docs/web-request.md)
+- [windows](docs/windows.md)
 
 ## Helpers
 
+- [env](docs/env.md) — Safe background-context detection with `isBackground()`.
 - [browserDetection](docs/browser-detection.md) — Best-effort browser detection with `BrowserName`, `BrowserFamily`, `guessBrowser()`, `isBrowser()`, and `isBrowserFamily()`.
 
-## Utilities
+## Supported browsers
 
-In addition to Chrome API wrappers, this package provides a set of low-level utilities for error handling, promise management, and listener safety. While these are primarily used internally, they are also exported via the `@addon-core/browser/utils` subpath for advanced usage.
+- Google Chrome (MV2 & MV3)
+- Microsoft Edge (Chromium)
+- Opera (Chromium) — plus sidebar helpers
+- Other Chromium-based browsers (e.g., Brave, Vivaldi, Arc, Yandex, Chromium) — expected to work; behavior aligns with Chrome.
+- Firefox — partial support via compatible helpers (e.g., `sidebarAction`, `runtime.getBrowserInfo`)
+- Apple Safari — limited WebExtensions support; many Chromium-specific APIs are not available, so some helpers won’t work.
 
-For a complete list of utility functions and examples, see the [Utilities Documentation](docs/utils.md).
+## TypeScript compatibility
+
+The package depends on `@types/chrome@^0.3.0`, which owns the global `browser` alias
+(`typeof chrome`). Our declarations extend that shared API shape with Firefox-only
+`sidebarAction`, `runtime.getBrowserInfo`, and search engine methods, plus the existing legacy APIs. They do
+not redeclare the `browser` value. The previous type names
+`browser.runtime.BrowserInfo` and `browser.sidebarAction.ImageDataType` remain available.
+
+These declarations are a cross-browser superset, not a guarantee of runtime availability:
+Chrome's `browser` alias does not provide Firefox-only APIs. Keep feature detection
+when calling vendor-specific APIs directly. Applications with an explicit dependency on
+older `@types/chrome` should update it to the same range to avoid mixing global declarations.
 
 ## Testing
 
-The framework-agnostic [`@addon-core/browser/testing`](docs/testing.md) subpath provides deterministic fixtures,
-configurable browser methods and events, stateful runtime/permissions/tabs/windows/scripting fakes, and reversible
-browser-global installation. Importing it never changes `globalThis`, and it has no dependency on Jest or another test
-runner.
+Test extension behavior with your preferred runner using [`@addon-core/browser/testing`](docs/testing.md). It provides deterministic fixtures, configurable browser methods and events, stateful runtime/permissions/tabs/windows/scripting fakes, and reversible browser-global installation. Importing it never changes `globalThis`, and it has no dependency on Jest or another test runner.
+
+Production API integration tests run in real Chromium and Firefox extensions through `npm run test:browser`.
+See the [browser test guide](tests/browser/README.md) for setup, per-API scenarios and permission profiles.
+
+## Utilities
+
+For finer control, `@addon-core/browser/utils` exposes the low-level utilities used primarily inside the package for error handling, promise management, and listener safety.
+
+For a complete list of utility functions and examples, see the [Utilities Documentation](docs/utils.md).
 
 ## Not yet covered
 
-These commonly used WebExtensions/Chrome Extension APIs are not wrapped here yet (Chrome OS–only APIs are intentionally omitted). If you’d like to contribute, please see [CONTRIBUTING.md](CONTRIBUTING.md) and open an issue/PR.
+The following commonly used WebExtensions/Chrome Extension APIs are not wrapped yet. Chrome OS–only APIs are intentionally omitted.
 
-- bookmarks
+Want to help expand coverage? See [CONTRIBUTING.md](CONTRIBUTING.md) to get started, or open an issue to discuss an API you need.
+
 - contentSettings
 - declarativeContent
-- declarativeNetRequest (and declarativeNetRequestFeedback)
 - desktopCapture
 - devtools.* (inspectedWindow, network, panels)
 - dns
@@ -177,12 +191,9 @@ These commonly used WebExtensions/Chrome Extension APIs are not wrapped here yet
 - power
 - privacy
 - proxy
-- search
 - sessions
 - system.cpu
 - system.memory
 - system.storage
-- tabGroups
-- topSites
 - tts
 - ttsEngine

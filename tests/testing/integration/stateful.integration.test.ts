@@ -5,7 +5,7 @@ import {
     onPermissionsRemoved,
     removePermissions,
     requestPermissions,
-} from "../../../src/permissions";
+} from "../../../src/api/permissions";
 import {
     getId,
     getManifest,
@@ -14,15 +14,16 @@ import {
     onMessage,
     onStartup,
     sendMessage as sendRuntimeMessage,
-} from "../../../src/runtime";
+} from "../../../src/api/runtime";
 import {
     executeScript,
     getRegisteredContentScripts,
     registerContentScripts,
     unregisterContentScripts,
     updateContentScripts,
-} from "../../../src/scripting";
-import {createTab, queryTabs, updateTab} from "../../../src/tabs";
+} from "../../../src/api/scripting/methods";
+import {createTab, queryTabs, updateTab} from "../../../src/api/tabs";
+import {createWindow, getAllWindows, removeWindow} from "../../../src/api/windows";
 import {
     createBrowserHarness,
     createInjectionResultFixture,
@@ -34,7 +35,6 @@ import {
     createWindowFixture,
     installGlobals,
 } from "../../../src/testing/index";
-import {createWindow, getAllWindows, removeWindow} from "../../../src/windows";
 
 const restorers: Array<() => void> = [];
 
@@ -43,7 +43,9 @@ const installChromeHarness = (harness: ReturnType<typeof createBrowserHarness>):
 };
 
 afterEach(() => {
-    while (restorers.length > 0) restorers.pop()?.();
+    while (restorers.length > 0) {
+        restorers.pop()?.();
+    }
 });
 
 describe("stateful browser test harness", () => {

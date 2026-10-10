@@ -4,17 +4,29 @@ export const serializeStorageValue = (input: unknown, api: string): unknown => {
     const ancestors = new Set<object>();
 
     const visit = (value: unknown, depth: number): unknown => {
-        if (depth > 100) throw new Error(`${api}: storage value exceeds the supported nesting depth (100).`);
+        if (depth > 100) {
+            throw new Error(`${api}: storage value exceeds the supported nesting depth (100).`);
+        }
 
-        if (value === null || typeof value === "string" || typeof value === "boolean") return value;
+        if (value === null || typeof value === "string" || typeof value === "boolean") {
+            return value;
+        }
 
-        if (typeof value === "number") return Number.isFinite(value) ? value === 0 ? 0 : value : null;
+        if (typeof value === "number") {
+            return Number.isFinite(value) ? value === 0 ? 0 : value : null;
+        }
 
-        if (typeof value === "bigint") throw new Error(`${api}: BigInt storage values are unsupported.`);
+        if (typeof value === "bigint") {
+            throw new Error(`${api}: BigInt storage values are unsupported.`);
+        }
 
-        if (typeof value !== "object") return undefined;
+        if (typeof value !== "object") {
+            return undefined;
+        }
 
-        if (ancestors.has(value)) throw new Error(`${api}: circular storage values are unsupported.`);
+        if (ancestors.has(value)) {
+            throw new Error(`${api}: circular storage values are unsupported.`);
+        }
 
         ancestors.add(value);
 
@@ -22,12 +34,16 @@ export const serializeStorageValue = (input: unknown, api: string): unknown => {
             const read = (key: string): unknown => {
                 const descriptor = Object.getOwnPropertyDescriptor(value, key);
 
-                if (descriptor && !("value" in descriptor)) throw new Error(`${api}: accessor storage properties are unsupported.`);
+                if (descriptor && !("value" in descriptor)) {
+                    throw new Error(`${api}: accessor storage properties are unsupported.`);
+                }
 
                 return visit(descriptor?.value, depth + 1);
             };
 
-            if (Array.isArray(value)) return Array.from({length: value.length}, (_, index) => read(String(index)) ?? null);
+            if (Array.isArray(value)) {
+                return Array.from({length: value.length}, (_, index) => read(String(index)) ?? null);
+            }
 
             return Object.fromEntries(Object.keys(value).flatMap(key => {
                 const item = read(key);
@@ -51,11 +67,17 @@ export const storageRecord = (input: unknown, api: string): Record<string, unkno
 };
 
 export const storageValuesEqual = (left: unknown, right: unknown): boolean => {
-    if (left === right) return true;
+    if (left === right) {
+        return true;
+    }
 
-    if (!left || !right || typeof left !== "object" || typeof right !== "object") return false;
+    if (!left || !right || typeof left !== "object" || typeof right !== "object") {
+        return false;
+    }
 
-    if (Array.isArray(left) !== Array.isArray(right)) return false;
+    if (Array.isArray(left) !== Array.isArray(right)) {
+        return false;
+    }
 
     const keys = Object.keys(left);
 

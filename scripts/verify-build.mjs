@@ -3,7 +3,9 @@ import {existsSync, readdirSync, readFileSync} from "node:fs";
 import {createRequire} from "node:module";
 import {dirname, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
+
 import ts from "typescript";
+
 import {assertPortableTestingGraph} from "./testing-boundary.mjs";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -50,17 +52,17 @@ const declarationExports = getModuleExports(declarationEntry, {
     types: ["chrome"],
 });
 
-assert.equal(sourceExports.length, 333, "The source public-export baseline changed; update the coverage matrix first");
+assert.equal(sourceExports.length, 427, "The source public-export baseline changed; update the coverage matrix first");
 
 assert.equal(
     sourceExports.filter(value => value.hasValue).length,
-    330,
+    416,
     "The source runtime-export baseline changed; update the coverage matrix first"
 );
 
 assert.deepEqual(sortNames(declarationExports), sortNames(sourceExports), "Source and declaration exports differ");
 
-const expectedTypeOnly = ["BrowserGuess", "LaunchWebAuthFlowDetails", "WindowEventFilter"];
+const expectedTypeOnly = ["BrowserGuess", "DnrRulesMatchedDetails", "DnrTestMatchOptions", "LaunchWebAuthFlowDetails", "SearchEngine", "SearchTargetOptions", "TabGroup", "TabGroupRemoveInfo", "TopSite", "TopSitesOptions", "WindowEventFilter"];
 
 assert.deepEqual(
     sourceExports
@@ -128,11 +130,15 @@ const listRuntimeSources = directory =>
     readdirSync(directory, {withFileTypes: true}).flatMap(entry => {
         const file = resolve(directory, entry.name);
 
-        if (entry.isDirectory()) return listRuntimeSources(file);
+        if (entry.isDirectory()) {
+            return listRuntimeSources(file);
+        }
 
         assert.doesNotMatch(entry.name, /\.(?:test|spec)\.[cm]?[jt]sx?$/, `Move test ${file} to tests/testing`);
 
-        if (!entry.name.endsWith(".ts")) return [];
+        if (!entry.name.endsWith(".ts")) {
+            return [];
+        }
 
         return [{file, source: readFileSync(file, "utf8")}];
     });
@@ -164,4 +170,4 @@ for (const {file, source} of testingRuntimeSources) {
     );
 }
 
-console.log("Verified 333 TypeScript exports, 330 ESM/CJS runtime exports, and isolated testing bundles.");
+console.log("Verified 427 TypeScript exports, 416 ESM/CJS runtime exports, and isolated testing bundles.");

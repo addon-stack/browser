@@ -15,7 +15,9 @@ export const matchesContextFilter = (
         [filter.windowIds, context.windowId],
     ];
 
-    if (typeof filter.incognito === "boolean" && context.incognito !== filter.incognito) return false;
+    if (typeof filter.incognito === "boolean" && context.incognito !== filter.incognito) {
+        return false;
+    }
 
     return checks.every(([expected, actual]) => !expected || expected.includes(actual));
 };

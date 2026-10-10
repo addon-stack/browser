@@ -1,4 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
+
 import {createBrowserHarness, createExtensionContextFixture, type OffscreenTestApi} from "../../../../src/testing";
 
 const parameters = (): chrome.offscreen.CreateParameters => ({url: "offscreen.html?mode=test#ready", reasons: ["DOM_PARSER"], justification: "Test document"});
@@ -200,11 +201,17 @@ describe("offscreen operation gates", () => {
         const creating = harness.chrome.offscreen.createDocument(parameters());
         const cancelled = expect(creating).rejects.toThrow("offscreen.createDocument: operation cancelled by reset");
 
-        if (target === "harness") harness.reset();
+        if (target === "harness") {
+            harness.reset();
+        }
 
-        if (target === "registry") harness.contexts.reset();
+        if (target === "registry") {
+            harness.contexts.reset();
+        }
 
-        if (target === "runtime") harness.runtime.reset();
+        if (target === "runtime") {
+            harness.runtime.reset();
+        }
 
         await cancelled;
         await harness.chrome.offscreen.createDocument({...parameters(), url: "new.html"});

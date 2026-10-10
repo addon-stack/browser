@@ -6,6 +6,7 @@ A promise-based wrapper for the Chrome `browsingData` API.
 
 ## Methods
 
+- [isAvailableBrowsingData()](#isAvailableBrowsingData)
 - [removeBrowsingData(options, dataToRemove)](#removeBrowsingData)
 - [removeAppcacheData(options?)](#removeAppcacheData)
 - [removeCacheData(options?)](#removeCacheData)
@@ -23,6 +24,27 @@ A promise-based wrapper for the Chrome `browsingData` API.
 - [getBrowsingDataSettings()](#getBrowsingDataSettings)
 
 ---
+
+<a name="isAvailableBrowsingData"></a>
+
+### isAvailableBrowsingData
+
+```ts
+isAvailableBrowsingData(): boolean
+```
+
+Returns `true` when the `browsingData` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableBrowsingData} from "@addon-core/browser";
+
+if (isAvailableBrowsingData()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="removeBrowsingData"></a>
 

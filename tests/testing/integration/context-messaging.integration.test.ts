@@ -1,4 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
+
 import {closeOffscreen, createOffscreen, getTab, onMessage, sendMessage, sendTabMessage} from "../../../src";
 import {createBrowserHarness, createTabFixture, installBrowserGlobals} from "../../../src/testing";
 
@@ -80,9 +81,13 @@ test.each(["sync", "promise", "thenable"] as const)("preserves production safeLi
     const failure = new Error("listener failed");
 
     const unsubscribe = onMessage(() => {
-        if (kind === "sync") throw failure;
+        if (kind === "sync") {
+            throw failure;
+        }
 
-        if (kind === "promise") return Promise.reject(failure);
+        if (kind === "promise") {
+            return Promise.reject(failure);
+        }
 
         return {then(_resolve: unknown, reject: (reason: unknown) => void) {
             reject(failure);
@@ -94,8 +99,11 @@ test.each(["sync", "promise", "thenable"] as const)("preserves production safeLi
 
     try {
         // safeListener swallowed the synchronous error; the callback-based wrapper now sees an unanswered port.
-        if (kind === "sync") await expect(sendMessage({})).rejects.toThrow("The message port closed");
-        else await expect(sendMessage({})).rejects.toThrow("listener failed");
+        if (kind === "sync") {
+            await expect(sendMessage({})).rejects.toThrow("The message port closed");
+        } else {
+            await expect(sendMessage({})).rejects.toThrow("listener failed");
+        }
 
         expect(harness.listenerErrors.entries).toHaveLength(kind === "thenable" ? 0 : 1);
     } finally {

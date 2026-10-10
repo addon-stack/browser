@@ -92,6 +92,19 @@ export type ActionConfigurableApi = Pick<
     | "setTitle"
 >;
 
+export type TabGroupsConfigurableApi = Pick<
+    typeof chrome.tabGroups,
+    "get" | "query" | "update" | "move" | "onCreated" | "onUpdated" | "onMoved" | "onRemoved"
+>;
+
+export type BookmarksConfigurableApi = Pick<
+    typeof chrome.bookmarks,
+    | "create" | "get" | "getChildren" | "getRecent" | "getSubTree" | "getTree"
+    | "move" | "remove" | "removeTree" | "search" | "update"
+    | "onCreated" | "onRemoved" | "onChanged" | "onMoved"
+    | "onChildrenReordered" | "onImportBegan" | "onImportEnded"
+>;
+
 export type BrowserActionConfigurableApi = Pick<
     typeof chrome.browserAction,
     | "disable"
@@ -154,6 +167,14 @@ export type ContextMenusConfigurableApi = Pick<
 export type CookiesConfigurableApi = Pick<
     typeof chrome.cookies,
     "get" | "getAll" | "getAllCookieStores" | "getPartitionKey" | "onChanged" | "remove" | "set"
+>;
+
+export type DeclarativeNetRequestConfigurableApi = Pick<
+    typeof chrome.declarativeNetRequest,
+    | "getDynamicRules" | "updateDynamicRules" | "getSessionRules" | "updateSessionRules"
+    | "getEnabledRulesets" | "updateEnabledRulesets" | "getDisabledRuleIds" | "updateStaticRules"
+    | "getAvailableStaticRuleCount" | "getMatchedRules" | "setExtensionActionOptions"
+    | "testMatchOutcome" | "isRegexSupported" | "onRuleMatchedDebug"
 >;
 
 export type DocumentScanConfigurableApi = Pick<
@@ -292,6 +313,8 @@ export type RuntimeConfigurableApi = Pick<
 
 export type ScriptingConfigurableApi = Pick<typeof chrome.scripting, "executeScript" | "insertCSS" | "removeCSS">;
 
+export type SearchConfigurableApi = Pick<typeof chrome.search, "query" | "get" | "search">;
+
 export type SidePanelConfigurableApi = Pick<
     typeof chrome.sidePanel,
     "close" | "getOptions" | "getPanelBehavior" | "open" | "setOptions" | "setPanelBehavior"
@@ -335,6 +358,8 @@ export type TabsConfigurableApi = Pick<
     | "setZoomSettings"
     | "ungroup"
 >;
+
+export type TopSitesConfigurableApi = Pick<typeof chrome.topSites, "get">;
 
 export type UserScriptsConfigurableApi = Pick<
     typeof chrome.userScripts,
@@ -406,11 +431,13 @@ export interface ConfigurableBrowserApi {
     action: ActionConfigurableApi;
     alarms: AlarmsConfigurableApi;
     audio: AudioConfigurableApi;
+    bookmarks: BookmarksConfigurableApi;
     browserAction: BrowserActionConfigurableApi;
     browsingData: BrowsingDataConfigurableApi;
     commands: CommandsConfigurableApi;
     contextMenus: ContextMenusConfigurableApi;
     cookies: CookiesConfigurableApi;
+    declarativeNetRequest: DeclarativeNetRequestConfigurableApi;
     documentScan: DocumentScanConfigurableApi;
     downloads: DownloadsConfigurableApi;
     extension: ExtensionConfigurableApi;
@@ -424,9 +451,12 @@ export interface ConfigurableBrowserApi {
     permissions: PermissionsConfigurableApi;
     runtime: RuntimeConfigurableApi;
     scripting: ScriptingConfigurableApi;
+    search: SearchConfigurableApi;
     sidePanel: SidePanelConfigurableApi;
     tabCapture: TabCaptureConfigurableApi;
+    tabGroups: TabGroupsConfigurableApi;
     tabs: TabsConfigurableApi;
+    topSites: TopSitesConfigurableApi;
     userScripts: UserScriptsConfigurableApi;
     webNavigation: WebNavigationConfigurableApi;
     webRequest: WebRequestConfigurableApi;
@@ -437,11 +467,13 @@ export interface ConfigurableBrowserControls {
     readonly action: BrowserNamespaceHarness<ActionConfigurableApi>;
     readonly alarms: BrowserNamespaceHarness<AlarmsConfigurableApi>;
     readonly audio: BrowserNamespaceHarness<AudioConfigurableApi>;
+    readonly bookmarks: BrowserNamespaceHarness<BookmarksConfigurableApi>;
     readonly browserAction: BrowserNamespaceHarness<BrowserActionConfigurableApi>;
     readonly browsingData: BrowserNamespaceHarness<BrowsingDataConfigurableApi>;
     readonly commands: BrowserNamespaceHarness<CommandsConfigurableApi>;
     readonly contextMenus: BrowserNamespaceHarness<ContextMenusConfigurableApi>;
     readonly cookies: BrowserNamespaceHarness<CookiesConfigurableApi>;
+    readonly declarativeNetRequest: BrowserNamespaceHarness<DeclarativeNetRequestConfigurableApi>;
     readonly documentScan: BrowserNamespaceHarness<DocumentScanConfigurableApi>;
     readonly downloads: BrowserNamespaceHarness<DownloadsConfigurableApi>;
     readonly extension: BrowserNamespaceHarness<ExtensionConfigurableApi>;
@@ -459,9 +491,12 @@ export interface ConfigurableBrowserControls {
     readonly permissions: BrowserNamespaceHarness<PermissionsConfigurableApi>;
     readonly runtime: BrowserNamespaceHarness<RuntimeConfigurableApi>;
     readonly scripting: BrowserNamespaceHarness<ScriptingConfigurableApi>;
+    readonly search: BrowserNamespaceHarness<SearchConfigurableApi>;
     readonly sidePanel: BrowserNamespaceHarness<SidePanelConfigurableApi>;
     readonly tabCapture: BrowserNamespaceHarness<TabCaptureConfigurableApi>;
+    readonly tabGroups: BrowserNamespaceHarness<TabGroupsConfigurableApi>;
     readonly tabs: BrowserNamespaceHarness<TabsConfigurableApi>;
+    readonly topSites: BrowserNamespaceHarness<TopSitesConfigurableApi>;
     readonly userScripts: BrowserNamespaceHarness<UserScriptsConfigurableApi>;
     readonly webNavigation: BrowserNamespaceHarness<WebNavigationConfigurableApi>;
     readonly webRequest: BrowserNamespaceHarness<WebRequestConfigurableApi>;
@@ -509,6 +544,8 @@ const NO_RESULT_METHODS = new Set([
     "audio.setActiveDevices",
     "audio.setMute",
     "audio.setProperties",
+    "bookmarks.remove",
+    "bookmarks.removeTree",
     "browserAction.disable",
     "browserAction.enable",
     "browserAction.setBadgeBackgroundColor",
@@ -534,6 +571,11 @@ const NO_RESULT_METHODS = new Set([
     "contextMenus.remove",
     "contextMenus.removeAll",
     "contextMenus.update",
+    "declarativeNetRequest.updateDynamicRules",
+    "declarativeNetRequest.updateSessionRules",
+    "declarativeNetRequest.updateEnabledRulesets",
+    "declarativeNetRequest.updateStaticRules",
+    "declarativeNetRequest.setExtensionActionOptions",
     "downloads.acceptDanger",
     "downloads.cancel",
     "downloads.open",
@@ -567,6 +609,8 @@ const NO_RESULT_METHODS = new Set([
     "runtime.setUninstallURL",
     "scripting.insertCSS",
     "scripting.removeCSS",
+    "search.query",
+    "search.search",
     "sidePanel.close",
     "sidePanel.open",
     "sidePanel.setOptions",
@@ -642,7 +686,9 @@ export const createConfigurableNamespaces = (options: ConfigurableNamespacesOpti
             continue;
         }
 
-        if (entry.kind !== "method") continue;
+        if (entry.kind !== "method") {
+            continue;
+        }
 
         const invocation = options.facade === "chrome" ? entry.chromeInvocation : entry.browserInvocation;
 
@@ -723,7 +769,9 @@ export const createConfigurableNamespaces = (options: ConfigurableNamespacesOpti
         ): BrowserEventHarness<TArgs, TRegistrationArgs> {
             const event = events.get(path);
 
-            if (!event) throw new Error(`Unknown configurable browser event "${path}".`);
+            if (!event) {
+                throw new Error(`Unknown configurable browser event "${path}".`);
+            }
 
             return event as unknown as BrowserEventHarness<TArgs, TRegistrationArgs>;
         },
@@ -735,17 +783,25 @@ export const createConfigurableNamespaces = (options: ConfigurableNamespacesOpti
         ): BrowserMethod<TApi, TResult> {
             const method = methods.get(path);
 
-            if (!method) throw new Error(`Unknown configurable browser method "${path}".`);
+            if (!method) {
+                throw new Error(`Unknown configurable browser method "${path}".`);
+            }
 
             return method as BrowserMethod<TApi, TResult>;
         },
         operaSidebarActionApi: apiNamespaces.operaSidebarAction as unknown as OperaSidebarActionConfigurableApi,
         reset(): void {
-            for (const method of methods.values()) method.reset();
+            for (const method of methods.values()) {
+                method.reset();
+            }
 
-            for (const event of events.values()) event.reset();
+            for (const event of events.values()) {
+                event.reset();
+            }
 
-            for (const entry of entries) setCapability(entry.path, true);
+            for (const entry of entries) {
+                setCapability(entry.path, true);
+            }
         },
         setCapability,
         sidebarActionApi: apiNamespaces.sidebarAction as unknown as FirefoxSidebarActionConfigurableApi,

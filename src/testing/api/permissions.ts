@@ -2,6 +2,7 @@ import {createPermissionsFixture} from "../fixtures";
 import {coversOrigin, parseOrigins} from "../matching/match-patterns";
 import {type BrowserEventHarness, type BrowserMethod, createBrowserEvent, createBrowserMethod} from "../primitives";
 import type {RuntimeLastErrorController} from "../primitives/last-error";
+
 import type {PermissionsTestApi} from "../types";
 
 type PermissionEventArgs = Parameters<Parameters<typeof chrome.permissions.onAdded.addListener>[0]>;
@@ -99,9 +100,13 @@ export const createPermissionsHarness = (
         const changedOrigins: string[] = [];
 
         const mutate = <T>(set: Set<T>, item: T): boolean => {
-            if (action === "revoke") return set.delete(item);
+            if (action === "revoke") {
+                return set.delete(item);
+            }
 
-            if (set.has(item)) return false;
+            if (set.has(item)) {
+                return false;
+            }
 
             set.add(item);
 
@@ -109,11 +114,15 @@ export const createPermissionsHarness = (
         };
 
         for (const permission of value.permissions ?? []) {
-            if (mutate(permissions, permission)) changedPermissions.push(permission);
+            if (mutate(permissions, permission)) {
+                changedPermissions.push(permission);
+            }
         }
 
         for (const origin of value.origins ?? []) {
-            if (mutate(origins, origin)) changedOrigins.push(origin);
+            if (mutate(origins, origin)) {
+                changedOrigins.push(origin);
+            }
         }
 
         const changed = {origins: changedOrigins, permissions: changedPermissions};

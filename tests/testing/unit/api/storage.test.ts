@@ -1,4 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
+
 import {createBrowserHarness, type StorageQuotaLimits} from "../../../../src/testing";
 
 describe("storage areas", () => {
@@ -142,7 +143,9 @@ describe("storage areas", () => {
         await one.chrome.storage.local.set({key: 1});
         expect(await one.browser.storage.local.get()).toEqual({key: 1});
 
-        for (const area of ["sync", "session", "managed"] as const) expect(await one.chrome.storage[area].get()).toEqual({});
+        for (const area of ["sync", "session", "managed"] as const) {
+            expect(await one.chrome.storage[area].get()).toEqual({});
+        }
 
         expect(await two.chrome.storage.local.get()).toEqual({});
         expect(one.chrome.storage.local).not.toBe(one.browser.storage.local);
@@ -211,13 +214,19 @@ describe("storage codec and quotas", () => {
         const harness = createBrowserHarness({storage: {local: {safe: true}}});
         const value: Record<string, unknown> = {};
 
-        if (kind === "bigint") value.bad = 1n;
+        if (kind === "bigint") {
+            value.bad = 1n;
+        }
 
-        if (kind === "cycle") value.bad = value;
+        if (kind === "cycle") {
+            value.bad = value;
+        }
 
-        if (kind === "accessor") Object.defineProperty(value, "bad", {enumerable: true, get() {
-            throw new Error("do not execute");
-        }});
+        if (kind === "accessor") {
+            Object.defineProperty(value, "bad", {enumerable: true, get() {
+                throw new Error("do not execute");
+            }});
+        }
 
         if (kind === "depth") {
             let nested = value;
@@ -353,7 +362,9 @@ describe("automatic storage events", () => {
         });
 
         harness.storage.onChanged.on(async (_, area) => {
-            if (area === "local") await harness.chrome.storage.sync.set({nested: 1});
+            if (area === "local") {
+                await harness.chrome.storage.sync.set({nested: 1});
+            }
 
             throw errors[1];
         });

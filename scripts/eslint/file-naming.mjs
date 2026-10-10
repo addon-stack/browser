@@ -1,4 +1,5 @@
 import path from "node:path";
+
 import paddingAroundMultiline from "./padding-around-multiline.mjs";
 
 const kebabCase = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;

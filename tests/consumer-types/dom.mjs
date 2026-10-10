@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
+
 import * as production from "@addon-core/browser";
 import {getManifest, getUrl} from "@addon-core/browser";
 import {createBrowserHarness, createTabFixture, installBrowserGlobals, installGlobals} from "@addon-core/browser/testing";
 import * as nodeTesting from "@addon-core/browser/testing/node";
 import {JSDOM} from "jsdom";
+
 import checkMessaging from "./messaging.cjs";
 import checkNodeScripting from "./node-scripting.cjs";
 import checkOffscreen from "./offscreen.cjs";

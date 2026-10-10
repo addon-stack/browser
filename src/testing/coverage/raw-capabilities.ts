@@ -1,6 +1,6 @@
 export type RawCapabilityKind = "method" | "event" | "property";
 export type RawCapabilityCoverage = "stateful" | "configurable" | "event";
-export type RawMethodInvocation = "sync" | "callback" | "promise" | "dual" | "promise-tolerant" | "hybrid";
+export type RawMethodInvocation = "sync" | "callback" | "callback-optional" | "promise" | "dual" | "promise-tolerant" | "hybrid";
 
 export type RawFailureChannel =
     | "none"
@@ -84,6 +84,22 @@ const propertyCapabilities = (
  * never synthesize an unlisted browser capability.
  */
 export const RAW_CAPABILITY_COVERAGE: readonly RawCapabilityEntry[] = [
+    ...methodCapabilities("tabGroups", "configurable", callbackInvocation, ["get", "query", "update", "move"]),
+    ...eventCapabilities("tabGroups", ["onCreated", "onUpdated", "onMoved", "onRemoved"]),
+    ...methodCapabilities("declarativeNetRequest", "configurable", callbackInvocation, [
+        "getDynamicRules", "updateDynamicRules", "getSessionRules", "updateSessionRules",
+        "getEnabledRulesets", "updateEnabledRulesets", "getDisabledRuleIds", "updateStaticRules",
+        "getAvailableStaticRuleCount", "getMatchedRules", "setExtensionActionOptions", "testMatchOutcome",
+        "isRegexSupported",
+    ]),
+    ...eventCapabilities("declarativeNetRequest", ["onRuleMatchedDebug"]),
+    ...methodCapabilities("bookmarks", "configurable", callbackInvocation, [
+        "create", "get", "getChildren", "getRecent", "getSubTree", "getTree",
+        "move", "remove", "removeTree", "search", "update",
+    ]),
+    ...eventCapabilities("bookmarks", [
+        "onCreated", "onRemoved", "onChanged", "onMoved", "onChildrenReordered", "onImportBegan", "onImportEnded",
+    ]),
     ...["local", "sync", "session", "managed"].flatMap(area => [
         ...methodCapabilities(`storage.${area}`, "stateful", {chrome: "dual", browser: "dual"}, ["get", "set", "remove", "clear", "getKeys"], {
             get: ["all", "string", "string[]", "defaults"],
@@ -334,6 +350,9 @@ export const RAW_CAPABILITY_COVERAGE: readonly RawCapabilityEntry[] = [
         "updateContentScripts",
     ]),
 
+    ...methodCapabilities("search", "configurable", callbackInvocation, ["query"]),
+    ...methodCapabilities("search", "configurable", promiseInvocation, ["get", "search"]),
+
     ...methodCapabilities("sidePanel", "configurable", callbackInvocation, [
         "close",
         "getOptions",
@@ -398,8 +417,8 @@ export const RAW_CAPABILITY_COVERAGE: readonly RawCapabilityEntry[] = [
         "sendMessage",
         "setZoom",
         "setZoomSettings",
-        "ungroup",
     ]),
+    ...methodCapabilities("tabs", "configurable", {chrome: "callback", browser: "promise"}, ["ungroup"]),
     ...eventCapabilities("tabs", [
         "onActivated",
         "onAttached",
@@ -412,6 +431,8 @@ export const RAW_CAPABILITY_COVERAGE: readonly RawCapabilityEntry[] = [
         "onUpdated",
         "onZoomChange",
     ]),
+
+    ...methodCapabilities("topSites", "configurable", callbackInvocation, ["get"]),
 
     ...methodCapabilities("userScripts", "configurable", callbackInvocation, ["getScripts"]),
     ...methodCapabilities("userScripts", "configurable", promiseInvocation, [
@@ -483,16 +504,18 @@ export const RAW_CAPABILITY_COVERAGE: readonly RawCapabilityEntry[] = [
         "setBadgeBackgroundColor",
         "setBadgeText",
         "setBadgeTextColor",
-        "setIcon",
         "setPanel",
         "setTitle",
     ]),
+    ...methodCapabilities("opr.sidebarAction", "configurable", {browser: "callback-optional", chrome: "callback-optional"}, ["setIcon"]),
 ].map(entry => {
     if (entry.path === "runtime.sendMessage" || entry.path === "tabs.sendMessage") {
         return {...entry, contextCoverage: "stateful", contextInvocation: "dual"} as const;
     }
 
-    if (entry.path === "runtime.onMessage") return {...entry, contextCoverage: "event"} as const;
+    if (entry.path === "runtime.onMessage") {
+        return {...entry, contextCoverage: "event"} as const;
+    }
 
     return entry;
 });

@@ -5,13 +5,18 @@ export async function offscreenProbe(api) {
 
     for (const style of ["promise", "callback"]) {
         const invoke = (name, ...args) => {
-            if (style === "promise") return api.offscreen[name](...args);
+            if (style === "promise") {
+                return api.offscreen[name](...args);
+            }
 
             return new Promise((resolve, reject) => api.offscreen[name](...args, result => {
                 const error = api.runtime.lastError;
 
-                if (error) reject(new Error(error.message));
-                else resolve(result);
+                if (error) {
+                    reject(new Error(error.message));
+                } else {
+                    resolve(result);
+                }
             }));
         };
 

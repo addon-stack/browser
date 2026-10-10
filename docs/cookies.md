@@ -6,6 +6,7 @@ A promise-based wrapper for the Chrome `cookies` API.
 
 ## Methods
 
+- [isAvailableCookies()](#isAvailableCookies)
 - [getCookie(details)](#getCookie)
 - [getAllCookie(details)](#getAllCookie)
 - [getAllCookieStores()](#getAllCookieStores)
@@ -16,6 +17,27 @@ A promise-based wrapper for the Chrome `cookies` API.
 ## Events
 
 - [onCookieChanged(callback)](#onCookieChanged)
+
+<a name="isAvailableCookies"></a>
+
+### isAvailableCookies
+
+```ts
+isAvailableCookies(): boolean
+```
+
+Returns `true` when the `cookies` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableCookies} from "@addon-core/browser";
+
+if (isAvailableCookies()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="getCookie"></a>
 

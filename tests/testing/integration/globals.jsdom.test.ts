@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
-import {getManifest, getUrl, onMessage, sendMessage} from "../../../src/runtime";
-import {executeScript} from "../../../src/scripting";
+import {getManifest, getUrl, onMessage, sendMessage} from "../../../src/api/runtime";
+import {executeScript} from "../../../src/api/scripting/methods";
 import {createBrowserHarness, createTabFixture, installBrowserGlobals} from "../../../src/testing/index";
 import {createNodeScriptExecutor} from "../../../src/testing/node";
 

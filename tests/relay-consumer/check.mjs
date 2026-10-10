@@ -3,10 +3,13 @@ import assert from "node:assert/strict";
 import {createRequire} from "node:module";
 import {resolve} from "node:path";
 import {fileURLToPath} from "node:url";
+
 import {createBrowserHarness, createTabFixture, installBrowserGlobals} from "../../dist/testing/index.js";
 import {createNodeScriptRuntime} from "../../dist/testing/node/index.js";
 
-if (!process.argv[2]) throw new Error("Usage: npm run test:relay-consumer -- /path/to/addon-bone (with its development dependencies installed)");
+if (!process.argv[2]) {
+    throw new Error("Usage: npm run test:relay-consumer -- /path/to/addon-bone (with its development dependencies installed)");
+}
 
 const consumer = resolve(process.argv[2]);
 const {buildSync} = createRequire(resolve(consumer, "package.json"))("esbuild");

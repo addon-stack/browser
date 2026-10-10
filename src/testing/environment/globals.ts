@@ -1,5 +1,6 @@
 import type {BrowserHarness} from "../harness";
 import {createContextGlobals, profileGlobals, sidebarDefaultForProfile} from "./profiles";
+
 import type {InstallBrowserGlobalsOptions, TestGlobalValues} from "./types";
 
 interface DescriptorChange {
@@ -40,13 +41,17 @@ const restoreChanges = (changes: readonly DescriptorChange[]): void => {
                 ? Reflect.defineProperty(target, key, descriptor)
                 : Reflect.deleteProperty(target, key);
 
-            if (!restored) failures.push(new Error(`Unable to restore global ${String(key)}`));
+            if (!restored) {
+                failures.push(new Error(`Unable to restore global ${String(key)}`));
+            }
         } catch (cause) {
             failures.push(new Error(`Unable to restore global ${String(key)}`, {cause}));
         }
     }
 
-    if (failures.length > 0) throw new AggregateError(failures, "Unable to restore browser globals");
+    if (failures.length > 0) {
+        throw new AggregateError(failures, "Unable to restore browser globals");
+    }
 };
 
 const installGlobalValues = (values: TestGlobalValues, restoreProfile?: () => void): (() => void) => {
@@ -54,7 +59,9 @@ const installGlobalValues = (values: TestGlobalValues, restoreProfile?: () => vo
 
     try {
         for (const key of ["chrome", "browser", "opr", "safari", "navigator", "window", "document", "location"] as const) {
-            if (!Object.hasOwn(values, key)) continue;
+            if (!Object.hasOwn(values, key)) {
+                continue;
+            }
 
             const descriptor = Reflect.getOwnPropertyDescriptor(globalThis, key);
             applyDescriptor(globalThis, key, values[key]);
@@ -86,7 +93,9 @@ const installGlobalValues = (values: TestGlobalValues, restoreProfile?: () => vo
     installations.push(installation);
 
     return (): void => {
-        if (finished) return;
+        if (finished) {
+            return;
+        }
 
         if (installations.at(-1) !== installation) {
             throw new Error("Restore browser globals in reverse installation order");
@@ -109,9 +118,13 @@ const installGlobalValues = (values: TestGlobalValues, restoreProfile?: () => vo
             installations.pop();
         }
 
-        if (failures.length === 1) throw failures[0];
+        if (failures.length === 1) {
+            throw failures[0];
+        }
 
-        if (failures.length > 1) throw new AggregateError(failures, "Browser globals and profile restoration failed");
+        if (failures.length > 1) {
+            throw new AggregateError(failures, "Browser globals and profile restoration failed");
+        }
     };
 };
 
@@ -159,8 +172,11 @@ export const installBrowserGlobals = (
         const target = messaging ? {chrome: messaging.chrome, browser: messaging.browser, getOperaSidebarAction: () => harness.getOperaSidebarAction()} : harness;
         const values: TestGlobalValues = profile === "custom" ? {} : profileGlobals(target, profile);
 
-        if (preserve) delete values.navigator;
-        else Object.assign(values, createContextGlobals(context));
+        if (preserve) {
+            delete values.navigator;
+        } else {
+            Object.assign(values, createContextGlobals(context));
+        }
 
         Object.assign(values, options.globals);
 

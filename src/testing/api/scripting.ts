@@ -2,8 +2,9 @@ import type {BrowserContextsHarness, BrowserScriptTarget} from "../model";
 import {type BrowserMethod, createBrowserMethod} from "../primitives";
 import {cloneRecord} from "../primitives/clone";
 import type {RuntimeLastErrorController} from "../primitives/last-error";
-import type {ScriptingTestApi} from "../types";
 import {type BrowserScriptExecutor, createScriptExecutionHarness} from "./script-execution";
+
+import type {ScriptingTestApi} from "../types";
 
 export interface ScriptingHarness {
     selectTargets(target: chrome.scripting.InjectionTarget): readonly BrowserScriptTarget[];
@@ -49,7 +50,9 @@ export const createScriptingHarness = (
         implementation: ((injection: chrome.scripting.ScriptInjection<unknown[], unknown>, callback?: (results?: chrome.scripting.InjectionResult<unknown>[]) => void) => {
             const operation = execution.execute(injection);
 
-            if (!callback) return operation;
+            if (!callback) {
+                return operation;
+            }
 
             operation.then(results => {
                 callback(results);
@@ -114,7 +117,9 @@ export const createScriptingHarness = (
             if (duplicate) {
                 const error = new Error(`Content script "${duplicate.id}" is already registered`);
 
-                if (callback) return lastError.runWithLastError(error, callback);
+                if (callback) {
+                    return lastError.runWithLastError(error, callback);
+                }
 
                 throw error;
             }
@@ -140,7 +145,9 @@ export const createScriptingHarness = (
             if (missing) {
                 const error = new Error(`Content script "${missing.id}" is not registered`);
 
-                if (callback) return lastError.runWithLastError(error, callback);
+                if (callback) {
+                    return lastError.runWithLastError(error, callback);
+                }
 
                 throw error;
             }
@@ -171,7 +178,9 @@ export const createScriptingHarness = (
                 filter.ids.forEach(id => {
                     scripts.delete(id);
                 });
-            } else scripts.clear();
+            } else {
+                scripts.clear();
+            }
 
             callback?.();
         }) as unknown as typeof chrome.scripting.unregisterContentScripts,

@@ -6,6 +6,7 @@ A promise-based wrapper for the Chrome `alarms` API.
 
 ## Methods
 
+- [isAvailableAlarms()](#isAvailableAlarms)
 - [clearAlarm(name)](#clearAlarm)
 - [clearAllAlarm()](#clearAllAlarm)
 - [createAlarm(name, info)](#createAlarm)
@@ -17,6 +18,28 @@ A promise-based wrapper for the Chrome `alarms` API.
 
 - [onAlarm(callback)](#onAlarm)
 - [onSpecificAlarm(name, callback)](#onSpecificAlarm)
+- [onSpecificAlarms(handlers)](#onSpecificAlarms)
+
+<a name="isAvailableAlarms"></a>
+
+### isAvailableAlarms
+
+```ts
+isAvailableAlarms(): boolean
+```
+
+Returns `true` when the `alarms` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableAlarms} from "@addon-core/browser";
+
+if (isAvailableAlarms()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="clearAlarm"></a>
 
@@ -116,5 +139,38 @@ const unsubscribe = onSpecificAlarm("sync", async alarm => {
 });
 
 // Remove this listener when it is no longer needed.
+unsubscribe();
+```
+
+<a name="onSpecificAlarms"></a>
+
+### onSpecificAlarms
+
+```ts
+onSpecificAlarms(handlers: Record<string, (alarm: chrome.alarms.Alarm) => void>): () => void
+```
+
+Subscribes to several named alarms using one object: each key is an alarm name and each value is its callback.
+When an alarm fires, the handler whose key exactly matches `alarm.name` receives the complete alarm object.
+Names are case-sensitive. Unmatched names and inherited properties are ignored; an empty object is also accepted.
+
+Uses one underlying `onAlarm` subscription for the entire object and returns one unsubscribe function that
+removes it. Callbacks may be async; synchronous errors and rejected Promises are logged by the listener wrapper.
+
+```ts
+import {onSpecificAlarms} from "@addon-core/browser";
+
+const unsubscribe = onSpecificAlarms({
+    sync: async alarm => {
+        console.log("Sync scheduled time:", alarm.scheduledTime);
+        await syncData();
+    },
+    cleanup: async alarm => {
+        console.log("Cleanup scheduled time:", alarm.scheduledTime);
+        await cleanupData();
+    },
+});
+
+// Remove the subscription for all handlers in this object.
 unsubscribe();
 ```

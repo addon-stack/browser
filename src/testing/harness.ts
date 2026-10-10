@@ -16,6 +16,7 @@ import type {BrowserContextsHarness, BrowserStorageOptions, ContextRegistryOptio
 import {createBrowserMemoryState} from "./model/browser-state";
 import type {BrowserHarnessCall, BrowserMethod, BrowserMethodCall} from "./primitives";
 import {createLastErrorController} from "./primitives/last-error";
+
 import type {
     BrowserProfile,
     BrowserTestApi,
@@ -96,7 +97,9 @@ interface NamedMethodCalls {
 
 const methodCalls = ({namespace, source}: NamedMethodCalls): BrowserHarnessCall[] =>
     Object.entries(source).flatMap(([member, control]) => {
-        if (!control || typeof control !== "object" || !("calls" in control)) return [];
+        if (!control || typeof control !== "object" || !("calls" in control)) {
+            return [];
+        }
 
         return (control as {calls: readonly BrowserMethodCall[]}).calls.map(call => ({
             ...call,
@@ -240,7 +243,9 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
     applySidebarFlavor();
 
     const setOwnedCapability = (path: string, enabled: boolean): boolean => {
-        if (!(path in ownedChrome) && !(path in ownedBrowser)) return false;
+        if (!(path in ownedChrome) && !(path in ownedBrowser)) {
+            return false;
+        }
 
         const segments = path.split(".");
         const member = segments.pop()!;
@@ -248,9 +253,13 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         const browserNamespace = segments.reduce<object>((value, key) => Reflect.get(value, key), browser);
 
         if (enabled) {
-            if (path in ownedChrome) Object.defineProperty(chromeNamespace, member, ownedChrome[path]);
+            if (path in ownedChrome) {
+                Object.defineProperty(chromeNamespace, member, ownedChrome[path]);
+            }
 
-            if (path in ownedBrowser) Object.defineProperty(browserNamespace, member, ownedBrowser[path]);
+            if (path in ownedBrowser) {
+                Object.defineProperty(browserNamespace, member, ownedBrowser[path]);
+            }
         } else {
             Reflect.deleteProperty(chromeNamespace, member);
             Reflect.deleteProperty(browserNamespace, member);
@@ -260,7 +269,9 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
     };
 
     const applyCapability = (path: string, enabled: boolean): void => {
-        if (setOwnedCapability(path, enabled)) return;
+        if (setOwnedCapability(path, enabled)) {
+            return;
+        }
 
         let recognized = false;
 
@@ -273,7 +284,9 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
             }
         }
 
-        if (!recognized) throw new Error(`Unknown browser capability "${path}"`);
+        if (!recognized) {
+            throw new Error(`Unknown browser capability "${path}"`);
+        }
     };
 
     const capabilities: BrowserCapabilitiesHarness = {
@@ -373,8 +386,11 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
                 sidebarFlavor = previousFlavor;
                 sidebarExplicit = previousExplicit;
 
-                if (previousBrowserInfoExplicit) explicitCapabilities.add("runtime.getBrowserInfo");
-                else explicitCapabilities.delete("runtime.getBrowserInfo");
+                if (previousBrowserInfoExplicit) {
+                    explicitCapabilities.add("runtime.getBrowserInfo");
+                } else {
+                    explicitCapabilities.delete("runtime.getBrowserInfo");
+                }
 
                 const cleanups = [
                     () => runtime.setUrlScheme(previousScheme),
@@ -390,7 +406,9 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
                             throw new Error(`Unable to restore harness ${path}`, {cause});
                         }
 
-                        if (!restored) throw new Error(`Unable to restore harness ${path}`);
+                        if (!restored) {
+                            throw new Error(`Unable to restore harness ${path}`);
+                        }
                     }),
                 ];
 
@@ -404,7 +422,9 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
                     }
                 }
 
-                if (failures.length > 0) throw new AggregateError(failures, "Unable to restore browser harness profile");
+                if (failures.length > 0) {
+                    throw new AggregateError(failures, "Unable to restore browser harness profile");
+                }
             };
         },
         get calls() {
@@ -418,12 +438,16 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
         createProfileFacade(facade, includeBrowserInfo) {
             const result = cloneFacade(facade === "chrome" ? chrome : browser);
 
-            if (!includeBrowserInfo) Reflect.deleteProperty(result.runtime, "getBrowserInfo");
+            if (!includeBrowserInfo) {
+                Reflect.deleteProperty(result.runtime, "getBrowserInfo");
+            }
 
             return result;
         },
         getListenerErrorHandler(forward) {
-            if (forward) listenerCapture.setForward(forward);
+            if (forward) {
+                listenerCapture.setForward(forward);
+            }
 
             return listenerCapture.handler;
         },
@@ -443,8 +467,11 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
                 cleanupErrors.push(error);
             }
 
-            if (activeProfile === "firefox") runtime.setUrlScheme("moz-extension");
-            else if (activeProfile === "safari") runtime.setUrlScheme("safari-web-extension");
+            if (activeProfile === "firefox") {
+                runtime.setUrlScheme("moz-extension");
+            } else if (activeProfile === "safari") {
+                runtime.setUrlScheme("safari-web-extension");
+            }
 
             permissions.reset();
             tabs.reset();
@@ -468,17 +495,25 @@ export const createBrowserHarness = (options: BrowserHarnessOptions = {}): Brows
             sidebarFlavor = sidebarDefaultForProfile(activeProfile);
             applySidebarFlavor();
 
-            if (cleanupErrors.length > 0) throw new AggregateError(cleanupErrors, "Browser harness context cleanup failed");
+            if (cleanupErrors.length > 0) {
+                throw new AggregateError(cleanupErrors, "Browser harness context cleanup failed");
+            }
         },
         setActiveProfile(profile) {
             activeProfile = profile;
 
-            if (profile === "firefox") runtime.setUrlScheme("moz-extension");
-            else if (profile === "safari") runtime.setUrlScheme("safari-web-extension");
-            else if (profile !== "custom") runtime.setUrlScheme("chrome-extension");
+            if (profile === "firefox") {
+                runtime.setUrlScheme("moz-extension");
+            } else if (profile === "safari") {
+                runtime.setUrlScheme("safari-web-extension");
+            } else if (profile !== "custom") {
+                runtime.setUrlScheme("chrome-extension");
+            }
         },
         setProfileCapability(path, enabled) {
-            if (!explicitCapabilities.has(path)) applyCapability(path, enabled);
+            if (!explicitCapabilities.has(path)) {
+                applyCapability(path, enabled);
+            }
         },
         setProfileSidebarFlavor(flavor) {
             if (!sidebarExplicit) {

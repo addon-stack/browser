@@ -1,4 +1,5 @@
 import {afterEach, expect, jest, test} from "@jest/globals";
+
 import {createBrowserHarness, installBrowserGlobals, installGlobals} from "../../../../src/testing";
 
 const restorers: Array<() => void> = [];
@@ -12,7 +13,9 @@ const keep = (restore: () => void): (() => void) => {
 afterEach(() => {
     jest.restoreAllMocks();
 
-    while (restorers.length > 0) restorers.pop()?.();
+    while (restorers.length > 0) {
+        restorers.pop()?.();
+    }
 });
 
 const caught = (action: () => void): AggregateError => {
@@ -40,7 +43,9 @@ test.each(["false", "throw"] as const)("raw restore releases its stack entry whe
 
     const define = jest.spyOn(Reflect, "defineProperty").mockImplementation((target, key, descriptor) => {
         if (target === globalThis && key === "browser") {
-            if (failure === "throw") throw cause;
+            if (failure === "throw") {
+                throw cause;
+            }
 
             return false;
         }
@@ -53,7 +58,9 @@ test.each(["false", "throw"] as const)("raw restore releases its stack entry whe
     expect(error.errors).toHaveLength(1);
     expect(error.errors[0].message).toBe("Unable to restore global browser");
 
-    if (failure === "throw") expect(error.errors[0].cause).toBe(cause);
+    if (failure === "throw") {
+        expect(error.errors[0].cause).toBe(cause);
+    }
 
     expect(Object.getOwnPropertyDescriptor(globalThis, "chrome")).toEqual(beforeChrome);
     expect(() => outer()).not.toThrow();
@@ -76,7 +83,9 @@ test("console restoration failure does not skip globals or profile cleanup", () 
     const cause = new Error("Console restore failed");
 
     const define = jest.spyOn(Reflect, "defineProperty").mockImplementation((target, key, descriptor) => {
-        if (target === console && key === "error") throw cause;
+        if (target === console && key === "error") {
+            throw cause;
+        }
 
         return original(target, key, descriptor);
     });
@@ -100,7 +109,9 @@ test("failed nested profile restore restores harness settings and never reapplie
     const original = Reflect.deleteProperty;
 
     const remove = jest.spyOn(Reflect, "deleteProperty").mockImplementation((target, key) => {
-        if (target === globalThis && key === "browser") return false;
+        if (target === globalThis && key === "browser") {
+            return false;
+        }
 
         return original(target, key);
     });
@@ -129,7 +140,9 @@ test.each([[false, false], [true, false], [true, true]])("profile failure does n
 
     const remove = jest.spyOn(Reflect, "deleteProperty").mockImplementation((target, key) => {
         if (target === harness.chrome.runtime && key === "getBrowserInfo") {
-            if (throwProfile) throw cause;
+            if (throwProfile) {
+                throw cause;
+            }
 
             return false;
         }
@@ -140,7 +153,9 @@ test.each([[false, false], [true, false], [true, true]])("profile failure does n
     const originalDefine = Reflect.defineProperty;
 
     const define = jest.spyOn(Reflect, "defineProperty").mockImplementation((target, key, descriptor) => {
-        if (failGlobal && target === globalThis && key === "browser") return false;
+        if (failGlobal && target === globalThis && key === "browser") {
+            return false;
+        }
 
         return originalDefine(target, key, descriptor);
     });
@@ -151,9 +166,13 @@ test.each([[false, false], [true, false], [true, true]])("profile failure does n
     const messages = (error: Error): string[] => [error.message, ...(error instanceof AggregateError ? error.errors.flatMap(messages) : [])];
     expect(messages(error)).toContain("Unable to restore harness chrome.runtime.getBrowserInfo");
 
-    if (failGlobal) expect(messages(error)).toContain("Unable to restore global browser");
+    if (failGlobal) {
+        expect(messages(error)).toContain("Unable to restore global browser");
+    }
 
-    if (throwProfile) expect(error.errors[1].errors[0].cause).toBe(cause);
+    if (throwProfile) {
+        expect(error.errors[1].errors[0].cause).toBe(cause);
+    }
 
     expect(Object.getOwnPropertyDescriptor(harness.browser.runtime, "getBrowserInfo")).toEqual(previous);
     expect(harness.configurable.active).toBe(harness.configurable.chrome);
@@ -172,7 +191,9 @@ test("installation failure preserves both the original error and a profile rollb
     const original = Reflect.defineProperty;
 
     const define = jest.spyOn(Reflect, "defineProperty").mockImplementation((target, key, descriptor) => {
-        if (target === globalThis && key === "safari") return false;
+        if (target === globalThis && key === "safari") {
+            return false;
+        }
 
         return original(target, key, descriptor);
     });

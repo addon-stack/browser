@@ -88,6 +88,41 @@ try {
     execFileSync(process.execPath, [join(consumerDirectory, "dom.mjs")], {cwd: consumerDirectory, stdio: "inherit"});
 
     for (const format of ["esm", "cjs"]) {
+        execFileSync(process.execPath, [join(consumerDirectory, "tab-groups.cjs"), format], {
+            cwd: consumerDirectory,
+            stdio: "inherit",
+        });
+
+        execFileSync(process.execPath, [join(consumerDirectory, "dnr.cjs"), format], {
+            cwd: consumerDirectory,
+            stdio: "inherit",
+        });
+
+        execFileSync(process.execPath, [join(consumerDirectory, "bookmarks.cjs"), format], {
+            cwd: consumerDirectory,
+            stdio: "inherit",
+        });
+
+        execFileSync(process.execPath, [join(consumerDirectory, "top-sites.cjs"), format], {
+            cwd: consumerDirectory,
+            stdio: "inherit",
+        });
+
+        execFileSync(process.execPath, [join(consumerDirectory, "search.cjs"), format], {
+            cwd: consumerDirectory,
+            stdio: "inherit",
+        });
+
+        execFileSync(process.execPath, [join(consumerDirectory, "predicates.cjs"), format], {
+            cwd: consumerDirectory,
+            stdio: "inherit",
+        });
+
+        execFileSync(process.execPath, [join(consumerDirectory, "availability.cjs"), format], {
+            cwd: consumerDirectory,
+            stdio: "inherit",
+        });
+
         for (const installer of ["raw", "profile"]) {
             execFileSync(process.execPath, [join(consumerDirectory, "globals-restore.cjs"), format, installer], {
                 cwd: consumerDirectory,

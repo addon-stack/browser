@@ -6,6 +6,7 @@ A promise-based wrapper for the Chrome `tabs` API, providing core tab operations
 
 ## Methods
 
+- [isAvailableTabs()](#isAvailableTabs)
 - [captureVisibleTab(windowId, options)](#captureVisibleTab)
 - [connectTab(tabId, connectInfo?)](#connectTab)
 - [createTab(properties)](#createTab)
@@ -58,6 +59,27 @@ A promise-based wrapper for the Chrome `tabs` API, providing core tab operations
 - [onTabZoomChange(callback)](#onTabZoomChange)
 
 ---
+
+<a name="isAvailableTabs"></a>
+
+### isAvailableTabs
+
+```ts
+isAvailableTabs(): boolean
+```
+
+Returns `true` when the `tabs` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableTabs} from "@addon-core/browser";
+
+if (isAvailableTabs()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="captureVisibleTab"></a>
 

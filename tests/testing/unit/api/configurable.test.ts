@@ -1,4 +1,5 @@
 import {describe, expect, jest, test} from "@jest/globals";
+
 import {createConfigurableNamespaces} from "../../../../src/testing/api/configurable";
 import {RAW_CAPABILITY_COVERAGE} from "../../../../src/testing/coverage";
 import {createLastErrorController} from "../../../../src/testing/primitives/last-error";

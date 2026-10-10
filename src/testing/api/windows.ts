@@ -3,8 +3,9 @@ import type {BrowserMemoryState} from "../model/browser-state";
 import {missingEntityError} from "../model/errors";
 import {type BrowserEventHarness, type BrowserMethod, createBrowserEvent, createBrowserMethod} from "../primitives";
 import type {RuntimeLastErrorController} from "../primitives/last-error";
-import type {WindowsTestApi} from "../types";
 import type {TabsHarness} from "./tabs";
+
+import type {WindowsTestApi} from "../types";
 
 type ListenerArgs<TEvent extends {addListener(listener: (...args: never[]) => unknown, ...args: never[]): unknown}> =
     Parameters<Parameters<TEvent["addListener"]>[0]>;
@@ -89,7 +90,9 @@ export const createWindowsHarness = (
             const focused = createData.focused ?? true;
 
             if (focused) {
-                for (const existing of state.windows.values()) existing.focused = false;
+                for (const existing of state.windows.values()) {
+                    existing.focused = false;
+                }
             }
 
             const window = createWindowFixture({
@@ -107,7 +110,9 @@ export const createWindowsHarness = (
 
             state.windows.set(id, window);
 
-            if (focused) state.setLastFocusedWindow(id);
+            if (focused) {
+                state.setLastFocusedWindow(id);
+            }
 
             if (typeof createData.tabId === "number") {
                 const tab = state.tabs.get(createData.tabId);
@@ -130,7 +135,9 @@ export const createWindowsHarness = (
             callback?.(result);
             ignoreAutoEventError(events.onCreated.emit(state.cloneWindow(window, true)));
 
-            if (focused) ignoreAutoEventError(events.onFocusChanged.emit(id));
+            if (focused) {
+                ignoreAutoEventError(events.onFocusChanged.emit(id));
+            }
 
             return result;
         }) as unknown as typeof chrome.windows.create,
@@ -238,7 +245,9 @@ export const createWindowsHarness = (
             state.windows.delete(windowId);
 
             for (const tabId of tabIds) {
-                if (typeof tabId !== "number") continue;
+                if (typeof tabId !== "number") {
+                    continue;
+                }
 
                 cleanupErrors.push(...state.removeTab(tabId));
                 ignoreAutoEventError(tabs.events.onRemoved.emit(tabId, {isWindowClosing: true, windowId}));
@@ -247,16 +256,22 @@ export const createWindowsHarness = (
             if (state.lastFocusedWindowId === windowId) {
                 const nextWindow = [...state.windows.values()][0];
 
-                if (nextWindow) nextWindow.focused = true;
+                if (nextWindow) {
+                    nextWindow.focused = true;
+                }
 
                 state.setLastFocusedWindow(nextWindow?.id);
             }
 
-            if (cleanupErrors.length === 0) callback?.();
+            if (cleanupErrors.length === 0) {
+                callback?.();
+            }
 
             ignoreAutoEventError(events.onRemoved.emit(windowId));
 
-            if (cleanupErrors.length > 0) throw new AggregateError(cleanupErrors, "windows.remove context cleanup failed");
+            if (cleanupErrors.length > 0) {
+                throw new AggregateError(cleanupErrors, "windows.remove context cleanup failed");
+            }
         }) as typeof chrome.windows.remove,
         invocation: "dual",
         lastError,
@@ -273,10 +288,14 @@ export const createWindowsHarness = (
         ) => {
             const window = state.windows.get(windowId);
 
-            if (!window) return resolveWindow(windowId, false, callback);
+            if (!window) {
+                return resolveWindow(windowId, false, callback);
+            }
 
             if (updateInfo.focused) {
-                for (const existing of state.windows.values()) existing.focused = existing.id === windowId;
+                for (const existing of state.windows.values()) {
+                    existing.focused = existing.id === windowId;
+                }
 
                 state.setLastFocusedWindow(windowId);
             } else if (updateInfo.focused === false) {
@@ -342,10 +361,14 @@ export const createWindowsHarness = (
         },
         set(windows): void {
             for (const window of windows) {
-                if (typeof window.id !== "number") throw new Error("A test window must have a numeric id");
+                if (typeof window.id !== "number") {
+                    throw new Error("A test window must have a numeric id");
+                }
 
                 for (const tab of window.tabs ?? []) {
-                    if (typeof tab.id !== "number") throw new Error("A test tab must have a numeric id");
+                    if (typeof tab.id !== "number") {
+                        throw new Error("A test tab must have a numeric id");
+                    }
                 }
             }
 
@@ -370,14 +393,18 @@ export const createWindowsHarness = (
             state.windows.clear();
 
             for (const window of windows) {
-                if (typeof window.id !== "number") throw new Error("A test window must have a numeric id");
+                if (typeof window.id !== "number") {
+                    throw new Error("A test window must have a numeric id");
+                }
 
                 const copy = state.cloneWindow(window);
                 delete copy.tabs;
                 state.windows.set(window.id, copy);
 
                 for (const tab of window.tabs ?? []) {
-                    if (typeof tab.id !== "number") throw new Error("A test tab must have a numeric id");
+                    if (typeof tab.id !== "number") {
+                        throw new Error("A test tab must have a numeric id");
+                    }
 
                     state.tabs.set(tab.id, state.cloneTab({...tab, windowId: window.id}));
                 }
@@ -389,7 +416,9 @@ export const createWindowsHarness = (
                 [...state.windows.values()].find(window => window.focused)?.id ?? [...state.windows.keys()][0]
             );
 
-            if (cleanupErrors.length > 0) throw new AggregateError(cleanupErrors, "windows.set context cleanup failed");
+            if (cleanupErrors.length > 0) {
+                throw new AggregateError(cleanupErrors, "windows.set context cleanup failed");
+            }
         },
     };
 };

@@ -18,7 +18,9 @@ export const createContextLifetime = (contextId: string) => {
     const closedError = (): Error => new Error(`Browser test context "${contextId}" was disposed`);
 
     const assertActive = (): void => {
-        if (disposed) throw closedError();
+        if (disposed) {
+            throw closedError();
+        }
     };
 
     const lifetime: BrowserContextLifetime = {
@@ -42,7 +44,9 @@ export const createContextLifetime = (contextId: string) => {
                 let settled = false;
 
                 const cancel = (reason: Error): void => {
-                    if (settled) return;
+                    if (settled) {
+                        return;
+                    }
 
                     settled = true;
                     pending.delete(cancel);
@@ -50,15 +54,20 @@ export const createContextLifetime = (contextId: string) => {
                 };
 
                 source.then(value => {
-                    if (settled) return;
+                    if (settled) {
+                        return;
+                    }
 
                     settled = true;
                     pending.delete(cancel);
                     resolve(value);
                 }, cancel);
 
-                if (disposed) cancel(closedError());
-                else pending.add(cancel);
+                if (disposed) {
+                    cancel(closedError());
+                } else {
+                    pending.add(cancel);
+                }
             });
         },
     };
@@ -82,7 +91,9 @@ export const createContextLifetime = (contextId: string) => {
                 return source.on(listener, ...args);
             },
             emit(...args) {
-                if (disposed) return Promise.reject(closedError());
+                if (disposed) {
+                    return Promise.reject(closedError());
+                }
 
                 return lifetime.track(source.emit(...args));
             },
@@ -93,12 +104,16 @@ export const createContextLifetime = (contextId: string) => {
         lifetime,
         event,
         dispose(): void {
-            if (disposed) return;
+            if (disposed) {
+                return;
+            }
 
             disposed = true;
             const reason = closedError();
 
-            for (const cancel of [...pending]) cancel(reason);
+            for (const cancel of [...pending]) {
+                cancel(reason);
+            }
 
             controller.abort(reason);
             const errors: unknown[] = [];
@@ -113,7 +128,9 @@ export const createContextLifetime = (contextId: string) => {
 
             cleanups.clear();
 
-            if (errors.length > 0) throw new AggregateError(errors, `Cleanup failed for browser test context "${contextId}"`);
+            if (errors.length > 0) {
+                throw new AggregateError(errors, `Cleanup failed for browser test context "${contextId}"`);
+            }
         },
     };
 };

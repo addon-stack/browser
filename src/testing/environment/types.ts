@@ -1,4 +1,5 @@
 import type {BrowserContext} from "../model";
+
 import type {BrowserProfile, BrowserTestApi, ExtensionContextKind} from "../types";
 
 export interface NavigatorTestValue extends Partial<Navigator> {

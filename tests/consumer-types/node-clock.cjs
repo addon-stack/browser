@@ -34,7 +34,9 @@ module.exports = async function checkClock(production, testing, nodeTesting) {
         // Inline protocol emulation, intentionally independent of Addon Bone and issue #109.
         const retry = async () => {
             for (let attempts = 1; attempts <= 10; attempts++) {
-                if (attempts === 10) return {ok: false, attempts, time: Date.now()};
+                if (attempts === 10) {
+                    return {ok: false, attempts, time: Date.now()};
+                }
 
                 await new Promise(resolve => setTimeout(resolve, 300));
             }
@@ -46,8 +48,11 @@ module.exports = async function checkClock(production, testing, nodeTesting) {
 
             const pending = style === "promise" ? production.executeScript(injection) : new Promise((resolve, reject) => {
                 harness.chrome.scripting.executeScript(injection, result => {
-                    if (harness.runtime.lastError) reject(new Error(harness.runtime.lastError.message));
-                    else resolve(result);
+                    if (harness.runtime.lastError) {
+                        reject(new Error(harness.runtime.lastError.message));
+                    } else {
+                        resolve(result);
+                    }
                 });
             });
 

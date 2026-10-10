@@ -6,6 +6,7 @@ A promise-based wrapper for the Chrome `offscreen` API to create and manage offs
 
 ## Methods
 
+- [isAvailableOffscreen()](#isAvailableOffscreen)
 - [createOffscreen(parameters)](#createOffscreen)
 - [closeOffscreen()](#closeOffscreen)
 - [hasOffscreen()](#hasOffscreen)
@@ -16,6 +17,27 @@ A promise-based wrapper for the Chrome `offscreen` API to create and manage offs
 - [hasOffscreenPath(path)](#hasOffscreenPath)
 
 ---
+
+<a name="isAvailableOffscreen"></a>
+
+### isAvailableOffscreen
+
+```ts
+isAvailableOffscreen(): boolean
+```
+
+Returns `true` when the `offscreen` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableOffscreen} from "@addon-core/browser";
+
+if (isAvailableOffscreen()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="createOffscreen"></a>
 
@@ -45,7 +67,8 @@ Closes the existing offscreen document.
 hasOffscreen(): Promise<boolean>
 ```
 
-Checks whether an offscreen document is currently open.
+Directly proxies the native `offscreen.hasDocument()` method. Resolves to its boolean result and preserves
+native errors as Promise rejections; this method does not convert failures into `false`.
 
 <a name="getOffscreenContext"></a>
 
@@ -85,7 +108,9 @@ Returns the current offscreen document path within the extension, if one is open
 hasOffscreenUrl(url: string): Promise<boolean>
 ```
 
-Checks whether the current offscreen document matches the given URL.
+Returns `true` when the current offscreen document matches the given URL. Returns `false` when no match
+can be confirmed, including missing APIs or failed context queries. Does not throw, reject, log, or cache.
+Use `getOffscreenUrl()` when query errors must remain observable.
 
 <a name="hasOffscreenPath"></a>
 
@@ -95,4 +120,7 @@ Checks whether the current offscreen document matches the given URL.
 hasOffscreenPath(path: string): Promise<boolean>
 ```
 
-Checks whether the current offscreen document matches the given extension path. Query parameters and hash fragments are ignored.
+Returns `true` when the current offscreen document matches the given extension path. Query parameters
+and hash fragments are ignored. Returns `false` when no match can be confirmed, including API access,
+context lookup, and URL parsing failures. Does not throw, reject, log, or cache.
+Use `getOffscreenPath()` when query errors must remain observable.

@@ -3,19 +3,31 @@ export function installMessagingReceiver(label, suppliedApi) {
     const api = suppliedApi ?? globalThis.chrome;
 
     const listener = (message, sender, respond) => {
-        if (message?.probe !== "context-messaging" || message.to !== label) return;
+        if (message?.probe !== "context-messaging" || message.to !== label) {
+            return;
+        }
 
-        if (message.mode === "promise") return (async () => "from-promise")();
+        if (message.mode === "promise") {
+            return (async () => "from-promise")();
+        }
 
-        if (message.mode === "promise-reject") return (async () => {
-            throw new Error("probe promise rejection");
-        })();
+        if (message.mode === "promise-reject") {
+            return (async () => {
+                throw new Error("probe promise rejection");
+            })();
+        }
 
-        if (message.mode === "no-argument") return respond();
+        if (message.mode === "no-argument") {
+            return respond();
+        }
 
-        if (message.mode === "undefined-response") return respond(undefined);
+        if (message.mode === "undefined-response") {
+            return respond(undefined);
+        }
 
-        if (message.mode === "silent") return;
+        if (message.mode === "silent") {
+            return;
+        }
 
         if (message.mode === "hold") {
             void api.runtime.sendMessage({probe: "context-messaging", mode: "ack", label}).catch(error => console.error(error));
@@ -29,14 +41,16 @@ export function installMessagingReceiver(label, suppliedApi) {
             return true;
         }
 
-        if (message.mode === "echo") respond({
-            label, payload: message.payload,
-            sender: {
-                id: sender.id, url: sender.url, origin: sender.origin ?? null,
-                frameId: sender.frameId ?? null, tabId: sender.tab?.id ?? null,
-                documentId: sender.documentId ?? null, documentLifecycle: sender.documentLifecycle ?? null,
-            },
-        });
+        if (message.mode === "echo") {
+            respond({
+                label, payload: message.payload,
+                sender: {
+                    id: sender.id, url: sender.url, origin: sender.origin ?? null,
+                    frameId: sender.frameId ?? null, tabId: sender.tab?.id ?? null,
+                    documentId: sender.documentId ?? null, documentLifecycle: sender.documentLifecycle ?? null,
+                },
+            });
+        }
     };
 
     api.runtime.onMessage.addListener(listener);
@@ -61,8 +75,11 @@ export async function messageResponsesProbe(api, {namespace, tabId, label, frame
                     : await new Promise((resolve, reject) => api[namespace].sendMessage(...args, result => {
                         const error = api.runtime.lastError;
 
-                        if (error) reject(new Error(error.message));
-                        else resolve(result);
+                        if (error) {
+                            reject(new Error(error.message));
+                        } else {
+                            resolve(result);
+                        }
                     }));
 
                 responses[mode] = value === undefined ? {kind: "undefined"} : value === null ? {kind: "null"} : {kind: "value", value};
@@ -86,13 +103,18 @@ export async function messagingProbe(api, {tabId, frames, createOffscreen}) {
 
     for (const style of ["promise", "callback"]) {
         const invoke = (namespace, ...args) => {
-            if (style === "promise") return api[namespace].sendMessage(...args);
+            if (style === "promise") {
+                return api[namespace].sendMessage(...args);
+            }
 
             return new Promise((resolve, reject) => api[namespace].sendMessage(...args, result => {
                 const error = api.runtime.lastError;
 
-                if (error) reject(new Error(error.message));
-                else resolve(result);
+                if (error) {
+                    reject(new Error(error.message));
+                } else {
+                    resolve(result);
+                }
             }));
         };
 
@@ -130,7 +152,9 @@ export async function messagingProbe(api, {tabId, frames, createOffscreen}) {
         });
 
         const ack = (message, _sender, respond) => {
-            if (message?.probe !== "context-messaging" || message.mode !== "ack") return;
+            if (message?.probe !== "context-messaging" || message.mode !== "ack") {
+                return;
+            }
 
             respond("ack");
             ready();

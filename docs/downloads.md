@@ -6,6 +6,7 @@ A promise-based wrapper for the Chrome `downloads` API.
 
 ## Methods
 
+- [isAvailableDownloads()](#isAvailableDownloads)
 - [acceptDownloadDanger(downloadId)](#acceptDownloadDanger)
 - [cancelDownload(downloadId)](#cancelDownload)
 - [download(options)](#download)
@@ -30,6 +31,27 @@ A promise-based wrapper for the Chrome `downloads` API.
 - [onDownloadsDeterminingFilename(callback)](#onDownloadsDeterminingFilename)
 
 ---
+
+<a name="isAvailableDownloads"></a>
+
+### isAvailableDownloads
+
+```ts
+isAvailableDownloads(): boolean
+```
+
+Returns `true` when the `downloads` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableDownloads} from "@addon-core/browser";
+
+if (isAvailableDownloads()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="acceptDownloadDanger"></a>
 
@@ -181,10 +203,13 @@ Retrieves the download item for the given download ID, if it exists.
 ### isDownloadExists
 
 ```
-isDownloadExists(downloadId: number): Promise<boolean | undefined>
+isDownloadExists(downloadId: number): Promise<boolean>
 ```
 
-Checks whether a download with the specified ID exists.
+Returns `true` only when the download record confirms that the file exists. Missing records, missing files,
+unavailable APIs, and search failures return `false`. The check does not throw, reject, log, or cache its result.
+Use `findDownload()` when you need the record or must distinguish a failed lookup from a missing download.
+`showDownload()` uses that strict lookup and continues to reject on search or native show errors.
 
 <a name="getDownloadState"></a>
 

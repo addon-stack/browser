@@ -3,8 +3,9 @@ import type {BrowserMemoryState} from "../model/browser-state";
 import {createMessageChannels, messageFailure} from "../model/message-channel";
 import {type BrowserHarnessCall, type BrowserMethod, createBrowserMethod} from "../primitives";
 import {createLastErrorController, type RuntimeLastErrorController} from "../primitives/last-error";
-import type {BrowserTestApi} from "../types";
 import {contextSender, messageRecipients, runtimeMessage, tabMessage} from "./message-routing";
+
+import type {BrowserTestApi} from "../types";
 
 export interface BrowserContextMessaging {
     readonly context: BrowserContext;
@@ -42,7 +43,9 @@ const overlay = <T extends object>(source: () => T, overrides: Readonly<Record<s
         getOwnPropertyDescriptor: (_target, key) => {
             const descriptor = Reflect.getOwnPropertyDescriptor(source(), key);
 
-            if (!descriptor) return undefined;
+            if (!descriptor) {
+                return undefined;
+            }
 
             return {configurable: true, enumerable: descriptor.enumerable, get: () =>
                 typeof key === "string" && Object.hasOwn(overrides, key) ? overrides[key]() : Reflect.get(source(), key)};
@@ -82,7 +85,9 @@ export const createMessagingHarness = (
             return promiseListeners;
         },
         set promiseListeners(value) {
-            if (value !== "accept" && value !== "ignore") throw new Error('Browser messaging promiseListeners must be "accept" or "ignore".');
+            if (value !== "accept" && value !== "ignore") {
+                throw new Error('Browser messaging promiseListeners must be "accept" or "ignore".');
+            }
 
             promiseListeners = value;
         },
@@ -106,16 +111,22 @@ export const createMessagingHarness = (
                 view.runtime.sendMessage.reset();
                 view.tabs.sendMessage.reset();
 
-                if (context.disposed) bindings.delete(context);
+                if (context.disposed) {
+                    bindings.delete(context);
+                }
             }
 
-            for (const info of contexts.list()) contexts.get(info.contextId)!.onMessage.reset();
+            for (const info of contexts.list()) {
+                contexts.get(info.contextId)!.onMessage.reset();
+            }
         },
         forContext(value) {
             const context = resolveContext(value);
             const existing = bindings.get(context);
 
-            if (existing) return existing;
+            if (existing) {
+                return existing;
+            }
 
             const lastError = createLastErrorController();
 
@@ -125,13 +136,19 @@ export const createMessagingHarness = (
                 let response: Promise<unknown>;
 
                 try {
-                    if (context.disposed || contexts.get(context.info.contextId) !== context) throw messageFailure(api, "sender context was disposed.");
+                    if (context.disposed || contexts.get(context.info.contextId) !== context) {
+                        throw messageFailure(api, "sender context was disposed.");
+                    }
 
                     const target = api === "tabs.sendMessage" ? tabMessage(args) : undefined;
 
-                    if (target && context.info.kind === "contentScript") throw messageFailure(api, "content scripts must use runtime.sendMessage.");
+                    if (target && context.info.kind === "contentScript") {
+                        throw messageFailure(api, "content scripts must use runtime.sendMessage.");
+                    }
 
-                    if (target && !state.tabs.has(target.tabId)) throw messageFailure(api, `No tab with id: ${target.tabId}.`);
+                    if (target && !state.tabs.has(target.tabId)) {
+                        throw messageFailure(api, `No tab with id: ${target.tabId}.`);
+                    }
 
                     const message = target ? target.message : runtimeMessage(args, getExtensionId());
 
@@ -145,7 +162,9 @@ export const createMessagingHarness = (
                     response = Promise.reject(error);
                 }
 
-                if (!callback) return response;
+                if (!callback) {
+                    return response;
+                }
 
                 void response.then(value => callback(value), error => lastError.runWithLastError(error, () => callback()));
 

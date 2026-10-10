@@ -63,6 +63,24 @@ integration test runs the extension in Chrome, Firefox, Safari, or another brows
 Use this kit for deterministic unit and integration tests around your application code. Keep real-browser tests for
 browser compatibility, manifest behavior, security boundaries, lifecycle timing, and vendor-specific behavior.
 
+The package's own production-wrapper tests run in actual extensions under [`tests/browser/`](../tests/browser/README.md).
+After building, run `npm run test:browser -- --browser chromium --api search --binary /path/to/browser` or select `firefox`.
+This shared infrastructure groups scenarios by API and uses a fresh extension/profile for each permission set.
+
+Search methods are configurable through `harness.configurable.active.search`: `query` models callback/Promise calls,
+while Firefox's `get` and `search` use Promise-only calls. Configure an engine list with `get.setResult(engines)` and
+operation completion with `query.setResult(undefined)` or `search.setResult(undefined)`. These stubs do not navigate
+tabs or simulate a search provider. The configurable surface is a cross-browser superset; use
+`harness.capabilities.set("search.get", false)` and `harness.capabilities.set("search.search", false)` to model Chromium's
+missing engine APIs, or install globals without the namespace to model Safari.
+
+Top Sites is configurable through `harness.configurable.active.topSites.get.setResult(sites)`.
+The Chromium facade models callback calls and the Firefox facade supports callback/Promise calls,
+including the options overload. This stub returns configured data; it does not rank browsing history
+or implement Firefox's filtering. Configure native failures with `failNext(error)` and remove the
+capability to model an unavailable API. See [Top Sites browser coverage](../tests/browser/README.md#top-sites-coverage)
+for the real-browser scenarios.
+
 ## Reset and isolation
 
 Every harness owns independent state. Call `harness.reset()` between tests when reusing one harness, or create a fresh

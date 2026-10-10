@@ -6,6 +6,7 @@ A promise-based wrapper for the Chrome `audio` API.
 
 ## Methods
 
+- [isAvailableAudio()](#isAvailableAudio)
 - [getAudioDevices(filter?)](#getAudioDevices)
 - [getAudioMute(streamType)](#getAudioMute)
 - [setAudioActiveDevices(ids?)](#setAudioActiveDevices)
@@ -19,6 +20,27 @@ A promise-based wrapper for the Chrome `audio` API.
 - [onAudioMuteChanged(callback)](#onAudioMuteChanged)
 
 ---
+
+<a name="isAvailableAudio"></a>
+
+### isAvailableAudio
+
+```ts
+isAvailableAudio(): boolean
+```
+
+Returns `true` when the `audio` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableAudio} from "@addon-core/browser";
+
+if (isAvailableAudio()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="getAudioDevices"></a>
 

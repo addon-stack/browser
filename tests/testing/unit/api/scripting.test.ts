@@ -1,4 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
+
 import {type BrowserScriptExecution, createBrowserHarness, createTabFixture} from "../../../../src/testing";
 
 const setup = () => {
@@ -286,13 +287,21 @@ describe("script execution lifetime", () => {
         const rejected = expect(operation).rejects.toThrow("scripting.executeScript:");
         expect(harness.scripting.pendingExecutions).toBe(1);
 
-        if (action === "document") harness.contexts.documents.remove("main");
-        else if (action === "context") harness.contexts.remove("content-a");
-        else if (action === "tab") await harness.chrome.tabs.remove(8);
-        else if (action === "window") await harness.chrome.windows.remove((await harness.chrome.tabs.get(8)).windowId);
-        else if (action === "reset") harness.reset();
-        else if (action === "contexts-reset") harness.contexts.reset();
-        else harness.scripting.cancelExecutions();
+        if (action === "document") {
+            harness.contexts.documents.remove("main");
+        } else if (action === "context") {
+            harness.contexts.remove("content-a");
+        } else if (action === "tab") {
+            await harness.chrome.tabs.remove(8);
+        } else if (action === "window") {
+            await harness.chrome.windows.remove((await harness.chrome.tabs.get(8)).windowId);
+        } else if (action === "reset") {
+            harness.reset();
+        } else if (action === "contexts-reset") {
+            harness.contexts.reset();
+        } else {
+            harness.scripting.cancelExecutions();
+        }
 
         await rejected;
         expect(requests[0].signal.aborted).toBe(true);
@@ -323,7 +332,9 @@ describe("script execution lifetime", () => {
         harness.scripting.setExecutor(request => {
             requests.push(request);
 
-            if (request.target.frameId === 3) throw new Error("child failed");
+            if (request.target.frameId === 3) {
+                throw new Error("child failed");
+            }
 
             return new Promise((_resolve, reject) => {
                 rejectLate = reject;

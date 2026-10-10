@@ -6,6 +6,7 @@ A wrapper for the Chrome `runtime` API, including messaging, updates, and lifecy
 
 ## Methods
 
+- [isAvailableRuntime()](#isAvailableRuntime)
 - [connect(extensionId, connectInfo?)](#connect)
 - [connectNative(application)](#connectNative)
 - [getContexts(filter)](#getContexts) [MV3]
@@ -41,6 +42,27 @@ A wrapper for the Chrome `runtime` API, including messaging, updates, and lifecy
 - [onUserScriptMessage(callback)](#onUserScriptMessage)
 
 ---
+
+<a name="isAvailableRuntime"></a>
+
+### isAvailableRuntime
+
+```ts
+isAvailableRuntime(): boolean
+```
+
+Returns `true` when the `runtime` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableRuntime} from "@addon-core/browser";
+
+if (isAvailableRuntime()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="connect"></a>
 
@@ -110,7 +132,9 @@ Retrieves the manifest version (2 or 3).
 isManifestVersion3(): boolean
 ```
 
-Checks if the extension uses Manifest V3.
+Returns `true` only when Manifest V3 is confirmed. Returns `false` for other versions, unavailable APIs,
+or failures reading the manifest, without throwing or logging. Reads the manifest on every call.
+Use `getManifestVersion()` when the exact version is required and lookup errors must propagate.
 
 <a name="getPackageDirectoryEntry"></a>
 

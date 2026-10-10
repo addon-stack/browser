@@ -19,9 +19,13 @@ export interface BrowserStorageOptions {
 export const storageAreaNames = ["local", "sync", "session", "managed"] as const;
 
 export const storageKeys = (keys: unknown, api: string): string[] => {
-    if (typeof keys === "string") return [keys];
+    if (typeof keys === "string") {
+        return [keys];
+    }
 
-    if (Array.isArray(keys) && keys.every(key => typeof key === "string")) return [...new Set(keys)];
+    if (Array.isArray(keys) && keys.every(key => typeof key === "string")) {
+        return [...new Set(keys)];
+    }
 
     throw new Error(`${api}: expected a key string or an array of key strings.`);
 };
@@ -45,11 +49,17 @@ export const createStorageAreaState = (
     const checkQuota = (candidate: Map<string, unknown>, api: string): void => {
         const bytes = [...candidate].map(([key, value]) => storageItemBytes(key, value));
 
-        if (quota.maxItems !== undefined && candidate.size > quota.maxItems) throw new Error(`${api}: MAX_ITEMS quota exceeded.`);
+        if (quota.maxItems !== undefined && candidate.size > quota.maxItems) {
+            throw new Error(`${api}: MAX_ITEMS quota exceeded.`);
+        }
 
-        if (quota.maxBytesPerItem !== undefined && bytes.some(value => value > quota.maxBytesPerItem!)) throw new Error(`${api}: QUOTA_BYTES_PER_ITEM quota exceeded.`);
+        if (quota.maxBytesPerItem !== undefined && bytes.some(value => value > quota.maxBytesPerItem!)) {
+            throw new Error(`${api}: QUOTA_BYTES_PER_ITEM quota exceeded.`);
+        }
 
-        if (quota.maxBytes !== undefined && bytes.reduce((total, value) => total + value, 0) > quota.maxBytes) throw new Error(`${api}: QUOTA_BYTES quota exceeded.`);
+        if (quota.maxBytes !== undefined && bytes.reduce((total, value) => total + value, 0) > quota.maxBytes) {
+            throw new Error(`${api}: QUOTA_BYTES quota exceeded.`);
+        }
     };
 
     checkQuota(data, `storage.${area} fixtures`);
@@ -58,7 +68,9 @@ export const createStorageAreaState = (
         checkQuota(candidate, api);
 
         const changes = Object.fromEntries([...new Set([...data.keys(), ...candidate.keys()])].flatMap(key => {
-            if (data.has(key) === candidate.has(key) && storageValuesEqual(data.get(key), candidate.get(key))) return [];
+            if (data.has(key) === candidate.has(key) && storageValuesEqual(data.get(key), candidate.get(key))) {
+                return [];
+            }
 
             return [[key, {
                 ...(data.has(key) ? {oldValue: cloneRecord(data.get(key))} : {}),
@@ -72,14 +84,18 @@ export const createStorageAreaState = (
     };
 
     const writable = (api: string): void => {
-        if (area === "managed") throw new Error(`${api}: managed storage is read-only.`);
+        if (area === "managed") {
+            throw new Error(`${api}: managed storage is read-only.`);
+        }
     };
 
     return {
         get(keys: unknown): Record<string, unknown> {
             const api = `storage.${area}.get`;
 
-            if (keys == null) return cloneRecord(Object.fromEntries(data));
+            if (keys == null) {
+                return cloneRecord(Object.fromEntries(data));
+            }
 
             if (typeof keys === "object" && !Array.isArray(keys)) {
                 const defaults = storageRecord(keys, api);

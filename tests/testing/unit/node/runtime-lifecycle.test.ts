@@ -1,4 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
+
 import {type BrowserScriptExecution, createBrowserHarness, createTabFixture} from "../../../../src/testing";
 import {createNodeScriptRuntime, type NodeScriptRuntimeOptions} from "../../../../src/testing/node";
 
@@ -168,8 +169,11 @@ describe("document-bound Node runtime", () => {
             const pending = harness.chrome.scripting.executeScript({target: {tabId: 7}, func: () => new Promise(() => {})});
             const rejected = expect(pending).rejects.toThrow("reset");
 
-            if (kind === "contexts") harness.contexts.reset();
-            else harness.reset();
+            if (kind === "contexts") {
+                harness.contexts.reset();
+            } else {
+                harness.reset();
+            }
 
             await rejected;
             expect(runtime.realmCount).toBe(0);
@@ -240,8 +244,11 @@ describe("document-bound Node runtime", () => {
         runtime.evaluate({documentId: "main"}, {source: "globalThis.ready = true"});
         expect(() => runtime.evaluate({documentId: "child"}, {source: "throw 1"})).toThrow();
 
-        if (kind === "tab") await harness.chrome.tabs.remove(7);
-        else await harness.chrome.windows.remove((await harness.chrome.tabs.get(7)).windowId);
+        if (kind === "tab") {
+            await harness.chrome.tabs.remove(7);
+        } else {
+            await harness.chrome.windows.remove((await harness.chrome.tabs.get(7)).windowId);
+        }
 
         expect(runtime.realmCount).toBe(0);
         expect(() => runtime.evaluate({documentId: "main"}, {source: ""})).toThrow("does not exist");

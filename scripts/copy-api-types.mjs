@@ -4,4 +4,4 @@ import {fileURLToPath} from "node:url";
 
 const rootDirectory = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-copyFileSync(join(rootDirectory, "src/api.d.ts"), join(rootDirectory, "dist/api.d.ts"));
+copyFileSync(join(rootDirectory, "src/api/api.d.ts"), join(rootDirectory, "dist/api.d.ts"));

@@ -1,4 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
+
 import {createBrowserHarness, createTabFixture} from "../../../../src/testing";
 
 const fixture = (namespace: "runtime" | "tabs" = "runtime", facade: "chrome" | "browser" = "chrome", callback = false) => {
@@ -12,14 +13,19 @@ const fixture = (namespace: "runtime" | "tabs" = "runtime", facade: "chrome" | "
     const api = view[facade];
 
     const send = (): Promise<unknown> => {
-        if (!callback) return namespace === "runtime" ? api.runtime.sendMessage("request") : api.tabs.sendMessage(7, "request");
+        if (!callback) {
+            return namespace === "runtime" ? api.runtime.sendMessage("request") : api.tabs.sendMessage(7, "request");
+        }
 
         return new Promise((resolve, reject) => {
             const done = (value: unknown): void => {
                 const error = api.runtime.lastError;
 
-                if (error) reject(new Error(error.message));
-                else resolve(value);
+                if (error) {
+                    reject(new Error(error.message));
+                } else {
+                    resolve(value);
+                }
             };
 
             const result = namespace === "runtime" ? api.runtime.sendMessage("request", done) : api.tabs.sendMessage(7, "request", done);
@@ -44,8 +50,11 @@ describe.each(scenarios)("$facade.$namespace compatibility (callback=$callback)"
         receiver.onMessage.reset();
         receiver.onMessage.on(() => undefined);
 
-        if (callback) await expect(send()).rejects.toThrow(`${namespace}.sendMessage: The message port closed`);
-        else await expect(send()).resolves.toBeUndefined();
+        if (callback) {
+            await expect(send()).rejects.toThrow(`${namespace}.sendMessage: The message port closed`);
+        } else {
+            await expect(send()).resolves.toBeUndefined();
+        }
 
         expect(view.chrome.runtime.lastError).toBeUndefined();
         expect(harness.messaging.pendingChannels).toEqual([]);
@@ -58,8 +67,11 @@ describe.each(scenarios)("$facade.$namespace compatibility (callback=$callback)"
         await expect(send()).resolves.toBe("from-promise");
         harness.messaging.promiseListeners = "ignore";
 
-        if (callback) await expect(send()).rejects.toThrow("The message port closed");
-        else await expect(send()).resolves.toBeUndefined();
+        if (callback) {
+            await expect(send()).rejects.toThrow("The message port closed");
+        } else {
+            await expect(send()).resolves.toBeUndefined();
+        }
 
         // Still-called synchronous sendResponse is independent of the returned Promise's interpretation.
         receiver.onMessage.reset();
@@ -92,10 +104,12 @@ test("tabs sends reach only the selected extension-page tab/frame/document and s
     const popup = harness.contexts.create({kind: "extensionPage", contextType: "POPUP"});
     const delivered: string[] = [];
 
-    for (const context of [page, frame, other, popup]) context.onMessage.on((_message, sender, respond) => {
-        delivered.push(context.info.contextId);
-        respond(sender);
-    });
+    for (const context of [page, frame, other, popup]) {
+        context.onMessage.on((_message, sender, respond) => {
+            delivered.push(context.info.contextId);
+            respond(sender);
+        });
+    }
 
     for (const options of [{frameId: 3}, {documentId: frame.info.documentId}, {frameId: 3, documentId: frame.info.documentId}]) {
         delivered.length = 0;

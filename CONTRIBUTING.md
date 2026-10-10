@@ -9,6 +9,7 @@ Contents:
 - GitFlow: branching and PRs
 - Commits: Conventional Commits and versioning
 - Scope: cover Chrome APIs and add helpers
+- Predicate and state contracts
 - Code quality: lint, format, types
 - Tests
 - Documentation
@@ -33,7 +34,9 @@ npm ci
 ```
 
 3) Useful scripts
-- `npm run dev` — build in watch mode (tsup)
+- `npm run dev` — watch generation descriptions and build in watch mode (tsup)
+- `npm run generate` — regenerate event wrappers and API availability checks
+- `npm run generate:check` — check generated sources without writing files
 - `npm run build` — production build (tsup)
 - `npm run lint` — check code, formatting, and filenames with ESLint; does not edit files
 - `npm run fix` — apply available ESLint fixes and report remaining violations
@@ -41,6 +44,8 @@ npm ci
 - `npm run typecheck` — type-check package source and TypeScript tests with tsc
 - `npm test` / `npm run test:ci` — tests (Jest)
 - `npm run test:browser-match-patterns -- /absolute/path/to/browser` — real-browser match-pattern smoke (build first)
+- `npm run test:browser -- --browser chromium --api search --binary /absolute/path/to/browser` — production API integration tests in a real extension (build first)
+- `npm run typecheck:browser` — type-check browser scenarios against the built package
 
 Minimum Node.js version: current LTS (at release time).
 
@@ -94,9 +99,29 @@ BREAKING CHANGE: function renamed to align with Chrome naming.
 
 The goal is to cover as much of the WebExtensions/Chrome API surface as possible and provide practical helpers. For major changes, please open an issue first to discuss.
 
+Production API modules live in `src/api/`. Namespaces use directories with `methods.ts`, `methods.test.ts`,
+and a handwritten `index.ts`; native API namespaces also have generated `availability.ts` with `availability.test.ts`.
+Namespaces with listeners also have event files as described below.
+`browser-detection/` follows the same structure and exports its methods, enums, and interface.
+`browser.ts` remains a single function with `browser.test.ts`; `env.ts` and `utils.ts` also remain flat modules.
+`sidebar/` has methods and an availability check with separate Chrome, Firefox, and Opera test cases.
+Its internal `api.ts` shares native API accessors between methods and availability.
+Tests stay beside the corresponding implementations and import
+`./methods`, `./events`, or `./availability` directly. Global native API declarations live in `src/api/api.d.ts`;
+they are not re-exported from the API index. `src/types.ts`, `src/internal/`, and `src/testing/` remain outside `api/`.
+`src/api/index.ts` explicitly re-exports the public API modules. The root `src/index.ts` re-exports `./api`.
+The build copies `src/api/api.d.ts` to `dist/api.d.ts`, preserving the published declaration references.
+Keep the API export list in `src/api/index.ts`; `utils.ts` remains available through the separate `/utils` entrypoint.
+Published entrypoints, including the separate `/utils` and `/testing` exports, remain unchanged.
+
+In `src/api/action/`, handwritten `methods.ts` and generated `events.ts` share the internal `api.ts`
+selector for MV3 `action` and MV2 `browserAction`. Generated `availability.ts` uses the same selector.
+Its index exports methods, events, and availability; the selector remains internal.
+Manifest selection remains in that handwritten selector and runs when each wrapper is called.
+
 How to add a new API wrapper:
 1) Implementation
-- Create `src/<api-in-kebab-case>.ts`.
+- Create `src/api/<api-in-kebab-case>/` with `methods.ts`, `methods.test.ts`, and a handwritten `index.ts` that re-exports the methods. Register the native namespace in `codegen/availability/apis.mjs` and re-export its generated availability check. Add event files when the API has listeners, following the generation rules below.
 - Wrap callback‑style APIs into `Promise` and call `checkLastError()` inside callbacks.
 - Events must return an unsubscribe function `() => void` (see `handleListener`/`safeListener`).
 - Use precise types from `@types/chrome` (avoid `Parameters<>` in the final documentation — show real argument types).
@@ -104,7 +129,7 @@ How to add a new API wrapper:
 - Where appropriate, add cross‑MV2/MV3 helpers and cross‑browser unification (examples: `action`, `sidebar`).
 
 2) Export
-- Re-export from `src/index.ts`.
+- Re-export from `src/api/index.ts`; the root `src/index.ts` forwards the API exports.
 
 3) Documentation
 - Create `docs/<api-in-kebab-case>.md` following the template: “Documentation → Methods/Events (links to sections) → sections with real TypeScript signatures”.
@@ -115,7 +140,161 @@ How to add a new API wrapper:
 
 See the list of not-yet-covered APIs in the "Not yet covered" section of `README.md`.
 
+### Generated events
+
+Event descriptions live in `codegen/events/apis/`:
+
+- Basic subscriptions: `alarms`, `audio`, `bookmarks`, `commands`, `context-menus`, `cookies`, `declarative-net-request`, `downloads`, `history`, `identity`, `idle`, `management`,
+  `notifications`, `permissions`, `runtime`, `tab-capture`, `tab-groups`, and `tabs`.
+- Specialized or mixed subscriptions: `action`, `web-request`, `windows`, and `web-navigation`.
+
+Each namespace has its own `.mjs` description. `codegen/events/apis/index.mjs` explicitly imports these
+descriptions and exports their combined list.
+Edit these descriptions, then run `npm run generate`; do not edit their `src/api/<namespace>/events.ts` files directly.
+Keep descriptions and generated
+sources in version control. Each namespace's `index.ts` is maintained manually and re-exports `./events`
+and `./methods`. Native API wrappers and custom methods remain together in `methods.ts`.
+Source imports of these namespaces resolve to the directories' indexes.
+The public `WindowEventFilter` interface is maintained in `src/api/windows/types.ts` and re-exported by its index.
+Keep event tests in `events.test.ts` and method tests in `methods.test.ts` beside the corresponding source files.
+
+API-specific listener wrappers live in a handwritten `custom-events.ts` with their own `custom-events.test.ts`.
+For example, `commands/events.ts` generates `onCommand`, while `commands/custom-events.ts` implements
+`onSpecificCommand` by importing `onCommand` directly from `./events`. Alarms follow the same structure:
+generated `onAlarm` and handwritten `onSpecificAlarm`. The namespace index re-exports both
+event files and `./methods`. A custom listener returns the base subscription's unsubscribe function and the
+callback result, so `safeListener` can observe rejected Promises. Event generation owns only `events.ts` and must
+not rewrite custom listeners. Namespaces without custom listeners do not need these extra files.
+
+`codegen/events/generate.mjs` selects a template for each event and combines the functions and their imports
+into one module per namespace. A description's `template` selects the default (`basic` when omitted).
+An event may be a native event name, or an object such as
+`{event: "onActionIgnored", template: "basic"}` to override that default for one event.
+Basic event descriptions may also specify `callbackType` when browser payloads differ from `@types/chrome`.
+For example, `bookmarks.onChanged` makes `title` optional because Firefox can send a URL-only change.
+This changes only the callback type; the generated subscription still forwards the native payload unchanged.
+A namespace may declare `typeImports: ["TabGroup", "TabGroupRemoveInfo"]` to import reusable callback
+types from its handwritten `./types.ts`. Tab Groups uses this for optional Chromium metadata and Firefox removal details.
+Unknown templates and invalid descriptions fail generation before any files are written.
+
+Templates live in `codegen/events/templates/`:
+
+- `basic.mjs` accepts only a callback and delegates subscription and cleanup to `handleListener`.
+  Notifications use this template without an availability guard. `isAvailableNotifications()` remains
+  a separate generated function for callers that need an explicit namespace check.
+  Runtime message events also use it: `sendResponse` is a callback argument, not a registration option.
+  Their wrappers preserve callback return values, including `true` and Promises, through `safeListener`.
+  Downloads use the same template: `suggest` is a callback argument of `onDownloadsDeterminingFilename`;
+  its listener return value (including `true` for a deferred suggestion) is preserved.
+- `action.mjs` accepts a callback typed from the native `chrome.action` event and subscribes through
+  the shared `action()` selector and `handleListener`. It preserves the existing behavior when an event
+  is unavailable on the selected API; it does not fall back to another namespace or silently skip it.
+- `web-request.mjs` accepts a callback, required filter, and optional `extraInfoSpec`. All three types
+  come from that specific native event's `addListener`. It uses `safeListener` to preserve callback
+  results and contain errors, and retains the subscribed event object for cleanup.
+- `windows.mjs` accepts a callback and optional `WindowEventFilter`. It omits the second registration
+  argument when no filter is supplied, preserving the existing calling convention.
+- `web-navigation.mjs` accepts a callback and optional native filter. It forwards the filter as the
+  second registration argument, including `undefined` when omitted. Both filtered templates use
+  `safeListener` and retain the subscribed event for cleanup. `onWindowBoundsChanged` and
+  `onWebNavigationTabReplaced` override their namespace defaults with `basic`.
+
+Templates can declare additional imports, such as the handwritten `WindowEventFilter` type; the generator
+deduplicates these imports alongside the required utilities. Templates using `browser()` declare
+`usesBrowser: true`; templates using their own accessor do not receive an unused browser import.
+
+Browser API access happens when a wrapper is called, not during import. Descriptions and generation
+scripts are not part of the published runtime. Events with other registration behavior need a matching
+template under `codegen/events/templates/`, registered in `codegen/events/generate.mjs`.
+
+`codegen/generate.mjs` is the common CLI and programmatic entrypoint. It imports the default functions from
+`codegen/events/index.mjs` and `codegen/availability/index.mjs` and calls them without arguments. Each section
+index connects its own API descriptions to the algorithm in its local `generate.mjs`. Importing or calling a
+section entrypoint does not write files. Calling its default function returns module descriptions with `namespace`, `name`,
+`exports`, and `source`. The entrypoint checks output-path and export-name conflicts, then writes or checks
+`src/api/<namespace>/events.ts` and `src/api/<namespace>/availability.ts`. Namespace indexes and methods are maintained
+manually; generation owns those two generated files and does not create indexes or select public exports by scanning directories.
+
+The section algorithms still accept descriptions as an argument for focused tests; callers that need the full
+configured generation use each section's default export. Keep relative ESM imports explicit, including the
+`.mjs` extension and `/index.mjs` for directory entrypoints: these scripts run directly in Node.js.
+
+```text
+codegen/
+├── generate.mjs
+├── events/
+│   ├── index.mjs          # configured default-export generator
+│   ├── generate.mjs       # algorithm accepting descriptions
+│   ├── apis/             # per-namespace descriptions and their index.mjs list
+│   └── templates/
+└── availability/
+    ├── index.mjs          # configured default-export generator
+    ├── generate.mjs       # algorithm accepting descriptions
+    ├── apis.mjs           # namespace descriptions
+    └── templates/
+```
+
+`npm run build` generates sources before tsup and checks a separate consumer for each generated namespace,
+importing one event from the built ESM entrypoint: unused event wrappers and methods must disappear.
+Both action events have their own consumers, which must retain both manifest branches.
+Commands and alarms also have separate consumers for their base and filtered listeners. Each filtered
+consumer must retain its name check and base subscription; the base consumer must not retain the custom wrapper.
+Runtime has separate consumers for all three message events to verify callback forwarding and return values.
+`npm run dev` starts the generator under Node's watch mode alongside tsup;
+`npm run generate:watch` watches descriptions and templates without starting tsup.
+CI runs `npm run generate:check` before any build so generation cannot hide a stale checked-in file.
+When adding another event namespace, add its description under `codegen/events/apis/`, register it in
+`codegen/events/apis/index.mjs`, and explicitly re-export `./events` from the appropriate public source module.
+
+### Generated availability checks
+
+`codegen/availability/apis.mjs` explicitly lists all native API modules, including modules without events.
+Descriptions contain `namespace` and an optional `template` (`basic` by default). Export names are derived as
+`isAvailable` plus the namespace with its first letter capitalized; the rest of its camelCase is preserved.
+For example, `userScripts` produces `isAvailableUserScripts`. An optional PascalCase `alias` abbreviates
+that suffix when needed: `{namespace: "declarativeNetRequest", alias: "Dnr"}` produces `isAvailableDnr`.
+The alias does not change the native namespace or output directory. There is no `exportName` override.
+Utility modules (`browser`, `browser-detection`, `env`, and `utils`) are not native API namespaces.
+
+`codegen/availability/generate.mjs` renders one `availability.ts` per description. Its templates live in
+`codegen/availability/templates/`: `basic` checks `browser().<namespace>`, `action` uses the shared MV2/MV3
+selector, and `sidebar` uses the shared Side Panel/Sidebar Action accessors. Unknown fields, invalid namespaces,
+and unknown or mismatched specialized templates fail before any output is written. The common generation
+entrypoint also rejects duplicate output paths or export names across generators.
+
+Every check is a synchronous `() => boolean`: it returns false when the API is absent or API access throws,
+without logging, probing native methods, or caching the result. A true result means namespace presence only;
+it does not promise permission, individual method support, or successful operations. Action reads the manifest
+through its existing selector. In particular, `isAvailableUserScripts` does not probe `getScripts()` to detect
+revoked access; `canOpenSidebar` and `canCloseSidebar` remain separate method-level checks.
+
+Add `export * from "./availability"` to the handwritten namespace index. Remove any duplicate handwritten
+availability export from `methods.ts`; the existing Notifications, Scripting, and User Scripts export names
+remain unchanged. These checks now return false, rather than throwing, when WebExtension globals are absent.
+Document each function in `docs/<api>.md` and classify every new public export in the testing coverage matrix.
+
+Keep tests in each module's `availability.test.ts`, importing the generated implementation directly. Common
+namespace cases live in `tests/api/availability.ts`; Action and Sidebar have dedicated branch tests. The
+`generate:check` and codegen CLI tests cover both output kinds. Build verification bundles one availability
+consumer per namespace, checks removal of unused wrappers, and executes it without extension globals to
+verify lazy access. Clean-package tests verify synchronous types and ESM/CJS exports.
+
 ---
+
+## Predicate and state contracts
+
+Native method proxies preserve native results and errors, including boolean methods such as
+`hasOffscreen()`, `containsPermissions()`, and `getAudioMute()`. A boolean return type does not imply
+that a native proxy suppresses errors. Keep `callWithPromise()` strict.
+
+Custom safe predicates return `boolean` (or `Promise<boolean>`), with `true` only for a confirmed match
+and `false` when the condition cannot be confirmed. They contain lookup errors without logging or caching.
+When callers need to distinguish a negative result from an unknown state, expose an explicit state query,
+such as `getSidebarState(): Promise<SidebarState>`, instead of adding `undefined` to an `is`/`has` result.
+
+Operations must use strict lookups when errors matter: Action selection uses `getManifestVersion()`,
+and `showDownload()` uses `findDownload()`. Do not use a safe predicate to silently suppress operation failures.
+Test native error propagation and safe-predicate fallbacks separately, including public consumer types.
 
 ## Code quality: lint, format, types
 
@@ -130,7 +309,8 @@ See the list of not-yet-covered APIs in the "Not yet covered" section of `README
   on task failure. If tests fail after lint-staged succeeds, the formatting fixes remain staged for review.
 - Pre-commit checks formatting only for staged files, so unrelated unstaged formatting does not block a commit.
   Tests still run against the working tree. Use `npm run lint` for a full-project check.
-- Husky pre-push runs lint, typecheck, full tests, and build without modifying source files.
+- Husky pre-push runs lint, typecheck, full tests, and build. Regenerate event sources before staging them;
+  the build can update stale generated files.
 
 Formatting rules:
 
@@ -154,11 +334,11 @@ Filename rules (`project/file-naming`):
 
 - A module defining and exporting a regular class must use the exact class name in PascalCase: `BrowserClient.ts`.
   A module defining multiple exported classes must split them into separate matching files. Re-export barrels may
-  keep names such as `index.ts` or `sidebar.ts`.
+  keep names such as `index.ts`.
 - Exception classes extending `Error` (including native error subclasses and local inheritance chains) stay in their
-  owning module and do not determine its filename. For example, `SidebarError` stays in `sidebar.ts`.
-- Other files use kebab-case, including documentation: `browser-detection.ts`, `browser-detection.md`.
-- Tests use the subject's casing: `BrowserClient.test.ts` or `browser-detection.test.ts`.
+  owning module and do not determine its filename. For example, `SidebarError` stays in `src/api/sidebar/methods.ts`.
+- Other files use kebab-case, including documentation: `custom-events.ts`, `browser-detection.md`.
+- Tests use the subject's casing: `BrowserClient.test.ts` or `custom-events.test.ts`.
   Dot-separated suffixes such as `.integration.test`, `.spec`, `.config`, and `.d` stay lowercase.
 - Standard project metadata names (`README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`,
   `LICENSE`, `LICENSE.md`, and `AGENTS.md`) are exempt. Names such as `package.json` and `tsconfig.json` already comply.
@@ -180,11 +360,24 @@ Framework: **Jest** (`npm test`). Recommendations:
 - Test error paths (`runtime.lastError`).
 - For events, verify that the returned function actually removes the listener.
 - Test-kit checks belong in `tests/testing/unit/` and `tests/testing/integration/`, not in `src/testing/`.
-  Existing production-wrapper tests remain colocated in `src/`; they are outside this layout migration.
+  Production-wrapper and utility tests are colocated in `src/api/`.
+- Colocated tests import the implementation directly: `methods.test.ts` imports `./methods`,
+  `events.test.ts` imports `./events`, `custom-events.test.ts` imports `./custom-events`,
+  `availability.test.ts` imports `./availability`, and type imports
+  use their defining module.
+  Public entrypoint exports are checked separately by build verification and package-consumer tests.
 
 In CI use `npm run test:ci`. All test scripts (`npm test`, `npm run test:ci`, and `npm run test:related`) share the same Jest ESM launcher, including Node's `--experimental-vm-modules` flag. No manual `NODE_OPTIONS` setup is needed locally or in CI.
 
 Import Jest helpers explicitly in test files, for example `import {describe, expect, jest, test} from "@jest/globals"`. In ESM, the `jest` object is not a global. These imports belong only in test suites; the published `@addon-core/browser/testing` runtime remains runner-independent.
+
+### Browser API integration tests
+
+Production API integration tests live in [`tests/browser/`](tests/browser/README.md). The common runner, browser
+launchers and extension shell are shared; `api/<namespace>/` declares browser support, permission profiles and
+`.scenario.ts` files. These scenarios import the built production package and run inside real disposable extensions.
+They are separate from Jest and from the in-memory test-kit integration tests below. The regular Jest suite still
+checks browser-runner infrastructure through its `.test.mjs` files. Add new API scenarios to `tests/browser/api/index.ts`.
 
 ### Test-kit layout and dependency boundaries
 
@@ -208,7 +401,9 @@ tests/
 ├── testing/
 │   ├── unit/             # component tests grouped by the corresponding source responsibility
 │   └── integration/      # combined components, real wrappers and jsdom (no real browser)
+├── api/                  # shared test cases for colocated production API tests
 ├── consumer-types/       # fresh tarball: TypeScript, ESM, CJS and jsdom
+├── browser/              # production API integration tests in Chromium and Firefox
 ├── browser-match-patterns/ # real-browser comparisons with a temporary Chromium profile
 └── tooling/              # lint/hooks, layout and dependency-boundary guards
 ```
@@ -322,8 +517,9 @@ not Firefox/Safari validation or complete browser parity. See [scope and example
 
 Releases are performed by maintainers.
 
-The reusable CI workflow includes the [browser match-pattern smoke](#browser-match-pattern-smoke). Keep it green
-alongside unit, type, build, and consumer checks before publishing; no separate manual browser-test waiver is implied.
+The reusable CI workflow includes [production API integration tests](tests/browser/README.md) in Chromium and Firefox
+and the [browser match-pattern smoke](#browser-match-pattern-smoke). Keep these green alongside unit, type, build,
+and consumer checks before publishing; no separate manual browser-test waiver is implied.
 
 Flow (aligned with GitFlow):
 1) Merge features into `develop` via PRs.

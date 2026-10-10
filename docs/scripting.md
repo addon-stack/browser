@@ -101,8 +101,19 @@ Updates existing content scripts with new definitions.
 
 ### isAvailableScripting
 
-```
+```ts
 isAvailableScripting(): boolean
 ```
 
-Checks if the Scripting API is available in the current browser.
+Returns `true` when the `scripting` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableScripting} from "@addon-core/browser";
+
+if (isAvailableScripting()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```

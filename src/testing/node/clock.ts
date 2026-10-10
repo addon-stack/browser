@@ -37,7 +37,9 @@ export const clockEpoch = (option: true | NodeScriptClockOptions): number => {
 
     const epoch = option === true || option.epoch === undefined ? 0 : option.epoch;
 
-    if (!Number.isSafeInteger(epoch) || Math.abs(epoch) > MAX_DATE) throw nodeError("clock epoch must be an integer within the JavaScript Date range");
+    if (!Number.isSafeInteger(epoch) || Math.abs(epoch) > MAX_DATE) {
+        throw nodeError("clock epoch must be an integer within the JavaScript Date range");
+    }
 
     return epoch;
 };
@@ -60,10 +62,14 @@ export const createRuntimeClock = <TRealm>(epoch: number, hooks: {
 
         // Re-read live queues on every iteration: diagnostics may dispose/remove/recreate realms.
         for (const [realm, queue] of queues) {
-            if (!hooks.isLive(realm)) continue;
+            if (!hooks.isLive(realm)) {
+                continue;
+            }
 
             for (const timer of queue.values()) {
-                if (!selected || timer.due < selected.timer.due || (timer.due === selected.timer.due && timer.order < selected.timer.order)) selected = {realm, timer};
+                if (!selected || timer.due < selected.timer.due || (timer.due === selected.timer.due && timer.order < selected.timer.order)) {
+                    selected = {realm, timer};
+                }
             }
         }
 
@@ -73,9 +79,13 @@ export const createRuntimeClock = <TRealm>(epoch: number, hooks: {
     const pump = (end: number | undefined, budget: number): void => {
         hooks.assertActive();
 
-        if (running) throw nodeError("clock advancement is already in progress");
+        if (running) {
+            throw nodeError("clock advancement is already in progress");
+        }
 
-        if (!Number.isSafeInteger(budget) || budget <= 0) throw nodeError("clock maxTimers must be a positive safe integer");
+        if (!Number.isSafeInteger(budget) || budget <= 0) {
+            throw nodeError("clock maxTimers must be a positive safe integer");
+        }
 
         running = true;
         let count = 0;
@@ -86,13 +96,19 @@ export const createRuntimeClock = <TRealm>(epoch: number, hooks: {
                 hooks.assertActive();
                 const selected = next();
 
-                if (!selected || (end !== undefined && selected.timer.due > end)) break;
+                if (!selected || (end !== undefined && selected.timer.due > end)) {
+                    break;
+                }
 
-                if (count >= budget) throw nodeError(`clock callback budget reached after ${count} timers; last ${last}`);
+                if (count >= budget) {
+                    throw nodeError(`clock callback budget reached after ${count} timers; last ${last}`);
+                }
 
                 const {realm, timer} = selected;
 
-                if (!Number.isSafeInteger(timer.due) || Math.abs(timer.due) > MAX_DATE) throw nodeError(`clock timer deadline exceeds Date range in ${hooks.describe(realm)}`);
+                if (!Number.isSafeInteger(timer.due) || Math.abs(timer.due) > MAX_DATE) {
+                    throw nodeError(`clock timer deadline exceeds Date range in ${hooks.describe(realm)}`);
+                }
 
                 now = timer.due;
                 count++;
@@ -100,7 +116,9 @@ export const createRuntimeClock = <TRealm>(epoch: number, hooks: {
                 hooks.runOne(realm, timer);
             }
 
-            if (end !== undefined) now = end;
+            if (end !== undefined) {
+                now = end;
+            }
         } finally {
             running = false;
         }

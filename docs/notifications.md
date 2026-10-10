@@ -16,6 +16,11 @@ A promise-based wrapper for the Chrome `notifications` API to create and manage 
 
 ## Events
 
+Listeners subscribe directly to the native event. If the notifications API or the requested event is unavailable,
+subscription throws; it does not log a warning or return an empty unsubscribe function.
+Call `isAvailableNotifications()` explicitly when you need to check whether the namespace is available
+in an extension context. It does not check individual events.
+
 - [onNotificationsButtonClicked(callback)](#onNotificationsButtonClicked)
 - [onNotificationsClicked(callback)](#onNotificationsClicked)
 - [onNotificationsClosed(callback)](#onNotificationsClosed)
@@ -83,11 +88,22 @@ Updates an existing notification with new options, resolving to `true` if the no
 
 ### isAvailableNotifications
 
-```
+```ts
 isAvailableNotifications(): boolean
 ```
 
-Returns `true` if the `chrome.notifications` API is available in the current environment, otherwise `false`.
+Returns `true` when the `notifications` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableNotifications} from "@addon-core/browser";
+
+if (isAvailableNotifications()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="clearAllNotifications"></a>
 

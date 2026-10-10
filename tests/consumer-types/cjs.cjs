@@ -9,11 +9,14 @@ const checkStorage = require("./storage.cjs");
 const beforeChrome = Object.getOwnPropertyDescriptor(globalThis, "chrome");
 const beforeBrowser = Object.getOwnPropertyDescriptor(globalThis, "browser");
 const production = require("@addon-core/browser");
+const utils = require("@addon-core/browser/utils");
 const testing = require("@addon-core/browser/testing");
 const nodeTesting = require("@addon-core/browser/testing/node");
 
 assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "chrome"), beforeChrome);
 assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, "browser"), beforeBrowser);
+assert.equal(typeof utils.callBrowserMethod, "function");
+assert.equal("callBrowserMethod" in production, false);
 
 async function checkConsumer() {
     await checkContexts(production, testing);

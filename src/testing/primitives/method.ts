@@ -1,4 +1,4 @@
-export type BrowserMethodInvocationStyle = "sync" | "callback" | "promise" | "dual" | "promise-tolerant" | "hybrid";
+export type BrowserMethodInvocationStyle = "sync" | "callback" | "callback-optional" | "promise" | "dual" | "promise-tolerant" | "hybrid";
 
 export type BrowserMethodObservedInvocation = "sync" | "callback" | "promise" | "promise-tolerant" | "hybrid";
 
@@ -67,6 +67,8 @@ function observedInvocation(
     hasCallback: boolean
 ): BrowserMethodObservedInvocation {
     switch (style) {
+        case "callback-optional":
+            return hasCallback ? "callback" : "sync";
         case "dual":
             return hasCallback ? "callback" : "promise";
         case "promise-tolerant":
@@ -103,6 +105,7 @@ export function createBrowserMethod<TApi extends BrowserMethodFunction, TResult>
     const recognizesCallback =
         options.callback === "last" ||
         options.invocation === "callback" ||
+        options.invocation === "callback-optional" ||
         options.invocation === "promise" ||
         options.invocation === "dual" ||
         options.invocation === "promise-tolerant" ||
@@ -147,6 +150,7 @@ export function createBrowserMethod<TApi extends BrowserMethodFunction, TResult>
 
         const isCallbackInvocation =
             options.invocation === "callback" ||
+            (options.invocation === "callback-optional" && callback !== undefined) ||
             (options.invocation === "dual" && callback !== undefined) ||
             (options.invocation === "hybrid" && callback !== undefined);
 
@@ -203,7 +207,7 @@ export function createBrowserMethod<TApi extends BrowserMethodFunction, TResult>
                 return Promise.resolve(configuredResult.value);
             }
 
-            return configuredResult.value;
+            return options.invocation === "callback-optional" ? undefined : configuredResult.value;
         }
 
         if (activeImplementation) {
@@ -229,7 +233,7 @@ export function createBrowserMethod<TApi extends BrowserMethodFunction, TResult>
                 return implementationResult;
             }
 
-            if (isCallbackInvocation) {
+            if (isCallbackInvocation || options.invocation === "callback-optional") {
                 return undefined;
             }
 

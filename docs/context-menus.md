@@ -6,6 +6,7 @@ A promise-based wrapper for the Chrome `contextMenus` API.
 
 ## Methods
 
+- [isAvailableContextMenus()](#isAvailableContextMenus)
 - [createContextMenus(createProperties?)](#createContextMenus)
 - [removeContextMenus(menuItemId)](#removeContextMenus)
 - [removeAllContextMenus()](#removeAllContextMenus)
@@ -17,6 +18,27 @@ A promise-based wrapper for the Chrome `contextMenus` API.
 - [onContextMenusClicked(callback)](#onContextMenusClicked)
 
 ---
+
+<a name="isAvailableContextMenus"></a>
+
+### isAvailableContextMenus
+
+```ts
+isAvailableContextMenus(): boolean
+```
+
+Returns `true` when the `contextMenus` namespace is present on the API selected by `browser()` in the current context.
+Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
+The check is synchronous, does not log, and reads the current API on every call without caching.
+It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+
+```ts
+import {isAvailableContextMenus} from "@addon-core/browser";
+
+if (isAvailableContextMenus()) {
+    // The namespace is present; handle operation-specific failures when using it.
+}
+```
 
 <a name="createContextMenus"></a>
 
