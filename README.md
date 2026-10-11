@@ -197,3 +197,29 @@ Want to help expand coverage? See [CONTRIBUTING.md](CONTRIBUTING.md) to get star
 - system.storage
 - tts
 - ttsEngine
+
+## API stability and versioning
+
+The API is still evolving. **Minor releases may include breaking changes, including within `1.x`**
+(for example, `1.0.0` → `1.1.0`). Changes can affect public TypeScript types and runtime behavior.
+Under the current release policy, breaking changes increase the minor version; major versions are not bumped automatically.
+Patch releases preserve backward compatibility of the public API, including its TypeScript types and runtime behavior.
+
+To allow only patch updates within a chosen minor version, use `~` in your application's `package.json`:
+
+```json
+{
+  "dependencies": {
+    "@addon-core/browser": "~1.0.0"
+  }
+}
+```
+
+`~1.0.0` allows `1.0.1`, `1.0.2`, and later `1.0.x` patches, but excludes `1.1.0` and `2.0.0`.
+Use `"1.0.0"` without a prefix to pin one exact version. `^1.0.0` also permits minor updates,
+which may contain breaking changes under this package's policy.
+
+Before upgrading, review the [Release Notes](https://github.com/addon-stack/browser/releases) for breaking changes
+and migration instructions. Commit your lockfile for reproducible installs; the version range determines which updates
+are allowed when you update dependencies.
+See the [versioning policy](CONTRIBUTING.md#commits-conventional-commits-and-versioning) for details.
