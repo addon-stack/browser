@@ -79,9 +79,9 @@ Examples:
 - `docs(readme): add usage examples`
 
 Types and their impact on version (as configured in release-it):
-- MAJOR: never selected automatically; a major transition requires an explicit maintainer decision.
-- MINOR: breaking changes (`!`, `BREAKING CHANGE:`, or `BREAKING-CHANGE:`), `feat`, and `revert`.
-- PATCH: `fix`, `perf`, `refactor`, `ci`.
+- MAJOR: breaking changes (`!`, `BREAKING CHANGE:`, or `BREAKING-CHANGE:`) starting with `2.0.0`. Before `2.0.0`, major transitions require an explicit maintainer decision.
+- MINOR: breaking changes before `2.0.0`; `feat` and `revert` without breaking changes at any version.
+- PATCH: `fix`, `perf`, `refactor`, `ci` without breaking changes.
 - Do not trigger a release by themselves: `docs`, `test`, `chore`, `build`, `style` without breaking changes.
 
 Generated changelogs and GitHub Release Notes include only `feat`, `fix`, `perf`, `refactor`, and `revert`.
@@ -89,14 +89,16 @@ The Features section contains `feat` commits; `features` is not a supported comm
 are excluded entirely, including their breaking-change notes. This filter is separate from version calculation:
 for example, `ci` still triggers a patch release, but its commit does not appear in the release notes.
 
-This policy applies to all versions, including `0.x` and `1.x`. For example, a breaking change produces
-`0.9.0 → 0.10.0` or `1.0.0 → 1.1.0`, never an automatic major bump. Keep breaking-change markers and
-migration notes so users can identify incompatible changes. Development continues on `1.x` from the
-published `1.0.0` release, without a rollback to `0.x` or special version redirects.
+Before `2.0.0`, a breaking change produces `0.9.0 → 0.10.0` or `1.0.0 → 1.1.0`, never an automatic major bump.
+Development continues on `1.x` from the published `1.0.0` release until the explicit `2.0.0` transition,
+without a rollback to `0.x` or special version redirects. Starting with `2.0.0`, a breaking change produces
+a major release (for example, `2.4.7 → 3.0.0`); minor and patch releases preserve public TypeScript types
+and runtime compatibility. Breaking changes take precedence over other commit types regardless of commit order.
+Keep breaking-change markers and migration notes so users can identify incompatible changes.
 
 The version and release-note policies are covered by `tests/tooling/release-it.test.mjs`, which runs the installed release-it CLI
 against isolated Git repositories without publishing or changing the working repository. The tests also verify that
-automatic minor bumps are written consistently to package files and the generated changelog inside a fixture.
+automatic minor and major bumps are written consistently to package files and the generated changelog inside a fixture.
 
 Commit messages are validated by commitlint (see `.commitlintrc.json`). Changelog and version selection are automated via release-it + Conventional Changelog (see `.release-it.cjs`).
 

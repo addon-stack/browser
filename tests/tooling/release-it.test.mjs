@@ -86,32 +86,45 @@ describe("release-it version and release-note policies through the installed CLI
         ["0.9.0", "0.10.0"],
         ["0.99.9", "0.100.0"],
         ["1.0.0", "1.1.0"],
-        ["2.4.7", "2.5.0"],
-    ])("breaking changes from %s produce minor %s", (current, expected) => {
+        ["1.99.9", "1.100.0"],
+        ["2.0.0", "3.0.0"],
+        ["2.4.7", "3.0.0"],
+        ["3.4.7", "4.0.0"],
+    ])("breaking changes from %s produce %s", (current, expected) => {
         prepare(current, ["fix(api)!: change the sidebar contract"]);
         const result = preview();
         expect(result.stdout.trim()).toBe(expected);
         expect(result.status).toBe(0);
     });
 
-    test.each([
-        "refactor!: change the contract",
-        "chore(api)!: change the contract",
-        "fix(api): change the contract\n\nBREAKING CHANGE: callers must migrate",
-        "fix(api): change the contract\n\nBREAKING-CHANGE: callers must migrate",
-        "feat(api): add a method",
-        "revert: restore the previous API",
-    ])("uses a minor bump for %s", message => {
-        prepare("0.9.0", [message]);
+    describe.each([
+        ["1.0.0", "1.1.0"],
+        ["2.4.7", "3.0.0"],
+    ])("breaking markers from %s produce %s", (current, expected) => {
+        test.each([
+            "refactor!: change the contract",
+            "chore(api)!: change the contract",
+            "fix(api): change the contract\n\nBREAKING CHANGE: callers must migrate",
+            "fix(api): change the contract\n\nBREAKING-CHANGE: callers must migrate",
+        ])("recognizes %s", message => {
+            prepare(current, [message]);
+            const result = preview();
+            expect(result.stdout.trim()).toBe(expected);
+            expect(result.status).toBe(0);
+        });
+    });
+
+    test.each(["feat", "revert"])("uses a minor bump for non-breaking %s starting with 2.x", type => {
+        prepare("2.4.7", [`${type}(api): update a method`]);
         const result = preview();
-        expect(result.stdout.trim()).toBe("0.10.0");
+        expect(result.stdout.trim()).toBe("2.5.0");
         expect(result.status).toBe(0);
     });
 
     test.each(["fix", "perf", "refactor", "ci"])("uses a patch bump for %s", type => {
-        prepare("1.0.0", [`${type}: improve existing behavior`]);
+        prepare("2.4.7", [`${type}: improve existing behavior`]);
         const result = preview();
-        expect(result.stdout.trim()).toBe("1.0.1");
+        expect(result.stdout.trim()).toBe("2.4.8");
         expect(result.status).toBe(0);
     });
 
@@ -122,9 +135,19 @@ describe("release-it version and release-note policies through the installed CLI
         expect(result.stdout + result.stderr).toContain("No new version to release");
     });
 
-    test("minor changes take precedence over surrounding patches", () => {
-        prepare("0.9.0", ["fix: first correction", "refactor(api)!: change the contract", "ci: update checks"]);
-        expect(preview().stdout.trim()).toBe("0.10.0");
+    test.each([
+        ["1.0.0", "1.1.0"],
+        ["2.4.7", "3.0.0"],
+    ])("breaking changes take precedence over features and patches from %s", (current, expected) => {
+        prepare(current, [
+            "feat: add the first method",
+            "fix: first correction",
+            "refactor(api)!: change the contract",
+            "feat: add another method",
+            "ci: update checks",
+        ]);
+
+        expect(preview().stdout.trim()).toBe(expected);
     });
 
     test("does not release when there are no commits since the last tag", () => {
@@ -134,11 +157,14 @@ describe("release-it version and release-note policies through the installed CLI
         expect(result.stdout + result.stderr).toContain("No new version to release");
     });
 
-    test("preserves breaking-change notes and the parsed subject in the changelog", () => {
-        prepare("0.9.0", ["refactor(api)!: change the sidebar contract"]);
+    test.each([
+        ["1.0.0", "1.1.0"],
+        ["2.4.7", "3.0.0"],
+    ])("preserves breaking-change notes and the parsed subject from %s", (current, expected) => {
+        prepare(current, ["refactor(api)!: change the sidebar contract"]);
         const result = preview("--changelog");
         expect(result.status).toBe(0);
-        expect(result.stdout).toContain("v0.10.0");
+        expect(result.stdout).toContain(`v${expected}`);
         expect(result.stdout).toContain("### 💥 Breaking Changes");
         expect(result.stdout).toContain("* change the sidebar contract");
         expect(result.stdout).toContain("**api:** change the sidebar contract");
@@ -187,11 +213,14 @@ describe("release-it version and release-note policies through the installed CLI
         expect(JSON.parse(github.stdout)).toEqual({autoGenerate: false, notes: result.stdout});
     });
 
-    test("excluded breaking commits still bump minor without appearing in release notes", () => {
-        prepare("0.9.0", ["chore!: excluded tooling migration", "docs: excluded documentation"]);
+    test.each([
+        ["1.0.0", "1.1.0"],
+        ["2.4.7", "3.0.0"],
+    ])("excluded breaking commits still bump %s without appearing in release notes", (current, expected) => {
+        prepare(current, ["chore!: excluded tooling migration", "docs: excluded documentation"]);
         const version = preview();
         expect(version.status).toBe(0);
-        expect(version.stdout.trim()).toBe("0.10.0");
+        expect(version.stdout.trim()).toBe(expected);
 
         const changelog = preview("--changelog");
         expect(changelog.status).toBe(0);
@@ -225,8 +254,11 @@ describe("release-it version and release-note policies through the installed CLI
         expect(result.stdout.trim()).toBe(expected);
     });
 
-    test("writes an automatic minor for breaking changes without publishing or changing Git history", () => {
-        prepare("1.0.0", ["feat(api)!: change the contract"]);
+    test.each([
+        ["1.0.0", "1.1.0"],
+        ["2.4.7", "3.0.0"],
+    ])("writes the breaking release from %s without publishing or changing Git history", (current, expected) => {
+        prepare(current, ["feat(api)!: change the contract"]);
         const head = git("rev-parse", "HEAD");
         const tags = git("tag", "--list");
 
@@ -238,13 +270,12 @@ describe("release-it version and release-note policies through the installed CLI
 
         expect(result.error).toBeUndefined();
         expect(result.status).toBe(0);
-        expect(JSON.parse(readFileSync(join(directory, "package.json"), "utf8")).version).toBe("1.1.0");
+        expect(JSON.parse(readFileSync(join(directory, "package.json"), "utf8")).version).toBe(expected);
         const lock = JSON.parse(readFileSync(join(directory, "package-lock.json"), "utf8"));
-        expect(lock.version).toBe("1.1.0");
-        expect(lock.packages[""].version).toBe("1.1.0");
+        expect(lock.version).toBe(expected);
+        expect(lock.packages[""].version).toBe(expected);
         const changelog = readFileSync(join(directory, "CHANGELOG.md"), "utf8");
-        expect(changelog).toContain("v1.1.0");
-        expect(changelog).not.toContain("v2.0.0");
+        expect(changelog).toContain(`v${expected}`);
         expect(git("rev-parse", "HEAD")).toBe(head);
         expect(git("tag", "--list")).toBe(tags);
     });

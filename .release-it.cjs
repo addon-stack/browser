@@ -168,14 +168,21 @@ module.exports = () => {
                 },
 
                 whatBump: commits => {
+                    let isMinor = false;
                     let isPatch = false;
 
                     for (const commit of commits) {
                         const type = (commit.type || "").toLowerCase();
 
-                        // Automatic releases stay within the current major, including breaking changes.
-                        if (commit.breaking || commit.notes?.length || ["feat", "revert"].includes(type)) {
-                            return {level: 1};
+                        // Keep breaking changes in 0.x/1.x until the explicit 2.0.0 transition.
+                        if (commit.breaking || commit.notes?.length) {
+                            const currentMajor = Number.parseInt(pkg.version.split(".")[0], 10);
+
+                            return {level: currentMajor >= 2 ? 0 : 1};
+                        }
+
+                        if (["feat", "revert"].includes(type)) {
+                            isMinor = true;
                         }
 
                         if (["fix", "perf", "refactor", "ci"].includes(type)) {
@@ -183,7 +190,7 @@ module.exports = () => {
                         }
                     }
 
-                    return isPatch ? {level: 2} : null;
+                    return isMinor ? {level: 1} : isPatch ? {level: 2} : null;
                 },
                 writerOpts: {
                     headerPartial:

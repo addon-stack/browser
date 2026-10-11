@@ -2,11 +2,12 @@
 
 ## Release versioning
 
-- Automatic releases must never increase the major version, even for breaking changes. This applies to all versions, including `0.x` and `1.x`.
-- Breaking changes (`!`, `BREAKING CHANGE`, or `BREAKING-CHANGE`), `feat`, and `revert` produce a minor bump. `fix`, `perf`, `refactor`, and `ci` produce a patch bump.
+- Before `2.0.0`, automatic releases must never increase the major version, even for breaking changes. This applies to both `0.x` and `1.x`; the transition to `2.0.0` requires an explicit maintainer decision.
+- Breaking changes (`!`, `BREAKING CHANGE`, or `BREAKING-CHANGE`) produce a minor bump before `2.0.0` and a major bump starting with `2.x`. Breaking changes take precedence over all other commit types regardless of commit order.
+- Without breaking changes, `feat` and `revert` produce a minor bump; `fix`, `perf`, `refactor`, and `ci` produce a patch bump. Starting with `2.0.0`, minor and patch releases must preserve public API compatibility, including TypeScript types and runtime behavior.
 - `docs`, `test`, `chore`, `build`, and `style` without breaking changes do not trigger a release on their own.
 - Keep breaking-change markers and migration notes; the minor-bump policy does not make incompatible changes backward compatible.
-- Continue from the published `1.0.0` release on the `1.x` line. Do not restore a `0.x` release baseline or redirect version numbers. A major transition requires an explicit maintainer decision.
+- Continue from the published `1.0.0` release on the `1.x` line until the explicit `2.0.0` transition. Do not restore a `0.x` release baseline or redirect version numbers.
 - Configure `whatBump` directly under `@release-it/conventional-changelog`. Verify version-policy changes through the installed release-it CLI in isolated fixtures, not only by calling the callback directly.
 
 ## Changelog
