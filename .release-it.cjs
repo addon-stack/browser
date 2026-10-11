@@ -27,7 +27,7 @@ function getContributors() {
         let fromTag;
 
         try {
-            const tag = execSync("git describe --tags --abbrev=0", {encoding: "utf8"}).trim();
+            const tag = execSync("git describe --tags --match=\"v*\" --exclude=v1.0.0 --abbrev=0", {encoding: "utf8"}).trim();
             fromTag = tag || null;
         } catch {
             fromTag = null;
@@ -99,11 +99,6 @@ const types = new Map([
     ["fix", "🐛 Bug Fixed"],
     ["perf", "⚡️ Performance Improvements"],
     ["refactor", "🛠️ Refactoring"],
-    ["docs", "📝 Documentation"],
-    ["test", "🧪 Tests"],
-    ["build", "🏗️ Build System"],
-    ["ci", "🤖 CI"],
-    ["chore", "🧹 Chores"],
     ["revert", "⏪ Reverts"],
 ]);
 
@@ -124,6 +119,8 @@ module.exports = () => {
             // release-it placeholder
             commitMessage: "chore(release): v${version}",
             tag: true,
+            // Keep the accidental release in history, but never use it as a release baseline.
+            tagExclude: "v1.0.0",
             // release-it placeholder
             tagName: "v${version}",
             // release-it placeholder
@@ -133,6 +130,7 @@ module.exports = () => {
 
         github: {
             release: true,
+            makeLatest: true,
             // release-it placeholder
             releaseName: "v${version}",
             autoGenerate: false,
@@ -149,13 +147,18 @@ module.exports = () => {
         },
 
         plugins: {
+            "./scripts/ReleaseVersionGuard.mjs": {currentVersion: pkg.version},
             "@release-it/conventional-changelog": {
                 infile: "CHANGELOG.md",
                 preset: "conventionalcommits",
+                // The bump recommender discovers tags independently of release-it's Git plugin.
+                tagOpts: {prefix: /^v(?!1\.0\.0$)/},
 
                 parserOpts: {
                     headerPattern: /^(\w+)(?:\(([^)]+)\))?(!)?:\s(.+?)(?:\s\(#\d+\))?$/,
                     headerCorrespondence: ["type", "scope", "breaking", "subject"],
+                    // The preset's separate breaking-header parser uses different capture groups.
+                    breakingHeaderPattern: null,
                     noteKeywords: ["BREAKING CHANGE", "BREAKING-CHANGE"],
                 },
 
@@ -170,44 +173,30 @@ module.exports = () => {
                     contributors,
                 },
 
-                recommendedBumpOpts: {
-                    preset: "conventionalcommits",
-                    whatBump: commits => {
-                        let isMajor = false;
-                        let isMinor = false;
-                        let isPatch = false;
+                whatBump: commits => {
+                    let isMinor = false;
+                    let isPatch = false;
 
-                        for (const commit of commits) {
-                            if (commit.notes?.some(n => /BREAKING CHANGE/i.test(n.title || n.text || ""))) {
-                                isMajor = true;
-                                break;
-                            }
+                    for (const commit of commits) {
+                        const type = (commit.type || "").toLowerCase();
 
-                            const type = (commit.type || "").toLowerCase();
+                        // Keep breaking changes in 0.x until the explicit first stable release.
+                        if (commit.breaking || commit.notes?.length) {
+                            const currentMajor = Number.parseInt(pkg.version.split(".")[0], 10);
 
-                            if (type === "feat") {
-                                isMinor = true;
-                            }
-
-                            if (["fix", "perf", "refactor", "ci"].includes(type)) {
-                                isPatch = true;
-                            }
+                            return {level: currentMajor >= 1 ? 0 : 1};
                         }
 
-                        if (isMajor) {
-                            return {level: 0};
+                        if (["feat", "revert"].includes(type)) {
+                            isMinor = true;
                         }
 
-                        if (isMinor) {
-                            return {level: 1};
+                        if (["fix", "perf", "refactor", "ci"].includes(type)) {
+                            isPatch = true;
                         }
+                    }
 
-                        if (isPatch) {
-                            return {level: 2};
-                        }
-
-                        return null;
-                    },
+                    return isMinor ? {level: 1} : isPatch ? {level: 2} : null;
                 },
                 writerOpts: {
                     headerPartial:
@@ -225,22 +214,21 @@ module.exports = () => {
                     commitGroupsSort: "title",
                     commitsSort: ["scope", "subject"],
                     transform: commit => {
+                        const type = (commit.type || "").toLowerCase().replace(/!+$/, "");
+                        const section = types.get(type);
+
+                        // Filter before collecting notes so excluded commits cannot leak into Breaking Changes.
+                        if (!section) {
+                            return null;
+                        }
+
                         const nextCommit = {...commit};
+                        nextCommit.type = section;
 
                         // If header had a '!' (captured into `breaking` by parser), ensure we surface a BREAKING note
                         if (nextCommit.breaking && (!nextCommit.notes || nextCommit.notes.length === 0)) {
                             const text = nextCommit.subject || nextCommit.header;
                             nextCommit.notes = [{title: "BREAKING CHANGE", text}];
-                        }
-
-                        // Normalize type: lowercase and drop trailing '!' so 'feat!' maps to 'feat'
-                        const type = (nextCommit.type || "").toLowerCase().replace(/!+$/, "");
-                        const section = types.get(type);
-
-                        if (section) {
-                            nextCommit.type = section;
-                        } else {
-                            nextCommit.type = "🧩 Other";
                         }
 
                         if (nextCommit.body) {

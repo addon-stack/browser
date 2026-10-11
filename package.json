@@ -1,6 +1,6 @@
 {
   "name": "@addon-core/browser",
-  "version": "1.0.0",
+  "version": "0.9.0",
   "description": "Browser extension APIs with typed helpers, promise-based calls, and easy event cleanup.",
   "keywords": [
     "browser",
@@ -82,7 +82,8 @@
     "test:related": "npm test -- --bail --passWithNoTests",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json --noEmit",
     "release": "release-it",
-    "release:preview": "release-it --no-github.release --no-npm.publish --no-git.tag --ci"
+    "release:preview": "release-it --release-version --no-github --npm.publish=false --git.push=false --git.requireCleanWorkingDir=false",
+    "release:notes": "release-it --changelog --no-github --npm.publish=false --git.push=false --git.requireCleanWorkingDir=false"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.0.0",
