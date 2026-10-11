@@ -2,6 +2,8 @@ import {defineConfig, type Options} from "tsup";
 
 const common: Options = {
     bundle: true,
+    // Clean dist before tsup starts; parallel builds share this output directory.
+    clean: false,
     outDir: "dist",
     sourcemap: true,
 };
@@ -17,7 +19,6 @@ export default defineConfig([
         outExtension() {
             return {js: ".js"};
         },
-        clean: true,
     },
     {
         ...common,
@@ -31,7 +32,6 @@ export default defineConfig([
         outExtension() {
             return {js: ".js"};
         },
-        clean: false,
     },
     {
         ...common,
@@ -41,7 +41,6 @@ export default defineConfig([
         outExtension() {
             return {js: ".cjs"};
         },
-        clean: false,
     },
     {
         ...common,
@@ -53,7 +52,6 @@ export default defineConfig([
         outExtension() {
             return {js: ".cjs"};
         },
-        clean: false,
     },
     {
         ...common,
@@ -66,7 +64,6 @@ export default defineConfig([
         outExtension({format}) {
             return {js: format === "cjs" ? ".cjs" : ".js"};
         },
-        clean: false,
     },
     {
         ...common,
@@ -79,6 +76,5 @@ export default defineConfig([
         outExtension() {
             return {js: ".cjs"};
         },
-        clean: false,
     },
 ]);
