@@ -99,11 +99,6 @@ const types = new Map([
     ["fix", "🐛 Bug Fixed"],
     ["perf", "⚡️ Performance Improvements"],
     ["refactor", "🛠️ Refactoring"],
-    ["docs", "📝 Documentation"],
-    ["test", "🧪 Tests"],
-    ["build", "🏗️ Build System"],
-    ["ci", "🤖 CI"],
-    ["chore", "🧹 Chores"],
     ["revert", "⏪ Reverts"],
 ]);
 
@@ -156,6 +151,8 @@ module.exports = () => {
                 parserOpts: {
                     headerPattern: /^(\w+)(?:\(([^)]+)\))?(!)?:\s(.+?)(?:\s\(#\d+\))?$/,
                     headerCorrespondence: ["type", "scope", "breaking", "subject"],
+                    // The preset's separate breaking-header parser uses different capture groups.
+                    breakingHeaderPattern: null,
                     noteKeywords: ["BREAKING CHANGE", "BREAKING-CHANGE"],
                 },
 
@@ -170,44 +167,23 @@ module.exports = () => {
                     contributors,
                 },
 
-                recommendedBumpOpts: {
-                    preset: "conventionalcommits",
-                    whatBump: commits => {
-                        let isMajor = false;
-                        let isMinor = false;
-                        let isPatch = false;
+                whatBump: commits => {
+                    let isPatch = false;
 
-                        for (const commit of commits) {
-                            if (commit.notes?.some(n => /BREAKING CHANGE/i.test(n.title || n.text || ""))) {
-                                isMajor = true;
-                                break;
-                            }
+                    for (const commit of commits) {
+                        const type = (commit.type || "").toLowerCase();
 
-                            const type = (commit.type || "").toLowerCase();
-
-                            if (type === "feat") {
-                                isMinor = true;
-                            }
-
-                            if (["fix", "perf", "refactor", "ci"].includes(type)) {
-                                isPatch = true;
-                            }
-                        }
-
-                        if (isMajor) {
-                            return {level: 0};
-                        }
-
-                        if (isMinor) {
+                        // Automatic releases stay within the current major, including breaking changes.
+                        if (commit.breaking || commit.notes?.length || ["feat", "revert"].includes(type)) {
                             return {level: 1};
                         }
 
-                        if (isPatch) {
-                            return {level: 2};
+                        if (["fix", "perf", "refactor", "ci"].includes(type)) {
+                            isPatch = true;
                         }
+                    }
 
-                        return null;
-                    },
+                    return isPatch ? {level: 2} : null;
                 },
                 writerOpts: {
                     headerPartial:
@@ -225,22 +201,21 @@ module.exports = () => {
                     commitGroupsSort: "title",
                     commitsSort: ["scope", "subject"],
                     transform: commit => {
+                        const type = (commit.type || "").toLowerCase().replace(/!+$/, "");
+                        const section = types.get(type);
+
+                        // Filter before collecting notes so excluded commits cannot leak into Breaking Changes.
+                        if (!section) {
+                            return null;
+                        }
+
                         const nextCommit = {...commit};
+                        nextCommit.type = section;
 
                         // If header had a '!' (captured into `breaking` by parser), ensure we surface a BREAKING note
                         if (nextCommit.breaking && (!nextCommit.notes || nextCommit.notes.length === 0)) {
                             const text = nextCommit.subject || nextCommit.header;
                             nextCommit.notes = [{title: "BREAKING CHANGE", text}];
-                        }
-
-                        // Normalize type: lowercase and drop trailing '!' so 'feat!' maps to 'feat'
-                        const type = (nextCommit.type || "").toLowerCase().replace(/!+$/, "");
-                        const section = types.get(type);
-
-                        if (section) {
-                            nextCommit.type = section;
-                        } else {
-                            nextCommit.type = "🧩 Other";
                         }
 
                         if (nextCommit.body) {
