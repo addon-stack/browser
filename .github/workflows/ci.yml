@@ -82,7 +82,7 @@ jobs:
     steps:
       - id: set
         run: |
-          if [[ "${{ inputs.full }}" == "true" ]]; then
+          if [[ "${{ inputs.full }}" == "true" || "${{ github.ref }}" == "refs/heads/develop" ]]; then
             echo 'matrix={"os":["ubuntu-24.04","windows-latest"],"node":[22,24]}' >> "$GITHUB_OUTPUT"
             echo 'name_suffix=(full matrix)' >> "$GITHUB_OUTPUT"
           else
