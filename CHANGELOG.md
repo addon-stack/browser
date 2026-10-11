@@ -1,5 +1,139 @@
 # Changelog
 
+## 🚀 Release `@addon-core/browser` v1.0.0 (2026-10-11)
+
+### 💥 Breaking Changes
+
+* getSidebarPath now returns extension-local paths without a
+leading slash and preserves query parameters and fragments. isOpenSidebar
+without a window ID checks the last focused window and returns false when
+its state cannot be confirmed. isDownloadExists returns false for missing
+records and failed checks instead of undefined or a rejected Promise.
+
+
+### ✨ Features
+
+* **api:** feat(api)!: add sidebar states and safe custom predicates ([ad9ba40](https://github.com/addon-stack/browser/commit/ad9ba4041c225d5913ff878f1ae04029247c1a0f))
+
+  Expose SidebarState and getSidebarState for open, closed, and unknown results.
+  Normalize extension-local sidebar paths while preserving query and fragment.
+  Make custom predicates return false when a condition cannot be confirmed.
+  Preserve native proxy errors and strict lookups used by Action and downloads.
+
+  Cover failure paths, browser profiles, public types, and ESM/CJS consumers.
+  Document predicate contracts and reserve changelog updates for release-it.
+
+* **api:** generate availability checks for all API modules ([d997cad](https://github.com/addon-stack/browser/commit/d997cad30c8304da07a59bf97974280ca96b2415))
+
+  Generate synchronous namespace checks for 27 browser APIs, deriving each
+  export name from its namespace and returning false on unavailable globals
+  or access errors. Preserve the three existing public availability names
+  and share Action and Sidebar selectors with their methods.
+
+  Encapsulate API descriptions behind default-export codegen entrypoints.
+  Move event descriptions into events/apis and keep rendering algorithms
+  separate from the common validation and file-writing runner.
+
+  Cover availability behavior, generator entrypoints, public types, ESM/CJS
+  consumers, and tree shaking. Update API documentation, contributor
+  guidance, generation commands, and watch paths.
+
+* **api:** generate event wrappers and standardize API modules ([83f24a4](https://github.com/addon-stack/browser/commit/83f24a46610a853a027ddf87d45c8190f1121348))
+
+  Move production APIs into src/api with separate method, event, and custom
+  listener modules while preserving published package entrypoints.
+
+  Generate 71 native event wrappers across 19 namespaces from shared and
+  specialized templates. Check generated sources in CI and verify tree
+  shaking against built-package consumers.
+
+  Add onSpecificAlarms and onSpecificCommands map-based subscriptions.
+  Subscribe notification listeners directly and retain an explicit
+  availability check for callers.
+
+  Fix sidebar capability detection, asynchronous error propagation, and
+  window filtering. Align Opera setIcon declarations and the test harness
+  with its optional callback signature.
+
+  Cover methods, events, custom listeners, and consumer types, and update
+  API documentation and contributor guidance for the new structure.
+
+* **bookmarks:** add native methods and generated events ([8dc0860](https://github.com/addon-stack/browser/commit/8dc08603da0063798319a2032ada9cc5e50fcc11))
+
+
+* **dnr:** add native methods and generated event ([d682a84](https://github.com/addon-stack/browser/commit/d682a8413542d730c0cfa20cb22875c1f4e08def))
+
+  Add thirteen Dnr method wrappers, generated availability and debug subscriptions,
+  and browser-specific types. Document native permissions and compatibility.
+  Cover real network effects in Chromium and Firefox.
+
+* **search:** add search API and browser integration tests ([1b6a183](https://github.com/addon-stack/browser/commit/1b6a1831c8c9b3ad465ba65db251920dbf5c9eb2))
+
+  Add search helpers, capability checks, public types, and documentation.
+  Verify native behavior in isolated Chromium and Firefox extensions.
+
+  Run the browser suites in CI before publishing releases.
+
+* **tab-groups:** add native methods and generated events ([c89015a](https://github.com/addon-stack/browser/commit/c89015a694cdebacd3c11d02dbc0b155eacb1c21))
+
+  Add four methods, generated subscriptions and availability, portable types,
+  documentation and consumer checks. Cover the lifecycle and browser-specific
+  payloads in Chromium and Firefox, including permission-denied profiles.
+
+  Fix ungroupTab to use Firefox's Promise-only invocation while retaining
+  callback support for the chrome facade.
+
+* **top-sites:** add API wrappers and browser integration tests ([887302b](https://github.com/addon-stack/browser/commit/887302b17308763cd87d757ff316141eba45497f))
+
+  Add getTopSites with Firefox options and generated availability checks.
+  Cover native behavior, permissions, installed consumers, and tree shaking.
+  Document the API using the shared reference format.
+
+
+
+### 🐛 Bug Fixed
+
+* **api:** normalize native calls and verify identity browser flows ([2e9b1df](https://github.com/addon-stack/browser/commit/2e9b1df84c71c193e4f3c06b56bcef48f562d36d))
+
+
+* **build:** clean output before parallel tsup builds ([8259d25](https://github.com/addon-stack/browser/commit/8259d25cee402b318da2128ea3b9bea4de71f432))
+
+
+
+
+### 📝 Documentation
+
+* refresh package positioning and README ([9353cc5](https://github.com/addon-stack/browser/commit/9353cc5f2432aabf180a0f1a1439714d1d974947))
+
+
+
+
+### 🤖 CI
+
+* update actions and Node matrix ([cb397dc](https://github.com/addon-stack/browser/commit/cb397dc581432ed1f05cff99f95399a0823a65d6))
+
+
+
+
+### 🧩 Other
+
+* apply brace and import grouping rules ([ea46e62](https://github.com/addon-stack/browser/commit/ea46e6294e042e7fe8a0a31ce17201a0244f8265))
+
+
+
+
+### 🧹 Chores
+
+* **eslint:** enforce braces and grouped imports ([5dd4e39](https://github.com/addon-stack/browser/commit/5dd4e3978719fe72efaeb581ddedb0feb82474d9))
+
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 16
+
 ## 🚀 Release `@addon-core/browser` v0.9.0 (2026-09-23)
 
 
