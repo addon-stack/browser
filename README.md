@@ -200,29 +200,31 @@ Want to help expand coverage? See [CONTRIBUTING.md](CONTRIBUTING.md) to get star
 
 ## API stability and versioning
 
-The `1.x` series is a period of shaping the package's public API contracts and working toward comprehensive coverage
-of currently available WebExtension and Chrome APIs. As this work progresses, method signatures, TypeScript types,
-and runtime behavior may change. **Minor releases in `1.x` may include breaking changes**
-(for example, `1.0.0` → `1.1.0`).
+The `0.x` series is a period of shaping the package's public API contracts and working toward comprehensive coverage
+of currently available WebExtension and Chrome APIs. Method signatures, TypeScript types, and runtime behavior may
+change. **Minor releases in `0.x` may include breaking changes** (for example, `0.9.0` → `0.10.0`).
 
-**Version `2.0.0` will mark the transition to stable public API contracts.** It will be released through an explicit
-maintainer decision when those contracts are ready. Starting with `2.0.0`, breaking changes will require a major release
-(for example, `2.4.0` → `3.0.0`), while minor releases will add backward-compatible functionality.
+**The first stable release will be `1.0.1`.** It will be released through an explicit maintainer decision when the
+public API contracts are ready. From stable `1.x` onward, breaking changes require a major release
+(for example, `1.4.0` → `2.0.0`), while minor releases add backward-compatible functionality.
 Patch releases preserve backward compatibility at every version, including public TypeScript types and runtime behavior.
+
+Version `1.0.0` was published with an incorrect version number and does not mark a stable API contract.
+Development continues on `0.x`; the replacement release is `0.10.0`. Consumers of `1.0.0` must explicitly change
+their dependency to `0.10.0` (or the range below) and update their lockfile. Existing `^1.0.0` ranges do not accept `0.x`.
 
 To allow only patch updates within a chosen minor version, use `~` in your application's `package.json`:
 
 ```json
 {
   "dependencies": {
-    "@addon-core/browser": "~1.0.0"
+    "@addon-core/browser": "~0.10.0"
   }
 }
 ```
 
-`~1.0.0` allows `1.0.1`, `1.0.2`, and later `1.0.x` patches, but excludes `1.1.0` and `2.0.0`.
-Use `"1.0.0"` without a prefix to pin one exact version. `^1.0.0` also permits minor updates,
-which may contain breaking changes during the `1.x` series.
+`~0.10.0` allows `0.10.1`, `0.10.2`, and later `0.10.x` patches, but excludes `0.11.0` and `1.x`.
+Use `"0.10.0"` without a prefix to pin one exact version. For this `0.10.x` range, `^0.10.0` also allows only patch updates.
 
 Before upgrading, review the [Release Notes](https://github.com/addon-stack/browser/releases) for breaking changes
 and migration instructions. Commit your lockfile for reproducible installs; the version range determines which updates

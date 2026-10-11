@@ -1,5 +1,5 @@
 import {spawnSync} from "node:child_process";
-import {copyFileSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync} from "node:fs";
+import {copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {fileURLToPath} from "node:url";
@@ -30,7 +30,13 @@ describe("release-it version and release-note policies through the installed CLI
     };
 
     const prepare = (version, messages) => {
-        const pkg = {name: "@addon-core/browser-release-test", version};
+        const {scripts} = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+
+        const pkg = {
+            name: "@addon-core/browser-release-test", version,
+            scripts: {"release:preview": scripts["release:preview"], "release:notes": scripts["release:notes"]},
+        };
+
         writeFileSync(join(directory, "package.json"), JSON.stringify(pkg));
         writeFileSync(join(directory, "package-lock.json"), JSON.stringify({...pkg, lockfileVersion: 3, packages: {"": pkg}}));
         writeFileSync(join(directory, "CHANGELOG.md"), "# Fixture changelog\n");
@@ -42,6 +48,38 @@ describe("release-it version and release-note policies through the installed CLI
             git("commit", "--quiet", "--allow-empty", "-m", message);
         }
     };
+
+    const setVersion = version => {
+        const packagePath = join(directory, "package.json");
+        const pkg = JSON.parse(readFileSync(packagePath, "utf8"));
+        pkg.version = version;
+        writeFileSync(packagePath, JSON.stringify(pkg));
+        const lockPath = join(directory, "package-lock.json");
+        const lock = JSON.parse(readFileSync(lockPath, "utf8"));
+        lock.version = version;
+        lock.packages[""].version = version;
+        writeFileSync(lockPath, JSON.stringify(lock));
+    };
+
+    const prepareRecovery = () => {
+        prepare("0.9.0", ["refactor(sidebar)!: change the sidebar contract"]);
+        git("commit", "--quiet", "--allow-empty", "--author", "Early Contributor <early@example.invalid>", "-m", "feat(api): add bookmarks");
+        setVersion("1.0.0");
+        git("add", ".");
+        git("commit", "--quiet", "-m", "chore(release): v1.0.0");
+        git("tag", "v1.0.0");
+        git("commit", "--quiet", "--allow-empty", "-m", "fix: correct release configuration");
+        setVersion("0.9.0");
+        git("add", ".");
+        git("commit", "--quiet", "-m", "chore: restore the 0.x release baseline");
+    };
+
+    const release = (...args) => spawnSync(process.execPath, [
+        join(root, "node_modules/release-it/bin/release-it.js"),
+        "--ci", "--no-github", "--npm.publish=false",
+        "--git.commit=false", "--git.tag=false", "--git.push=false",
+        ...args,
+    ], {cwd: directory, env, encoding: "utf8", timeout: 10000});
 
     const preview = (mode = "--release-version", ...args) => {
         const files = ["package.json", "package-lock.json", "CHANGELOG.md"];
@@ -69,6 +107,8 @@ describe("release-it version and release-note policies through the installed CLI
     beforeEach(() => {
         directory = mkdtempSync(join(tmpdir(), "browser-release-policy-"));
         copyFileSync(join(root, ".release-it.cjs"), join(directory, ".release-it.cjs"));
+        mkdirSync(join(directory, "scripts"));
+        copyFileSync(join(root, "scripts/ReleaseVersionGuard.mjs"), join(directory, "scripts/ReleaseVersionGuard.mjs"));
         symlinkSync(join(root, "node_modules"), join(directory, "node_modules"), process.platform === "win32" ? "junction" : "dir");
         writeFileSync(join(directory, ".gitignore"), "node_modules/\n");
         git("init", "--quiet");
@@ -85,8 +125,8 @@ describe("release-it version and release-note policies through the installed CLI
     test.each([
         ["0.9.0", "0.10.0"],
         ["0.99.9", "0.100.0"],
-        ["1.0.0", "1.1.0"],
-        ["1.99.9", "1.100.0"],
+        ["1.0.1", "2.0.0"],
+        ["1.99.9", "2.0.0"],
         ["2.0.0", "3.0.0"],
         ["2.4.7", "3.0.0"],
         ["3.4.7", "4.0.0"],
@@ -98,7 +138,8 @@ describe("release-it version and release-note policies through the installed CLI
     });
 
     describe.each([
-        ["1.0.0", "1.1.0"],
+        ["0.9.0", "0.10.0"],
+        ["1.0.1", "2.0.0"],
         ["2.4.7", "3.0.0"],
     ])("breaking markers from %s produce %s", (current, expected) => {
         test.each([
@@ -114,17 +155,17 @@ describe("release-it version and release-note policies through the installed CLI
         });
     });
 
-    test.each(["feat", "revert"])("uses a minor bump for non-breaking %s starting with 2.x", type => {
-        prepare("2.4.7", [`${type}(api): update a method`]);
+    test.each(["feat", "revert"])("uses a minor bump for non-breaking %s starting with 1.x", type => {
+        prepare("1.4.7", [`${type}(api): update a method`]);
         const result = preview();
-        expect(result.stdout.trim()).toBe("2.5.0");
+        expect(result.stdout.trim()).toBe("1.5.0");
         expect(result.status).toBe(0);
     });
 
     test.each(["fix", "perf", "refactor", "ci"])("uses a patch bump for %s", type => {
-        prepare("2.4.7", [`${type}: improve existing behavior`]);
+        prepare("1.4.7", [`${type}: improve existing behavior`]);
         const result = preview();
-        expect(result.stdout.trim()).toBe("2.4.8");
+        expect(result.stdout.trim()).toBe("1.4.8");
         expect(result.status).toBe(0);
     });
 
@@ -136,7 +177,7 @@ describe("release-it version and release-note policies through the installed CLI
     });
 
     test.each([
-        ["1.0.0", "1.1.0"],
+        ["1.0.1", "2.0.0"],
         ["2.4.7", "3.0.0"],
     ])("breaking changes take precedence over features and patches from %s", (current, expected) => {
         prepare(current, [
@@ -158,7 +199,7 @@ describe("release-it version and release-note policies through the installed CLI
     });
 
     test.each([
-        ["1.0.0", "1.1.0"],
+        ["1.0.1", "2.0.0"],
         ["2.4.7", "3.0.0"],
     ])("preserves breaking-change notes and the parsed subject from %s", (current, expected) => {
         prepare(current, ["refactor(api)!: change the sidebar contract"]);
@@ -214,7 +255,7 @@ describe("release-it version and release-note policies through the installed CLI
     });
 
     test.each([
-        ["1.0.0", "1.1.0"],
+        ["1.0.1", "2.0.0"],
         ["2.4.7", "3.0.0"],
     ])("excluded breaking commits still bump %s without appearing in release notes", (current, expected) => {
         prepare(current, ["chore!: excluded tooling migration", "docs: excluded documentation"]);
@@ -245,8 +286,8 @@ describe("release-it version and release-note policies through the installed CLI
     });
 
     test.each([
-        ["0.9.0", "1.0.0"],
-        ["1.0.0", "2.0.0"],
+        ["1.0.1", "2.0.0"],
+        ["2.4.7", "3.0.0"],
     ])("allows an explicitly requested major from %s without redirecting %s", (current, expected) => {
         prepare(current, ["feat: add a method"]);
         const result = preview("--release-version", "--increment=major");
@@ -254,8 +295,106 @@ describe("release-it version and release-note policies through the installed CLI
         expect(result.stdout.trim()).toBe(expected);
     });
 
+    test.each(["major", "premajor", "1.0.0", "1.0.0-rc.0", "1.0.0+build", "1.1.0", "2.0.0"])("rejects an incorrect first stable version %s before writes", increment => {
+        prepare("0.9.0", ["feat: add a method"]);
+        const result = preview("--release-version", `--increment=${increment}`);
+        expect(result.status).toBe(1);
+        expect(result.stderr).toContain("1.0.1");
+        const files = ["package.json", "package-lock.json", "CHANGELOG.md"];
+        const before = files.map(file => readFileSync(join(directory, file), "utf8"));
+        expect(release(`--increment=${increment}`).status).toBe(1);
+        expect(files.map(file => readFileSync(join(directory, file), "utf8"))).toEqual(before);
+        expect(git("status", "--porcelain")).toBe("");
+    });
+
+    test("prepares 0.10.0 and all changes since 0.9.0 while preserving the accidental tag", () => {
+        prepareRecovery();
+        const accidentalTag = git("rev-parse", "v1.0.0");
+        const version = preview();
+        expect(version.status).toBe(0);
+        expect(version.stdout.trim()).toBe("0.10.0");
+
+        const notes = preview("--changelog");
+        expect(notes.status).toBe(0);
+        expect(notes.stdout).toContain("v0.10.0");
+        expect(notes.stdout).toContain("add bookmarks");
+        expect(notes.stdout).toContain("change the sidebar contract");
+        expect(notes.stdout).toContain("correct release configuration");
+        expect(notes.stdout).toContain("Early Contributor");
+        expect(notes.stdout).not.toContain("chore(release)");
+        expect(git("rev-parse", "v1.0.0")).toBe(accidentalTag);
+    });
+
     test.each([
-        ["1.0.0", "1.1.0"],
+        ["fix: correct a method", "0.10.1"],
+        ["feat: add a method", "0.11.0"],
+        ["refactor!: change a method", "0.11.0"],
+    ])("writes the recovery release and continues 0.x for %s", (message, expected) => {
+        prepareRecovery();
+        const accidentalTag = git("rev-parse", "v1.0.0");
+        const result = release();
+        expect(result.status).toBe(0);
+        expect(JSON.parse(readFileSync(join(directory, "package.json"), "utf8")).version).toBe("0.10.0");
+        const lock = JSON.parse(readFileSync(join(directory, "package-lock.json"), "utf8"));
+        expect(lock.version).toBe("0.10.0");
+        expect(lock.packages[""].version).toBe("0.10.0");
+        expect(readFileSync(join(directory, "CHANGELOG.md"), "utf8")).toContain("v0.10.0");
+        git("add", ".");
+        git("commit", "--quiet", "-m", "chore(release): v0.10.0");
+        git("tag", "v0.10.0");
+        git("commit", "--quiet", "--allow-empty", "-m", message);
+        const next = preview();
+        expect(next.status).toBe(0);
+        expect(next.stdout.trim()).toBe(expected);
+        const notes = preview("--changelog");
+        expect(notes.stdout).not.toContain("add bookmarks");
+        expect(notes.stdout).not.toContain("change the sidebar contract");
+        expect(git("rev-parse", "v1.0.0")).toBe(accidentalTag);
+    });
+
+    test("releases the explicitly requested 1.0.1 and uses major bumps for later breaking changes", () => {
+        prepareRecovery();
+        const previewResult = preview("--release-version", "--increment=1.0.1");
+        expect(previewResult.status).toBe(0);
+        expect(previewResult.stdout.trim()).toBe("1.0.1");
+        const result = release("1.0.1");
+        expect(result.status).toBe(0);
+        expect(JSON.parse(readFileSync(join(directory, "package.json"), "utf8")).version).toBe("1.0.1");
+        git("add", ".");
+        git("commit", "--quiet", "-m", "chore(release): v1.0.1");
+        git("tag", "v1.0.1");
+        git("commit", "--quiet", "--allow-empty", "-m", "feat!: change the stable contract");
+        expect(preview().stdout.trim()).toBe("2.0.0");
+    });
+
+    test("allows a release candidate for 1.0.1", () => {
+        prepareRecovery();
+        const result = preview("--release-version", "--increment=1.0.1-rc.0", "--preRelease=rc");
+        expect(result.status).toBe(0);
+        expect(result.stdout.trim()).toBe("1.0.1-rc.0");
+    });
+
+    test("the documented npm preview commands leave package files and history unchanged", () => {
+        prepareRecovery();
+        const files = ["package.json", "package-lock.json", "CHANGELOG.md"];
+        const before = files.map(file => readFileSync(join(directory, file), "utf8"));
+        const head = git("rev-parse", "HEAD");
+        const tags = git("tag", "--list");
+
+        for (const script of ["release:preview", "release:notes"]) {
+            const result = spawnSync("npm", ["run", "--silent", script], {cwd: directory, env, encoding: "utf8", timeout: 10000});
+            expect(result.status).toBe(0);
+            expect(result.stdout).toContain("0.10.0");
+        }
+
+        expect(files.map(file => readFileSync(join(directory, file), "utf8"))).toEqual(before);
+        expect(git("rev-parse", "HEAD")).toBe(head);
+        expect(git("tag", "--list")).toBe(tags);
+        expect(git("status", "--porcelain")).toBe("");
+    });
+
+    test.each([
+        ["1.0.1", "2.0.0"],
         ["2.4.7", "3.0.0"],
     ])("writes the breaking release from %s without publishing or changing Git history", (current, expected) => {
         prepare(current, ["feat(api)!: change the contract"]);

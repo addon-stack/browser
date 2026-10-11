@@ -2,13 +2,14 @@
 
 ## Release versioning
 
-- Before `2.0.0`, automatic releases must never increase the major version, even for breaking changes. This applies to both `0.x` and `1.x`; the transition to `2.0.0` requires an explicit maintainer decision.
-- Breaking changes (`!`, `BREAKING CHANGE`, or `BREAKING-CHANGE`) produce a minor bump before `2.0.0` and a major bump starting with `2.x`. Breaking changes take precedence over all other commit types regardless of commit order.
-- Without breaking changes, `feat` and `revert` produce a minor bump; `fix`, `perf`, `refactor`, and `ci` produce a patch bump. Starting with `2.0.0`, minor and patch releases must preserve public API compatibility, including TypeScript types and runtime behavior.
+- Development continues on `0.x`. Breaking changes (`!`, `BREAKING CHANGE`, or `BREAKING-CHANGE`) produce a minor bump in `0.x` and a major bump from stable `1.x` onward. Breaking changes take precedence over all other commit types regardless of commit order.
+- The first stable release requires an explicit maintainer decision and must use `1.0.1`. The accidental `1.0.0` is reserved forever; do not reuse it or its prerelease numbers. Request `1.0.1` explicitly instead of `major` or `premajor` when leaving `0.x`.
+- Keep the historical `v1.0.0` tag, but exclude it from the release baseline, bump recommendation, changelog range, and contributor range. The recovery release is `0.10.0`, calculated from the restored `0.9.0` baseline without reverting product code.
+- Without breaking changes, `feat` and `revert` produce a minor bump; `fix`, `perf`, `refactor`, and `ci` produce a patch bump. Patch releases preserve compatibility at every version; from stable `1.x` onward, minor releases must also preserve public TypeScript types and runtime behavior.
 - `docs`, `test`, `chore`, `build`, and `style` without breaking changes do not trigger a release on their own.
-- Keep breaking-change markers and migration notes; the minor-bump policy does not make incompatible changes backward compatible.
-- Continue from the published `1.0.0` release on the `1.x` line until the explicit `2.0.0` transition. Do not restore a `0.x` release baseline or redirect version numbers.
-- Configure `whatBump` directly under `@release-it/conventional-changelog`. Verify version-policy changes through the installed release-it CLI in isolated fixtures, not only by calling the callback directly.
+- Keep breaking-change markers and migration notes; the pre-1.0 minor-bump policy does not make incompatible changes backward compatible.
+- Configure `whatBump` directly under `@release-it/conventional-changelog`. Verify version-policy changes through the installed release-it CLI in isolated fixtures, including the historical `v1.0.0` tag and the explicit `1.0.1` transition.
+- Preview with `npm run release:preview` and `npm run release:notes`. These stop before writes; do not use an ordinary release or a dry run merely to inspect the next version or notes.
 
 ## Changelog
 

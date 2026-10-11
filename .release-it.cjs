@@ -27,7 +27,7 @@ function getContributors() {
         let fromTag;
 
         try {
-            const tag = execSync("git describe --tags --abbrev=0", {encoding: "utf8"}).trim();
+            const tag = execSync("git describe --tags --match=\"v*\" --exclude=v1.0.0 --abbrev=0", {encoding: "utf8"}).trim();
             fromTag = tag || null;
         } catch {
             fromTag = null;
@@ -119,6 +119,8 @@ module.exports = () => {
             // release-it placeholder
             commitMessage: "chore(release): v${version}",
             tag: true,
+            // Keep the accidental release in history, but never use it as a release baseline.
+            tagExclude: "v1.0.0",
             // release-it placeholder
             tagName: "v${version}",
             // release-it placeholder
@@ -128,6 +130,7 @@ module.exports = () => {
 
         github: {
             release: true,
+            makeLatest: true,
             // release-it placeholder
             releaseName: "v${version}",
             autoGenerate: false,
@@ -144,9 +147,12 @@ module.exports = () => {
         },
 
         plugins: {
+            "./scripts/ReleaseVersionGuard.mjs": {currentVersion: pkg.version},
             "@release-it/conventional-changelog": {
                 infile: "CHANGELOG.md",
                 preset: "conventionalcommits",
+                // The bump recommender discovers tags independently of release-it's Git plugin.
+                tagOpts: {prefix: /^v(?!1\.0\.0$)/},
 
                 parserOpts: {
                     headerPattern: /^(\w+)(?:\(([^)]+)\))?(!)?:\s(.+?)(?:\s\(#\d+\))?$/,
@@ -174,11 +180,11 @@ module.exports = () => {
                     for (const commit of commits) {
                         const type = (commit.type || "").toLowerCase();
 
-                        // Keep breaking changes in 0.x/1.x until the explicit 2.0.0 transition.
+                        // Keep breaking changes in 0.x until the explicit first stable release.
                         if (commit.breaking || commit.notes?.length) {
                             const currentMajor = Number.parseInt(pkg.version.split(".")[0], 10);
 
-                            return {level: currentMajor >= 2 ? 0 : 1};
+                            return {level: currentMajor >= 1 ? 0 : 1};
                         }
 
                         if (["feat", "revert"].includes(type)) {
