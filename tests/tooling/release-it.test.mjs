@@ -375,6 +375,12 @@ describe("release-it version and release-note policies through the installed CLI
     });
 
     test("the documented npm preview commands leave package files and history unchanged", () => {
+        const npmCli = process.env.npm_execpath;
+
+        if (!npmCli) {
+            throw new Error("Run this test with npm test so npm_execpath identifies the npm CLI.");
+        }
+
         prepareRecovery();
         const files = ["package.json", "package-lock.json", "CHANGELOG.md"];
         const before = files.map(file => readFileSync(join(directory, file), "utf8"));
@@ -382,8 +388,20 @@ describe("release-it version and release-note policies through the installed CLI
         const tags = git("tag", "--list");
 
         for (const script of ["release:preview", "release:notes"]) {
-            const result = spawnSync("npm", ["run", "--silent", script], {cwd: directory, env, encoding: "utf8", timeout: 10000});
-            expect(result.status).toBe(0);
+            // Invoke npm's JavaScript CLI directly; npm.cmd cannot be spawned without a shell on Windows.
+            const result = spawnSync(process.execPath, [npmCli, "run", "--silent", script], {cwd: directory, env, encoding: "utf8", timeout: 10000});
+
+            if (result.error || result.signal || result.status !== 0) {
+                throw new Error([
+                    `npm run ${script} failed`,
+                    `status: ${result.status}`,
+                    `signal: ${result.signal ?? "none"}`,
+                    `error: ${result.error?.message ?? "none"}`,
+                    `stdout:\n${result.stdout || "(empty)"}`,
+                    `stderr:\n${result.stderr || "(empty)"}`,
+                ].join("\n"), {cause: result.error});
+            }
+
             expect(result.stdout).toContain("0.10.0");
         }
 
