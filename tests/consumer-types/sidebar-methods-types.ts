@@ -1,4 +1,4 @@
-import {canCloseSidebar, canOpenSidebar, clearSidebarBadgeText, closeSidebar, getSidebarBadgeBgColor, getSidebarBadgeText, getSidebarBadgeTextColor, getSidebarBehavior, getSidebarOptions, getSidebarPath, getSidebarState, getSidebarTitle, isOpenSidebar, openSidebar, setSidebarBadgeBgColor, setSidebarBadgeText, setSidebarBadgeTextColor, setSidebarBehavior, setSidebarIcon, setSidebarOptions, setSidebarPath, setSidebarTitle, SidebarError, SidebarState, toggleSidebar} from "@addon-core/browser";
+import {canCloseSidebar, canGetSidebarTitle, canOpenSidebar, canSetSidebarTitle, clearSidebarBadgeText, closeSidebar, getSidebarBadgeBgColor, getSidebarBadgeText, getSidebarBadgeTextColor, getSidebarBehavior, getSidebarOptions, getSidebarPath, getSidebarState, getSidebarTitle, isOpenSidebar, openSidebar, setSidebarBadgeBgColor, setSidebarBadgeText, setSidebarBadgeTextColor, setSidebarBehavior, setSidebarIcon, setSidebarOptions, setSidebarPath, setSidebarTitle, SidebarError, SidebarState, toggleSidebar} from "@addon-core/browser";
 
 type Color = string | ColorArray;
 type ColorArray = chrome.extensionTypes.ColorArray;
@@ -8,13 +8,15 @@ type PanelOptions = chrome.sidePanel.PanelOptions;
 type PanelBehavior = chrome.sidePanel.PanelBehavior;
 type IconDetails = opr.sidebarAction.IconDetails;
 
-const methods = {getSidebarOptions, getSidebarBehavior, canOpenSidebar, canCloseSidebar, openSidebar, closeSidebar, setSidebarOptions, setSidebarBehavior, getSidebarState, isOpenSidebar, toggleSidebar, setSidebarPath, getSidebarPath, setSidebarTitle, setSidebarBadgeText, clearSidebarBadgeText, setSidebarIcon, setSidebarBadgeTextColor, setSidebarBadgeBgColor, getSidebarTitle, getSidebarBadgeText, getSidebarBadgeTextColor, getSidebarBadgeBgColor};
+const methods = {getSidebarOptions, getSidebarBehavior, canOpenSidebar, canCloseSidebar, canSetSidebarTitle, canGetSidebarTitle, openSidebar, closeSidebar, setSidebarOptions, setSidebarBehavior, getSidebarState, isOpenSidebar, toggleSidebar, setSidebarPath, getSidebarPath, setSidebarTitle, setSidebarBadgeText, clearSidebarBadgeText, setSidebarIcon, setSidebarBadgeTextColor, setSidebarBadgeBgColor, getSidebarTitle, getSidebarBadgeText, getSidebarBadgeTextColor, getSidebarBadgeBgColor};
 
 type Expected = {
     getSidebarOptions: (tabId?: number) => Promise<PanelOptions>;
     getSidebarBehavior: () => Promise<PanelBehavior>;
     canOpenSidebar: () => boolean;
     canCloseSidebar: () => boolean;
+    canSetSidebarTitle: () => boolean;
+    canGetSidebarTitle: () => boolean;
     openSidebar: (options: OpenOptions) => Promise<void>;
     closeSidebar: (options: CloseOptions) => Promise<void>;
     setSidebarOptions: (options?: PanelOptions) => Promise<void>;

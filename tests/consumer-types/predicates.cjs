@@ -7,6 +7,21 @@ const assert = require("node:assert/strict");
 
     assert.deepEqual(api.SidebarState, {Open: "open", Closed: "closed", Unknown: "unknown"});
 
+    assert.equal(api.canSetSidebarTitle(), false);
+    assert.equal(api.canGetSidebarTitle(), false);
+
+    for (const profile of ["chrome", "firefox", "opera"]) {
+        const harness = testing.createBrowserHarness();
+        const restore = testing.installBrowserGlobals(harness, {profile});
+
+        try {
+            assert.equal(api.canSetSidebarTitle(), profile !== "chrome");
+            assert.equal(api.canGetSidebarTitle(), profile !== "chrome");
+        } finally {
+            restore();
+        }
+    }
+
     for (const probe of [
         api.isBackground, api.isManifestVersion3, api.isOpenSidebar,
         () => api.isDownloadExists(41), () => api.hasOffscreenUrl("offscreen.html"),
