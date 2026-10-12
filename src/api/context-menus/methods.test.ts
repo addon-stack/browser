@@ -21,16 +21,25 @@ describe.each(["chrome", "firefox"] as const)("contextMenus methods in %s", prof
         restoreGlobals();
     });
 
-    test("create and update preserve properties and normalize omitted options", async () => {
+    test.each([
+        {title: "Open", enabled: false},
+        {type: "separator"},
+        {type: "checkbox", title: "Enabled", checked: true},
+        {type: "radio", title: "Mode A"},
+    ] satisfies chrome.contextMenus.CreateProperties[])("create preserves properties %j", async properties => {
         const native = harness.configurable.active.contextMenus;
-        const properties = {title: "Open", enabled: false};
         await expect(createContextMenus(properties)).resolves.toBeUndefined();
-        await createContextMenus();
-        await expect(updateContextMenus(7, properties)).resolves.toBeUndefined();
-        await updateContextMenus("item");
-        expect(native.create.calls.map(call => call.args)).toEqual([[properties], [{}]]);
-        expect(native.update.calls.map(call => call.args)).toEqual([[7, properties], ["item", {}]]);
+        expect(native.create.calls.map(call => call.args)).toEqual([[properties]]);
         expect(native.create.calls[0].args[0]).toBe(properties);
+    });
+
+    test("update preserves partial properties and normalizes omitted options", async () => {
+        const native = harness.configurable.active.contextMenus;
+        const properties = {enabled: false};
+        await expect(updateContextMenus(7, properties)).resolves.toBeUndefined();
+        await updateContextMenus("empty", {});
+        await updateContextMenus("item");
+        expect(native.update.calls.map(call => call.args)).toEqual([[7, properties], ["empty", {}], ["item", {}]]);
         expect(native.update.calls[0].args[1]).toBe(properties);
     });
 
@@ -52,6 +61,17 @@ describe.each(["chrome", "firefox"] as const)("contextMenus methods in %s", prof
         expect(properties).toEqual({title: "Open"});
     });
 
+    test("createOrUpdate preserves a separator without a title through the update fallback", async () => {
+        const native = harness.configurable.active.contextMenus;
+        const properties = {type: "separator"} as const;
+        native.create.failNext(new Error("Duplicate menu ID"));
+        await expect(createOrUpdateContextMenu(7, properties)).resolves.toBeUndefined();
+        expect(native.create.calls[0].args).toEqual([{id: "7", type: "separator"}]);
+        expect(native.update.calls[0].args).toEqual([7, properties]);
+        expect(native.update.calls[0].args[1]).toBe(properties);
+        expect(properties).toEqual({type: "separator"});
+    });
+
     test("createOrUpdate falls back to update with the original ID after a create failure", async () => {
         const native = harness.configurable.active.contextMenus;
         const properties = {title: "Updated"};
@@ -66,11 +86,11 @@ describe.each(["chrome", "firefox"] as const)("contextMenus methods in %s", prof
         const native = harness.configurable.active.contextMenus;
         native.create.failNext(new Error("Duplicate menu ID"));
         native.update.failNext(new Error("Menu update denied"));
-        await expect(createOrUpdateContextMenu("item", {})).rejects.toThrow("Menu update denied");
+        await expect(createOrUpdateContextMenu("item", {title: "Open"})).rejects.toThrow("Menu update denied");
     });
 
     test.each([
-        ["create", () => createContextMenus()],
+        ["create", () => createContextMenus({title: "Open"})],
         ["update", () => updateContextMenus("item")],
         ["remove", () => removeContextMenus("item")],
         ["removeAll", () => removeAllContextMenus()],

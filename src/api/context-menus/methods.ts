@@ -2,12 +2,14 @@ import {browser} from "../browser";
 import {callWithPromise} from "../utils";
 
 type CreateProperties = chrome.contextMenus.CreateProperties;
+// Preserve the title/type relationship in each native creation variant.
+type WithoutId<T> = T extends unknown ? Omit<T, "id"> : never;
 
 const contextMenus = () => browser().contextMenus;
 
 // Methods
-export const createContextMenus = (createProperties?: CreateProperties): Promise<void> =>
-    callWithPromise(cb => contextMenus().create(createProperties || {}, cb));
+export const createContextMenus = (createProperties: CreateProperties): Promise<void> =>
+    callWithPromise(cb => contextMenus().create(createProperties, cb));
 
 export const removeContextMenus = (menuItemId: string | number): Promise<void> =>
     callWithPromise(cb => contextMenus().remove(menuItemId, cb));
@@ -22,7 +24,7 @@ export const updateContextMenus = (
 // Custom Methods
 export const createOrUpdateContextMenu = async (
     id: string | number,
-    properties: Omit<CreateProperties, "id">
+    properties: WithoutId<CreateProperties>
 ): Promise<void> => {
     try {
         await createContextMenus({...properties, id: id.toString()});

@@ -149,7 +149,7 @@ Explore the API guides for available helpers, examples, and browser-specific det
 
 ## TypeScript compatibility
 
-The package depends on `@types/chrome@^0.3.0`, which owns the global `browser` alias
+The package depends on `@types/chrome@^0.3.5`, which owns the global `browser` alias
 (`typeof chrome`). Our declarations extend that shared API shape with Firefox-only
 `sidebarAction`, `runtime.getBrowserInfo`, and search engine methods, plus the existing legacy APIs. They do
 not redeclare the `browser` value. The previous type names
