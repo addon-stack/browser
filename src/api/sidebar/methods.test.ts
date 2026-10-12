@@ -924,6 +924,101 @@ describe.each([
 });
 
 describe.each([
+    ["setTitle", api.canSetSidebarTitle, () => api.setSidebarTitle("Panel")],
+    ["getTitle", api.canGetSidebarTitle, () => api.getSidebarTitle()],
+] as const)("safe sidebar %s capability check", (method, probe, invoke) => {
+    let restore: () => void = () => undefined;
+
+    beforeEach(() => {
+        jest.spyOn(console, "error").mockImplementation(() => undefined);
+        jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+        restore();
+        expect(console.error).not.toHaveBeenCalled();
+        expect(console.warn).not.toHaveBeenCalled();
+        jest.restoreAllMocks();
+    });
+
+    test.each([
+        {}, {chrome: {sidePanel: {}}}, {browser: {sidebarAction: {}}}, {opr: {sidebarAction: {}}},
+    ])("returns false without the method while operations still reject: %j", async globals => {
+        restore = installAvailabilityGlobals(globals);
+        expect(probe()).toBe(false);
+        await expect(invoke()).rejects.toBeInstanceOf(api.SidebarError);
+    });
+
+    describe.each(["browser", "opr"] as const)("%s.sidebarAction", globalName => {
+        test("observes method changes independently without calling or caching the operation", async () => {
+            const operation = jest.fn();
+            const native: Record<string, unknown> = {[method]: operation};
+            restore = installAvailabilityGlobals({[globalName]: {sidebarAction: native}});
+            expect(probe()).toBe(true);
+            delete native[method];
+            expect(probe()).toBe(false);
+            native[method] = true;
+            expect(probe()).toBe(false);
+            await expect(invoke()).rejects.toBeInstanceOf(api.SidebarError);
+            native[method] = operation;
+            expect(probe()).toBe(true);
+            expect(operation).not.toHaveBeenCalled();
+        });
+
+        test.each(["global", "namespace", "method"])("contains %s access errors while operations preserve them", async level => {
+            const error = new Error("Sidebar API access denied");
+
+            const native = Object.defineProperty({}, level === "method" ? method : "sidebarAction", {get: () => {
+                throw error;
+            }});
+
+            if (level === "global") {
+                restore = installAvailabilityGlobals();
+
+                Object.defineProperty(globalThis, globalName, {configurable: true, get: () => {
+                    throw error;
+                }});
+            } else {
+                restore = installAvailabilityGlobals({[globalName]: level === "method" ? {sidebarAction: native} : native});
+            }
+
+            expect(probe()).toBe(false);
+            await expect(invoke()).rejects.toBe(error);
+        });
+
+        test("method presence does not suppress native operation failures", async () => {
+            const error = new Error("Sidebar operation denied");
+
+            const operation = jest.fn(() => {
+                throw error;
+            });
+
+            restore = installAvailabilityGlobals({[globalName]: {sidebarAction: {[method]: operation}}});
+            expect(probe()).toBe(true);
+            await expect(invoke()).rejects.toBe(error);
+            expect(operation).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    test("follows Opera-first selection even when sidePanel and Firefox are present", async () => {
+        const operation = jest.fn();
+        const opera: Record<string, unknown> = {};
+
+        restore = installAvailabilityGlobals({
+            chrome: {sidePanel: {}},
+            browser: {sidebarAction: {[method]: operation}},
+            opr: {sidebarAction: opera},
+        });
+
+        expect(probe()).toBe(false);
+        await expect(invoke()).rejects.toBeInstanceOf(api.SidebarError);
+        opera[method] = operation;
+        expect(probe()).toBe(true);
+        expect(operation).not.toHaveBeenCalled();
+    });
+});
+
+describe.each([
     ["isOpenSidebar", api.isOpenSidebar, false],
     ["getSidebarState", api.getSidebarState, api.SidebarState.Unknown],
 ] as const)("safe sidebar state check: %s", (_name, probe, expected) => {

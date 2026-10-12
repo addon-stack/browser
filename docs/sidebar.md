@@ -21,6 +21,8 @@ Custom error class thrown when an API method is not supported or fails.
 - [getSidebarBehavior()](#getSidebarBehavior) [Chromium]
 - [canOpenSidebar()](#canOpenSidebar)
 - [canCloseSidebar()](#canCloseSidebar)
+- [canSetSidebarTitle()](#canSetSidebarTitle)
+- [canGetSidebarTitle()](#canGetSidebarTitle)
 - [openSidebar(options)](#openSidebar)
 - [closeSidebar(options)](#closeSidebar)
 - [setSidebarOptions(options?)](#setSidebarOptions) [Chromium]
@@ -56,7 +58,8 @@ Returns `false` if the namespace or WebExtension environment is absent, or if ac
 The check is synchronous, does not log, and reads the current API on every call without caching.
 It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
 
-Use `canOpenSidebar()` and `canCloseSidebar()` to check whether those specific methods exist.
+Use `canOpenSidebar()`, `canCloseSidebar()`, `canSetSidebarTitle()`, and `canGetSidebarTitle()` to check
+whether those specific methods exist.
 
 ```ts
 import {isAvailableSidebar} from "@addon-core/browser";
@@ -110,6 +113,54 @@ Returns `true` if the selected API exposes a callable `close` method: `chrome.si
 Returns `false` if the environment, API, or method is absent, or if reading it throws.
 The check never throws or logs, does not call `close`, and reads the current capability on every call.
 It does not guarantee that a later `closeSidebar()` operation will succeed; native operation errors still reject.
+
+<a name="canSetSidebarTitle"></a>
+
+### canSetSidebarTitle
+
+```ts
+canSetSidebarTitle(): boolean
+```
+
+Returns `true` if the selected `sidebarAction` API exposes a callable `setTitle` method.
+Uses `opr.sidebarAction` first, otherwise `browser.sidebarAction`, just like `setSidebarTitle()`.
+If the selected namespace lacks the method, it does not fall back to another namespace.
+Chrome and Edge's `sidePanel` API has no title methods; `isAvailableSidebar()` alone is insufficient.
+
+Returns `false` if the environment, namespace, or method is absent, the method is not callable, or reading it throws.
+The check is synchronous, never throws or logs, does not call the native method, and reads the current API on every
+call without caching. It checks method availability only; a later `setSidebarTitle()` call can still reject.
+
+```ts
+import {canSetSidebarTitle, setSidebarTitle} from "@addon-core/browser";
+
+if (canSetSidebarTitle()) {
+    await setSidebarTitle("My panel");
+}
+```
+
+<a name="canGetSidebarTitle"></a>
+
+### canGetSidebarTitle
+
+```ts
+canGetSidebarTitle(): boolean
+```
+
+Returns `true` if the selected `sidebarAction` API exposes a callable `getTitle` method.
+Uses the same Opera-first selection and safe, synchronous behavior as `canSetSidebarTitle()`:
+missing or non-callable methods and access errors produce `false`, without logging, native calls, or caching.
+It checks `getTitle` independently of `setTitle`; support for one does not establish support for the other.
+A later `getSidebarTitle()` call can still reject on native errors.
+
+```ts
+import {canGetSidebarTitle, getSidebarTitle} from "@addon-core/browser";
+
+if (canGetSidebarTitle()) {
+    const title = await getSidebarTitle();
+    console.log(title);
+}
+```
 
 <a name="openSidebar"></a>
 
@@ -282,7 +333,12 @@ Toggles the sidebar in Firefox. Throws if unsupported.
 setSidebarTitle(title: string | number, tabId?: number): Promise<void>
 ```
 
-Sets the sidebar title via `sidebarAction.setTitle()` (Firefox/Opera). Throws if unsupported.
+Sets the sidebar title via `sidebarAction.setTitle()` (Firefox/Opera). Firefox uses it in the sidebar menu and
+the open panel's heading; Opera documents it as the sidebar action's tooltip. This does not set the HTML document title.
+
+Rejects with `SidebarError` if the method is unavailable or not callable. API access errors and native operation
+errors still reject; unsupported operations are not silently skipped. Use `canSetSidebarTitle()` when setting
+the title is optional. Firefox's native Promise is awaited; Opera's native setter is synchronous.
 
 <a name="setSidebarIcon"></a>
 
@@ -346,7 +402,9 @@ Sets the sidebar badge background color via `opr.sidebarAction.setBadgeBackgroun
 getSidebarTitle(tabId?: number): Promise<string>
 ```
 
-Gets the sidebar title via `sidebarAction.getTitle()` (Firefox/Opera). Throws if unsupported.
+Gets the sidebar title via `sidebarAction.getTitle()` (Firefox/Opera). Rejects with `SidebarError` if the method
+is unavailable or not callable. API access errors, Firefox Promise rejections, and Opera callback
+`runtime.lastError` still reject. Use `canGetSidebarTitle()` when reading the title is optional.
 
 <a name="getSidebarBadgeText"></a>
 

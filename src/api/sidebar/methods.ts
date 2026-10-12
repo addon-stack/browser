@@ -89,6 +89,22 @@ export const canCloseSidebar = (): boolean => {
     }
 };
 
+export const canSetSidebarTitle = (): boolean => {
+    try {
+        return typeof sidebarAction()?.setTitle === "function";
+    } catch {
+        return false;
+    }
+};
+
+export const canGetSidebarTitle = (): boolean => {
+    try {
+        return typeof sidebarAction()?.getTitle === "function";
+    } catch {
+        return false;
+    }
+};
+
 export const openSidebar = (options: OpenOptions): Promise<void> =>
     callWithPromise(cb => {
         const sp = sidePanel();
@@ -262,7 +278,7 @@ export const setSidebarTitle = (title: string | number, tabId?: number): Promise
     callWithPromise(async cb => {
         const sb = sidebarAction();
 
-        if (sb?.setTitle) {
+        if (typeof sb?.setTitle === "function") {
             const result = sb.setTitle({tabId, title: title.toString()});
 
             if (result instanceof Promise) {
@@ -335,7 +351,7 @@ export const getSidebarTitle = (tabId?: number): Promise<string> =>
     callWithPromise<string>(cb => {
         const sb = sidebarAction() as OperaSidebarAction | undefined;
 
-        if (sb?.getTitle) {
+        if (typeof sb?.getTitle === "function") {
             if (isAvailableOperaSidebar()) {
                 return sb.getTitle({tabId}, cb);
             }
