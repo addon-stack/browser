@@ -1,5 +1,52 @@
 # Changelog
 
+## 🚀 Release `@addon-core/browser` v0.11.0 (2026-10-12)
+
+### 💥 Breaking Changes
+
+* createContextMenus now requires creation properties.
+Normal, checkbox, and radio items require title in createContextMenus
+and createOrUpdateContextMenu; separators may omit it. Use
+updateContextMenus for partial changes to an existing item.
+
+* getDefaultPopup() now returns string | undefined.
+Callers using strictNullChecks must handle undefined before using the
+result as a string. A missing action section now returns undefined.
+
+
+### ✨ Features
+
+* **sidebar:** add title capability checks ([d6fd44d](https://github.com/addon-stack/browser/commit/d6fd44d3c4daae46df657b467b38972a287bb718))
+
+
+
+
+### 🐛 Bug Fixed
+
+* **action:** handle missing default popup configuration ([cdfacd7](https://github.com/addon-stack/browser/commit/cdfacd7083576f31d77ddfb82edcdb92ca95928b))
+
+  Read the manifest once and preserve configured popup strings, including
+  an empty string. Return undefined when the selected action section or
+  default_popup field is absent, while propagating manifest access errors.
+
+  Update MV2/MV3 tests, installed-consumer type checks, and documentation.
+
+* **context-menus:** adapt to updated Chrome types ([9083d44](https://github.com/addon-stack/browser/commit/9083d440f911ef937a4dc44dcb9a77f11561a947))
+
+  Upgrade @types/chrome to ^0.3.5 and preserve its discriminated context
+  menu creation options when omitting id for create-or-update calls.
+  Keep partial updates and native error propagation unchanged.
+
+  Update documentation, Chrome/Firefox profile tests, and clean-consumer
+  type checks.
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 4
+
 ## 🚀 Release `@addon-core/browser` v0.10.0 (2026-10-11)
 
 
