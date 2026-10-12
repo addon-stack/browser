@@ -219,10 +219,39 @@ Sets the title for the action in a given tab.
 ### getDefaultPopup
 
 ```
-getDefaultPopup(): string
+getDefaultPopup(): string | undefined
 ```
 
-Returns the default popup URL from the manifest (`action.default_popup` in MV3 or `browser_action.default_popup` in MV2).
+Reads the manifest once and returns its default popup setting: `action.default_popup` in MV3 or
+`browser_action.default_popup` in MV2, using that snapshot's `manifest_version`.
+
+| Manifest configuration | Result |
+| --- | --- |
+| `default_popup: "popup.html"` | The exact configured string, `"popup.html"` |
+| `default_popup: ""` | The empty string, `""` |
+| `default_popup` is absent | `undefined` |
+| The selected `action` or `browser_action` section is absent | `undefined` |
+
+Errors reading the manifest propagate unchanged. The helper reads the manifest default; it does not query a
+popup set dynamically or for a specific tab. Use `getActionPopup(tabId)` for the current action popup.
+
+```ts
+import {getDefaultPopup} from "@addon-core/browser";
+
+const popup = getDefaultPopup();
+
+if (popup !== undefined) {
+    // The configured string is available, including an explicit empty string.
+    console.log(popup);
+} else {
+    console.log("No default popup is configured in the manifest.");
+}
+```
+
+Compatibility note: the return type changed from `string` to `string | undefined`. With `strictNullChecks`,
+callers must narrow the result before assigning it to a required string or calling string methods.
+Check against `undefined` when an explicit empty string must remain distinguishable from a missing setting.
+An absent action section now returns `undefined` instead of causing a property-access error.
 
 <a name="clearBadgeText"></a>
 

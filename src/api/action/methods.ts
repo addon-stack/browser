@@ -60,10 +60,10 @@ export const setActionTitle = (title: string, tabId?: number): Promise<void> =>
     callWithPromise(cb => action().setTitle({title, tabId}, cb));
 
 // Custom Methods
-export const getDefaultPopup = (): string => {
+export const getDefaultPopup = (): string | undefined => {
     const manifest = getManifest();
 
-    return getManifestVersion() === 3 ? manifest.action.default_popup : manifest.browser_action.default_popup;
+    return manifest.manifest_version === 3 ? manifest.action?.default_popup : manifest.browser_action?.default_popup;
 };
 
 export const clearBadgeText = (tabId?: number): Promise<void> => setBadgeText("", tabId);

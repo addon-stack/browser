@@ -3,7 +3,7 @@ import {afterEach, beforeEach, describe, expect, jest, test} from "@jest/globals
 import {type BrowserTestApi, installGlobals} from "../../testing";
 import {clearBadgeText, getBadgeText, getDefaultPopup, setBadgeText, setBadgeTextColor} from "./methods";
 
-describe.each([2, 3])("action methods in MV%s", version => {
+describe.each([2, 3] as const)("action methods in MV%s", version => {
     let restoreGlobals: () => void;
     let lastError: chrome.runtime.LastError | undefined;
     const modernGet = jest.fn<(details: unknown, callback: (text: string) => void) => void>();
@@ -50,6 +50,31 @@ describe.each([2, 3])("action methods in MV%s", version => {
         expect(selected).toHaveBeenCalledWith({tabId: 7}, expect.any(Function));
         expect(other).not.toHaveBeenCalled();
         expect(getDefaultPopup()).toBe(version === 3 ? "modern.html" : "legacy.html");
+    });
+
+    test.each([
+        {name: "configured path", section: {default_popup: "/popup.html?mode=compact#ready"}, expected: "/popup.html?mode=compact#ready"},
+        {name: "explicit empty string", section: {default_popup: ""}, expected: ""},
+        {name: "missing popup field", section: {}, expected: undefined},
+        {name: "missing action section", section: undefined, expected: undefined},
+    ])("getDefaultPopup preserves $name from a single manifest snapshot", ({section, expected}) => {
+        const selected = version === 3 ? "action" : "browser_action";
+        const other = version === 3 ? "browser_action" : "action";
+
+        const manifest: chrome.runtime.Manifest = {
+            manifest_version: version,
+            name: "Popup defaults",
+            version: "1.0.0",
+            [other]: {default_popup: "other.html"},
+        };
+
+        if (section !== undefined) {
+            manifest[selected] = section;
+        }
+
+        const readManifest = jest.spyOn(globalThis.chrome.runtime, "getManifest").mockReturnValue(manifest);
+        expect(getDefaultPopup()).toBe(expected);
+        expect(readManifest).toHaveBeenCalledTimes(1);
     });
 
     test("normalizes badge text and clears it using the selected native API", async () => {
