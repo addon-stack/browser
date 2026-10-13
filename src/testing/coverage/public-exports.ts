@@ -366,6 +366,7 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
         "getSidebarBehavior",
         "canOpenSidebar",
         "canCloseSidebar",
+        "canSetSidebarIcon",
         "canSetSidebarTitle",
         "canGetSidebarTitle",
         "openSidebar",
@@ -519,8 +520,8 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
 
 export const TYPE_ONLY_ROOT_EXPORTS = ["BrowserGuess", "DnrRulesMatchedDetails", "DnrTestMatchOptions", "LaunchWebAuthFlowDetails", "SearchEngine", "SearchTargetOptions", "TabGroup", "TabGroupRemoveInfo", "TopSite", "TopSitesOptions", "WindowEventFilter"] as const;
 
-export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 429;
-export const EXPECTED_ROOT_RUNTIME_EXPORT_COUNT = 418;
+export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 430;
+export const EXPECTED_ROOT_RUNTIME_EXPORT_COUNT = 419;
 
 export const getPublicExportCoverage = (name: string): PublicExportCoverageEntry | undefined =>
     PUBLIC_EXPORT_COVERAGE.find(entry => entry.name === name);

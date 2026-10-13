@@ -52,11 +52,11 @@ const declarationExports = getModuleExports(declarationEntry, {
     types: ["chrome"],
 });
 
-assert.equal(sourceExports.length, 429, "The source public-export baseline changed; update the coverage matrix first");
+assert.equal(sourceExports.length, 430, "The source public-export baseline changed; update the coverage matrix first");
 
 assert.equal(
     sourceExports.filter(value => value.hasValue).length,
-    418,
+    419,
     "The source runtime-export baseline changed; update the coverage matrix first"
 );
 
@@ -170,4 +170,4 @@ for (const {file, source} of testingRuntimeSources) {
     );
 }
 
-console.log("Verified 429 TypeScript exports, 418 ESM/CJS runtime exports, and isolated testing bundles.");
+console.log("Verified 430 TypeScript exports, 419 ESM/CJS runtime exports, and isolated testing bundles.");

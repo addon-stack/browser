@@ -736,7 +736,7 @@ describe("sidebar methods: Opera sidebarAction", () => {
         }
     });
 
-    test.each([...actionMethods, ...badgeMethods, ["setIcon", () => api.setSidebarIcon({path: "icon.png"})]] as const)("%s propagates native callback/synchronous errors", async (name, invoke) => {
+    test.each([...actionMethods, ...badgeMethods])("%s propagates native callback/synchronous errors", async (name, invoke) => {
         harness.sidebar.opera[name].failNext(new Error("Opera sidebar denied"));
         await expect(invoke()).rejects.toThrow("Opera sidebar denied");
         expect(harness.runtime.lastError).toBeUndefined();
@@ -776,72 +776,6 @@ describe("sidebar methods: Opera sidebarAction", () => {
         await expect(api.isOpenSidebar(windowId)).resolves.toBe(false);
         await expect(api.getSidebarState(windowId)).resolves.toBe(api.SidebarState.Unknown);
         expect(harness.windows.getLastFocused.calls).toHaveLength(0);
-    });
-
-    test("setSidebarIcon invokes the native method with a completion callback", async () => {
-        const method = harness.sidebar.opera.setIcon;
-        method.setResult(undefined);
-        const details = {path: "icon.png", tabId: 4};
-        await expect(api.setSidebarIcon(details)).resolves.toBeUndefined();
-        expect(method.calls).toHaveLength(1);
-        expect(method.calls[0].args[0]).toBe(details);
-        expect(method.calls[0]).toMatchObject({invocation: "callback", callbackCalls: [[]]});
-    });
-
-    test("setSidebarIcon waits for the Opera completion callback", async () => {
-        const method = harness.sidebar.opera.setIcon;
-        let complete!: () => void;
-
-        method.setImplementation((_details, callback) => {
-            complete = callback!;
-        });
-
-        const operation = observe(api.setSidebarIcon({path: "icon.png"}));
-        await nextTurn();
-
-        try {
-            expect(operation.status).toBe("pending");
-        } finally {
-            complete();
-            await operation.result;
-        }
-
-        expect(operation.status).toBe("resolved");
-        expect(method.calls[0].callbackCalls).toEqual([[]]);
-    });
-
-    test("setSidebarIcon rejects a delayed Opera runtime.lastError", async () => {
-        const method = harness.sidebar.opera.setIcon;
-        let complete!: () => void;
-
-        method.setImplementation((_details, callback) => {
-            complete = callback!;
-        });
-
-        const operation = observe(api.setSidebarIcon({path: "icon.png"}));
-        await nextTurn();
-        const lastError = jest.spyOn(harness.chrome.runtime, "lastError", "get");
-        lastError.mockReturnValue({message: "Access to extension API denied"});
-
-        try {
-            complete();
-        } finally {
-            lastError.mockRestore();
-        }
-
-        expect(await operation.result).toMatchObject({
-            status: "rejected", error: {message: "Access to extension API denied"},
-        });
-    });
-
-    test("setSidebarIcon turns a synchronous native exception into a rejection", async () => {
-        const error = new Error("Access to extension API denied");
-
-        harness.sidebar.opera.setIcon.setImplementation(() => {
-            throw error;
-        });
-
-        await expect(api.setSidebarIcon({path: "icon.png"})).rejects.toBe(error);
     });
 
     test("the Opera facade also accepts setIcon without its optional callback", () => {

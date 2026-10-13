@@ -288,7 +288,7 @@ Every check is a synchronous `() => boolean`: it returns false when the API is a
 without logging, probing native methods, or caching the result. A true result means namespace presence only;
 it does not promise permission, individual method support, or successful operations. Action reads the manifest
 through its existing selector. In particular, `isAvailableUserScripts` does not probe `getScripts()` to detect
-revoked access; `canOpenSidebar`, `canCloseSidebar`, `canSetSidebarTitle`, and `canGetSidebarTitle` remain
+revoked access; `canOpenSidebar`, `canCloseSidebar`, `canSetSidebarTitle`, `canGetSidebarTitle`, and `canSetSidebarIcon` remain
 separate handwritten method-level checks.
 
 Add `export * from "./availability"` to the handwritten namespace index. Remove any duplicate handwritten

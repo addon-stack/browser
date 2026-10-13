@@ -1,47 +1,165 @@
 # sidebar
 
-Documentation:
+Documentation: [Chrome Side Panel API](https://developer.chrome.com/docs/extensions/reference/api/sidePanel),
+[Firefox Sidebar Action API](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction),
+[Opera Sidebar Action API](https://help.opera.com/en/extensions/sidebar-action-api/).
 
-- [Chrome Side Panel API](https://developer.chrome.com/docs/extensions/reference/sidePanel) [MV3]
-- [Opera Sidebar Action API](https://help.opera.com/en/extensions/sidebar-action-api/)
-- [Firefox Sidebar Action API](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction)
-
-A promise-based wrapper around Chromium's side panel (`chrome.sidePanel`, MV3) and Firefox/Opera `sidebarAction` APIs. Methods provide unified behavior to get/set options and behavior, open the panel, and, where supported, manage title and icon (Firefox & Opera) and badge (Opera). Support includes Chrome, Edge, Firefox, and Opera.
-
-## Classes
-
-### SidebarError
-
-Custom error class thrown when an API method is not supported or fails.
+Promise-based methods for configuring an extension's sidebar, controlling its visibility, and changing its
+label, icon or badge where the browser supports those operations. Capability checks help callers decide
+which features to offer. This module does not export sidebar event subscriptions.
 
 ## Methods
 
 - [isAvailableSidebar()](#isAvailableSidebar)
-- [getSidebarOptions(tabId?)](#getSidebarOptions) [Chromium]
-- [getSidebarBehavior()](#getSidebarBehavior) [Chromium]
 - [canOpenSidebar()](#canOpenSidebar)
 - [canCloseSidebar()](#canCloseSidebar)
 - [canSetSidebarTitle()](#canSetSidebarTitle)
 - [canGetSidebarTitle()](#canGetSidebarTitle)
+- [canSetSidebarIcon()](#canSetSidebarIcon)
 - [openSidebar(options)](#openSidebar)
 - [closeSidebar(options)](#closeSidebar)
-- [setSidebarOptions(options?)](#setSidebarOptions) [Chromium]
-- [setSidebarBehavior(behavior?)](#setSidebarBehavior) [Chromium]
-- [getSidebarState(windowId?)](#getSidebarState)
-- [isOpenSidebar(windowId?)](#isOpenSidebar)
-- [toggleSidebar()](#toggleSidebar) [Firefox]
+- [toggleSidebar()](#toggleSidebar)
+- [getSidebarOptions(tabId?)](#getSidebarOptions)
+- [setSidebarOptions(options?)](#setSidebarOptions)
+- [getSidebarBehavior()](#getSidebarBehavior)
+- [setSidebarBehavior(behavior?)](#setSidebarBehavior)
 - [setSidebarPath(path, tabId?)](#setSidebarPath)
 - [getSidebarPath(tabId?)](#getSidebarPath)
-- [setSidebarTitle(title, tabId?)](#setSidebarTitle) [Firefox, Opera]
-- [setSidebarIcon(details)](#setSidebarIcon) [Firefox, Opera]
-- [setSidebarBadgeText(text, tabId?)](#setSidebarBadgeText) [Opera]
-- [clearSidebarBadgeText(tabId?)](#clearSidebarBadgeText) [Opera]
-- [setSidebarBadgeTextColor(color, tabId?)](#setSidebarBadgeTextColor) [Opera]
-- [setSidebarBadgeBgColor(color, tabId?)](#setSidebarBadgeBgColor) [Opera]
-- [getSidebarTitle(tabId?)](#getSidebarTitle) [Firefox, Opera]
-- [getSidebarBadgeText(tabId?)](#getSidebarBadgeText) [Opera]
-- [getSidebarBadgeTextColor(tabId?)](#getSidebarBadgeTextColor) [Opera]
-- [getSidebarBadgeBgColor(tabId?)](#getSidebarBadgeBgColor) [Opera]
+- [getSidebarState(windowId?)](#getSidebarState)
+- [isOpenSidebar(windowId?)](#isOpenSidebar)
+- [setSidebarTitle(title, tabId?)](#setSidebarTitle)
+- [getSidebarTitle(tabId?)](#getSidebarTitle)
+- [setSidebarIcon(details)](#setSidebarIcon)
+- [setSidebarBadgeText(text, tabId?)](#setSidebarBadgeText)
+- [clearSidebarBadgeText(tabId?)](#clearSidebarBadgeText)
+- [getSidebarBadgeText(tabId?)](#getSidebarBadgeText)
+- [setSidebarBadgeTextColor(color, tabId?)](#setSidebarBadgeTextColor)
+- [getSidebarBadgeTextColor(tabId?)](#getSidebarBadgeTextColor)
+- [setSidebarBadgeBgColor(color, tabId?)](#setSidebarBadgeBgColor)
+- [getSidebarBadgeBgColor(tabId?)](#getSidebarBadgeBgColor)
+
+## Permissions and browser support
+
+For Chromium's Side Panel API, declare the `sidePanel` permission and an initial local page in the MV3 manifest:
+
+```json
+{
+  "manifest_version": 3,
+  "permissions": ["sidePanel"],
+  "side_panel": {
+    "default_path": "sidebar.html"
+  }
+}
+```
+
+For Firefox or Opera Sidebar Action, use the `sidebar_action` manifest key:
+
+```json
+{
+  "sidebar_action": {
+    "default_panel": "sidebar.html",
+    "default_title": "My sidebar",
+    "default_icon": "icons/sidebar.png"
+  }
+}
+```
+
+These are manifest fragments; provide the referenced files and the remaining required manifest fields.
+`sidebar_action` does not use the Chromium `sidePanel` permission. See the
+[Firefox manifest reference](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/sidebar_action)
+and [Opera's manifest example](https://help.opera.com/en/extensions/sidebar-action-api/).
+Call the wrappers from an extension context, such as a background script, service worker, popup or extension page.
+
+| Browser / API | Configuration and visibility | Title, icon and badge |
+| --- | --- | --- |
+| Chrome / Chromium, MV3 `sidePanel` | Options, behavior, path, open/close and state query; method support varies by version | No title, icon or badge methods |
+| Microsoft Edge, MV3 `sidePanel` | Uses the Chromium implementation where exposed | No title, icon or badge methods |
+| Firefox desktop `sidebarAction` | Path, open/close, toggle and state query | Title and icon; no sidebar badge methods |
+| Opera `opr.sidebarAction`, MV2 | Path; no legacy open/close, toggle or state query | Title; icon is temporarily disabled by the package; badge methods depend on the platform and exposed API |
+| Opera, MV3 | Uses `sidePanel` for configuration/visibility when exposed; otherwise legacy Sidebar Action where supported | Title via `opr.sidebarAction`; icon is temporarily disabled by the package |
+| Safari / iOS Safari / Firefox for Android | These sidebar APIs are unavailable | Unavailable |
+
+See the compatibility data for [Side Panel](https://github.com/mdn/browser-compat-data/blob/main/webextensions/api/sidePanel.json)
+and [Sidebar Action](https://github.com/mdn/browser-compat-data/blob/main/webextensions/api/sidebarAction.json).
+Chrome introduced `sidePanel` in 114, `open` in 116, and `close` in 141. Use method-level checks rather
+than treating namespace presence as support for every operation.
+[Opera's reference](https://help.opera.com/en/extensions/sidebar-action-api/) marks badge support as unavailable
+on macOS; the package's declarations do not guarantee that a method is exposed or functional on every platform.
+The [Opera icon limitations](#opera-icon-compatibility) apply specifically to changing the icon.
+
+### API selection and errors
+
+- Options and behavior use `sidePanel` only. Path, open/close and state queries prefer `sidePanel` when present.
+- Title, icon, badge and toggle operations use `sidebarAction`: `opr.sidebarAction` takes precedence over
+  `browser.sidebarAction`. A selected namespace with a missing method does not trigger a retry on another namespace.
+
+A browser exposing both APIs can therefore use different native namespaces for different operations.
+
+`isAvailableSidebar()` and the `can…` checks are synchronous, uncached and silent. They return `false` when
+required API access fails and do not call the operation being checked. They work without a DOM, including in
+service workers. A `true` result does not guarantee valid arguments, a required user gesture or a successful call.
+
+Operations return Promises and preserve failures as rejections. Unsupported operations are not silently skipped.
+Callback errors through `runtime.lastError`, native Promise rejections and synchronous native errors are passed
+back to the caller. Only the state helpers deliberately convert unavailable or failed queries into safe results.
+
+```ts
+import {canSetSidebarTitle, setSidebarTitle} from "@addon-core/browser";
+
+if (canSetSidebarTitle()) {
+    try {
+        await setSidebarTitle("Reading list");
+    } catch (error) {
+        console.error("Could not update the sidebar title", error);
+    }
+}
+```
+
+## Types
+
+### SidebarError
+
+An exported `Error` subclass used for explicit unsupported-operation checks, including a blocked Opera
+icon change. It is not a wrapper around every possible failure: native errors and API access errors remain
+ordinary rejections, and some unavailable configuration/path operations use `Error` directly.
+Do not assume that every Sidebar failure is an instance of `SidebarError`.
+
+### SidebarState
+
+Exported as both a runtime enum and a TypeScript type:
+
+```ts
+enum SidebarState {
+    Open = "open",
+    Closed = "closed",
+    Unknown = "unknown",
+}
+```
+
+Use `SidebarState.Unknown` when the browser cannot establish the panel's state. It is distinct from a confirmed
+closed panel. See [getSidebarState()](#getSidebarState) for the query scope and Chromium limitation.
+
+### Native argument types
+
+Configuration and visibility methods use `chrome.sidePanel.PanelOptions`, `PanelBehavior`, `OpenOptions`
+and `CloseOptions`. These types describe arguments; their availability in TypeScript does not establish runtime support.
+
+`setSidebarIcon()` retains the existing global type `opr.sidebarAction.IconDetails` for its Firefox arguments;
+the type name does not imply runtime support in Opera:
+
+| Property | Type | Meaning |
+| --- | --- | --- |
+| `path` | `string \| Record<string, string>` | An image path or a map of sizes to paths |
+| `imageData` | `ImageData` | Pixel data supplied instead of a path |
+| `tabId` | `number` | Optional tab-specific override; omitted for the global icon |
+
+Supply `path` or `imageData`. The current wrapper type does not expose Firefox's `windowId` option or maps of
+`ImageData` objects. Supported Firefox calls receive the original arguments, including all path-map keys,
+string paths, pixel data and `tabId`. The browser validates native arguments; the package does not adapt maps.
+`IconDetails` is not a separate named export from the package.
+
+Badge setters accept a color string or `chrome.extensionTypes.ColorArray`, an RGBA tuple
+`[number, number, number, number]` with channels from 0 to 255. Badge color getters return that tuple.
 
 ---
 
@@ -53,66 +171,49 @@ Custom error class thrown when an API method is not supported or fails.
 isAvailableSidebar(): boolean
 ```
 
-Checks the same accessors used by sidebar methods: the selected browser API’s `sidePanel`, then `opr.sidebarAction` or `browser.sidebarAction`. Opera takes precedence over Firefox when both sidebar actions exist.
-Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
-The check is synchronous, does not log, and reads the current API on every call without caching.
-It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
-
-Use `canOpenSidebar()`, `canCloseSidebar()`, `canSetSidebarTitle()`, and `canGetSidebarTitle()` to check
-whether those specific methods exist.
+Checks for `sidePanel` on the API selected by `browser()`, then for the selected `sidebarAction` namespace.
+Returns `false` if no namespace is available or accessing the environment throws. It checks namespace
+presence only; use the `can…` functions for the operations they cover.
 
 ```ts
 import {isAvailableSidebar} from "@addon-core/browser";
 
-if (isAvailableSidebar()) {
-    // The namespace is present; handle operation-specific failures when using it.
-}
+const hasSidebarApi = isAvailableSidebar();
 ```
-
-<a name="getSidebarOptions"></a>
-
-### getSidebarOptions [Chromium]
-
-```
-getSidebarOptions(tabId?: number): Promise<chrome.sidePanel.PanelOptions>
-```
-
-Retrieves the side panel options (e.g., `path`) for the specified tab. Throws if the Side Panel API isn't supported (requires Chromium-based browsers like Chrome, Edge, or Opera MV3). [MV3]
-
-<a name="getSidebarBehavior"></a>
-
-### getSidebarBehavior [Chromium]
-
-```
-getSidebarBehavior(): Promise<chrome.sidePanel.PanelBehavior>
-```
-
-Gets the current side panel behavior settings. Throws if unsupported (requires Chromium-based browsers like Chrome, Edge, or Opera MV3). [MV3]
 
 <a name="canOpenSidebar"></a>
 
 ### canOpenSidebar
 
-```
+```ts
 canOpenSidebar(): boolean
 ```
 
-Returns `true` if the selected API exposes a callable `open` method: `chrome.sidePanel.open` when Side Panel is present, otherwise `sidebarAction.open`. Namespace availability alone is insufficient. This checks API support; it does not guarantee that a particular call will succeed or satisfy user-action requirements.
-Returns `false` if the environment, API, or method is absent, or if reading it throws.
-The check never throws or logs, does not call `open`, and reads the current capability on every call.
+Checks for a callable `sidePanel.open` when Side Panel is present, otherwise for `sidebarAction.open`.
+A missing method or access error returns `false`. This does not check user-gesture requirements.
+
+```ts
+import {canOpenSidebar} from "@addon-core/browser";
+
+const canShowOpenButton = canOpenSidebar();
+```
 
 <a name="canCloseSidebar"></a>
 
 ### canCloseSidebar
 
-```
+```ts
 canCloseSidebar(): boolean
 ```
 
-Returns `true` if the selected API exposes a callable `close` method: `chrome.sidePanel.close` when Side Panel is present, otherwise `sidebarAction.close`. Namespace availability alone is insufficient.
-Returns `false` if the environment, API, or method is absent, or if reading it throws.
-The check never throws or logs, does not call `close`, and reads the current capability on every call.
-It does not guarantee that a later `closeSidebar()` operation will succeed; native operation errors still reject.
+Checks for a callable `sidePanel.close` when Side Panel is present, otherwise for `sidebarAction.close`.
+This is independent of `canOpenSidebar()`; a browser can support opening without exposing a close method.
+
+```ts
+import {canCloseSidebar} from "@addon-core/browser";
+
+const canShowCloseButton = canCloseSidebar();
+```
 
 <a name="canSetSidebarTitle"></a>
 
@@ -122,14 +223,8 @@ It does not guarantee that a later `closeSidebar()` operation will succeed; nati
 canSetSidebarTitle(): boolean
 ```
 
-Returns `true` if the selected `sidebarAction` API exposes a callable `setTitle` method.
-Uses `opr.sidebarAction` first, otherwise `browser.sidebarAction`, just like `setSidebarTitle()`.
-If the selected namespace lacks the method, it does not fall back to another namespace.
-Chrome and Edge's `sidePanel` API has no title methods; `isAvailableSidebar()` alone is insufficient.
-
-Returns `false` if the environment, namespace, or method is absent, the method is not callable, or reading it throws.
-The check is synchronous, never throws or logs, does not call the native method, and reads the current API on every
-call without caching. It checks method availability only; a later `setSidebarTitle()` call can still reject.
+Checks for a callable `setTitle` on the selected `sidebarAction`. Returns `false` for an absent or
+non-callable method or an access error. `sidePanel` alone cannot change the title through this helper.
 
 ```ts
 import {canSetSidebarTitle, setSidebarTitle} from "@addon-core/browser";
@@ -147,18 +242,38 @@ if (canSetSidebarTitle()) {
 canGetSidebarTitle(): boolean
 ```
 
-Returns `true` if the selected `sidebarAction` API exposes a callable `getTitle` method.
-Uses the same Opera-first selection and safe, synchronous behavior as `canSetSidebarTitle()`:
-missing or non-callable methods and access errors produce `false`, without logging, native calls, or caching.
-It checks `getTitle` independently of `setTitle`; support for one does not establish support for the other.
-A later `getSidebarTitle()` call can still reject on native errors.
+Checks for a callable `getTitle` on the selected `sidebarAction`. Reading and setting are checked
+independently; support for `setTitle` does not establish support for `getTitle`.
 
 ```ts
 import {canGetSidebarTitle, getSidebarTitle} from "@addon-core/browser";
 
 if (canGetSidebarTitle()) {
-    const title = await getSidebarTitle();
-    console.log(title);
+    console.log(await getSidebarTitle());
+}
+```
+
+<a name="canSetSidebarIcon"></a>
+
+### canSetSidebarIcon
+
+```ts
+canSetSidebarIcon(): boolean
+```
+
+Uses the same compatibility rule as `setSidebarIcon()`: the selected `sidebarAction` must expose a callable
+`setIcon`, and it must not be Opera's `opr.sidebarAction`. Opera is temporarily blocked in both MV2 and MV3
+because its native handler targets the wrong API. This check does not read the manifest.
+
+Returns `false` for `sidePanel` alone, absent or non-callable methods, API access errors and the temporary
+Opera restriction. `true` means support considering known restrictions, not success with arbitrary arguments.
+The check does not load an image or make a trial icon change. See the [Opera restriction](#opera-icon-compatibility).
+
+```ts
+import {canSetSidebarIcon, setSidebarIcon} from "@addon-core/browser";
+
+if (canSetSidebarIcon()) {
+    await setSidebarIcon({path: "/icons/sidebar.png"});
 }
 ```
 
@@ -166,79 +281,196 @@ if (canGetSidebarTitle()) {
 
 ### openSidebar
 
-```
+```ts
 openSidebar(options: chrome.sidePanel.OpenOptions): Promise<void>
 ```
 
-Opens the side panel with the given options in Chromium-based browsers (MV3). Falls back to `sidebarAction.open()` in Firefox/Opera. Throws if unsupported.
+Forwards `options` to `sidePanel.open` when available. Chromium requires at least one of `tabId` or `windowId`.
+Without Side Panel, calls Firefox's `sidebarAction.open()` with no arguments: the supplied IDs do not target
+another window in that branch. The public wrapper still uses Chromium's options type and requires a target ID.
+A missing selected method rejects with `SidebarError`.
 
-Resolves after the native callback or Promise completes. Callback `runtime.lastError`, native Promise rejections, and synchronous failures reject the returned Promise. If the selected API lacks `open`, rejects with `SidebarError`.
+Invoke opening directly in a user-action handler. See the
+[Chromium requirements](https://developer.chrome.com/docs/extensions/reference/api/sidePanel#method-open)
+and [Firefox active-window behavior](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/open).
+For example, register this in a background context with an action configured without a popup:
+
+```ts
+import {canOpenSidebar, onActionClicked, openSidebar} from "@addon-core/browser";
+
+onActionClicked(tab => {
+    if (canOpenSidebar()) {
+        void openSidebar({windowId: tab.windowId}).catch(error => {
+            console.error("Could not open the sidebar", error);
+        });
+    }
+});
+```
 
 <a name="closeSidebar"></a>
 
 ### closeSidebar
 
-```
+```ts
 closeSidebar(options: chrome.sidePanel.CloseOptions): Promise<void>
 ```
 
-Closes the side panel with the given options in Chromium-based browsers (MV3). Falls back to `sidebarAction.close()` in Firefox/Opera. Throws if unsupported.
+Forwards `options` to `sidePanel.close`; Chromium requires `tabId` or `windowId` to identify the target.
+Otherwise calls Firefox's `sidebarAction.close()` without arguments, ignoring the supplied IDs and closing
+the extension's sidebar in the active window. A missing selected method rejects with `SidebarError`.
+Firefox requires a user-action handler for this call; see its
+[close reference](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/close).
 
-Resolves after the native callback or Promise completes and rejects on native errors. If the selected API lacks `close`, rejects with `SidebarError`.
+This alternative action handler closes the panel when the toolbar button is clicked. Configure the action
+without a popup and register the handler in a background context:
+
+```ts
+import {canCloseSidebar, closeSidebar, onActionClicked} from "@addon-core/browser";
+
+onActionClicked(tab => {
+    if (canCloseSidebar()) {
+        void closeSidebar({windowId: tab.windowId}).catch(error => console.error("Could not close the sidebar", error));
+    }
+});
+```
+
+The public wrapper requires a target ID even in Firefox, where the native call ignores it.
+
+<a name="toggleSidebar"></a>
+
+### toggleSidebar
+
+```ts
+toggleSidebar(): Promise<void>
+```
+
+Calls the selected `sidebarAction.toggle()`, supported by Firefox. It does not emulate toggling through
+`sidePanel.open` and `sidePanel.close`. Missing support rejects with `SidebarError`.
+Firefox toggles the extension's sidebar in the active window and requires a
+[user-action handler](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/sidebarAction/toggle).
+
+```ts
+import {toggleSidebar} from "@addon-core/browser";
+
+// Firefox extension page with a button whose ID is toggle-sidebar.
+document.querySelector<HTMLButtonElement>("#toggle-sidebar")?.addEventListener("click", () => {
+    void toggleSidebar().catch(error => console.error("Could not toggle the sidebar", error));
+});
+```
+
+<a name="getSidebarOptions"></a>
+
+### getSidebarOptions
+
+```ts
+getSidebarOptions(tabId?: number): Promise<chrome.sidePanel.PanelOptions>
+```
+
+Reads `sidePanel.getOptions({tabId})`. Omit `tabId` for the default configuration or provide it for a tab's
+configuration. Returns the native options unchanged, including `path` and `enabled` when supplied by the browser.
+This is Side Panel only; missing support and native query failures reject.
+
+```ts
+import {getSidebarOptions} from "@addon-core/browser";
+
+const options = await getSidebarOptions(42);
+console.log(options.path, options.enabled);
+```
 
 <a name="setSidebarOptions"></a>
 
-### setSidebarOptions [Chromium]
+### setSidebarOptions
 
-```
+```ts
 setSidebarOptions(options?: chrome.sidePanel.PanelOptions): Promise<void>
 ```
 
-Sets side panel options (e.g., `path`) in Chromium-based browsers (MV3). Throws if unsupported. [MV3]
+Passes the supplied object to `sidePanel.setOptions`. Omitting it sends `{}`; this helper does not implement
+a reset operation. Configuration does not open the panel. This is Side Panel only and rejects when unavailable.
+
+```ts
+import {setSidebarOptions} from "@addon-core/browser";
+
+await setSidebarOptions({tabId: 42, path: "sidebar.html", enabled: true});
+```
+
+<a name="getSidebarBehavior"></a>
+
+### getSidebarBehavior
+
+```ts
+getSidebarBehavior(): Promise<chrome.sidePanel.PanelBehavior>
+```
+
+Returns the result of `sidePanel.getPanelBehavior()`. This is Side Panel only; it has no Sidebar Action fallback.
+
+```ts
+import {getSidebarBehavior} from "@addon-core/browser";
+
+const behavior = await getSidebarBehavior();
+console.log(behavior.openPanelOnActionClick);
+```
 
 <a name="setSidebarBehavior"></a>
 
-### setSidebarBehavior [Chromium]
+### setSidebarBehavior
 
-```
+```ts
 setSidebarBehavior(behavior?: chrome.sidePanel.PanelBehavior): Promise<void>
 ```
 
-Updates default panel behavior in Chromium-based browsers (MV3). Throws if unsupported. [MV3]
+Calls `sidePanel.setPanelBehavior`, for example to let an action click toggle the panel.
+Omitting `behavior` sends `{}` without adding defaults or resetting configuration. This is Side Panel only.
+
+```ts
+import {setSidebarBehavior} from "@addon-core/browser";
+
+await setSidebarBehavior({openPanelOnActionClick: true});
+```
 
 <a name="setSidebarPath"></a>
 
 ### setSidebarPath
 
-```
+```ts
 setSidebarPath(path: string, tabId?: number): Promise<void>
 ```
 
-Sets the sidebar path in Chromium-based browsers via `setOptions` (MV3) or via `sidebarAction.setPanel()` in Firefox/Opera. Throws if unsupported.
+Sets `sidePanel` options `{tabId, path}` when that API is present; otherwise calls
+`sidebarAction.setPanel({tabId, panel: path})`. Omit `tabId` to update the default/global panel.
+The path is passed unchanged, and the browser decides which URLs it accepts. Chromium requires a local
+extension resource. Setting a path does not itself open the panel; unsupported operations and native failures reject.
+
+```ts
+import {setSidebarPath} from "@addon-core/browser";
+
+await setSidebarPath("sidebar.html");
+await setSidebarPath("sidebar.html?mode=compact#settings", 42);
+```
 
 <a name="getSidebarPath"></a>
 
 ### getSidebarPath
 
-```
+```ts
 getSidebarPath(tabId?: number): Promise<string | undefined>
 ```
 
-Retrieves the configured sidebar page using Chromium's `sidePanel.getOptions()` (MV3) or
-`sidebarAction.getPanel()` in Firefox/Opera. Uses the same result format across browsers:
+Reads `sidePanel.getOptions()` or the selected `sidebarAction.getPanel()`. Omit `tabId` for the default/global
+configuration. Unlike `getSidebarOptions().path`, this helper normalizes the native result:
 
-- A page belonging to this extension is returned relative to the extension root, without a leading `/`.
-  Query parameters, fragments, and URL encoding are preserved: `panel.html?mode=compact#settings`.
-- An external URL is returned in full, including its scheme and host. Firefox supports remote sidebar pages;
-  their addresses must not be treated as local extension paths.
-- An absent or empty native path returns `undefined`.
+- This extension's URLs become paths relative to its root, without a leading `/`.
+- Query parameters, fragments and URL encoding are preserved.
+- External URLs remain absolute, including their scheme and host.
+- Empty or absent native paths produce `undefined`.
 
-An omitted `tabId` queries the default/global panel configuration. Throws if unsupported or if the native query fails.
+A failed query rejects; it is not converted to `undefined`. Reading a configured path does not establish visibility.
 
 ```ts
-await setSidebarPath("/panel.html?mode=compact#settings", 7);
-const path = await getSidebarPath(7);
-// "panel.html?mode=compact#settings" in Chromium, Firefox, and Opera.
+import {getSidebarPath, setSidebarPath} from "@addon-core/browser";
+
+await setSidebarPath("sidebar.html?mode=compact#settings", 42);
+console.log(await getSidebarPath(42)); // "sidebar.html?mode=compact#settings"
 ```
 
 <a name="getSidebarState"></a>
@@ -246,33 +478,23 @@ const path = await getSidebarPath(7);
 ### getSidebarState
 
 ```ts
-enum SidebarState {
-    Open = "open",
-    Closed = "closed",
-    Unknown = "unknown",
-}
-
 getSidebarState(windowId?: number): Promise<SidebarState>
 ```
 
-Checks the specified window using `runtime.getContexts()` in Chromium (MV3) or `sidebarAction.isOpen()`
-in Firefox. Without `windowId`, resolves the last focused browser window using `windows.getLastFocused()`
-on every call and checks only that window. The last focused window may differ from the window containing
-the calling extension page. An explicit `windowId`, including `0`, bypasses the focus lookup.
+Queries `runtime.getContexts({contextTypes: ["SIDE_PANEL"]})` when Side Panel is present; otherwise uses
+Firefox's `sidebarAction.isOpen({windowId})`. Without an ID, looks up the last focused browser window on
+each call. It checks only that window, which may differ from the calling page's window. An explicit ID,
+including `0`, bypasses the focus lookup.
 
-Returns `"open"` when an open panel is identified, `"closed"` when the query confirms no open panel in that
-window, or `"unknown"` when the state cannot be determined. Missing WebExtension globals or required APIs,
-API access errors, window lookup failures, and synchronous or asynchronous query failures produce `"unknown"`.
-Opera's legacy `opr.sidebarAction` does not support this check and also produces `"unknown"`.
-The helper does not throw, reject, log errors, or cache its result. The `SidebarState` enum is publicly exported
-as both a runtime value and a TypeScript type.
+Returns `SidebarState.Open` for a confirmed open panel, `SidebarState.Closed` for a confirmed closed panel,
+and `SidebarState.Unknown` when the result cannot be established. Missing APIs, API access errors, failed
+window lookups and failed queries produce `Unknown` without rejection, logging or caching.
+Opera's legacy Sidebar Action has no state query; an environment with only that API returns `Unknown`.
 
-Chromium limitation: `runtime.getContexts()` can report a side panel with `windowId: -1`, including when the
-panel is visibly open. Such a context cannot be assigned to the requested window. If no context matches that
-window and at least one panel has an unknown window, the result is `"unknown"`.
-No side-panel contexts means `"closed"`; a context matching the window means `"open"`.
-This helper checks context existence in Chromium and does not maintain its own visibility or window registry.
-The unassigned side-panel window ID is also covered by
+Chromium reports panel contexts, which are not a complete visibility signal. A matching window context
+produces `Open`. If none matches but a side-panel context has `windowId: -1`, the result is `Unknown` because
+that context cannot be assigned to a window. Otherwise the result is `Closed`, including an empty context list.
+The helper does not maintain its own visibility registry. The unassigned window ID is covered by
 [Chromium's native API test](https://chromium.googlesource.com/chromium/src/+/cc748d4034cf809a90bead06f9f9dcabd0dbbaf5/chrome/browser/extensions/api/runtime/runtime_apitest.cc#1165).
 
 ```ts
@@ -281,11 +503,11 @@ import {getSidebarState, SidebarState} from "@addon-core/browser";
 const state = await getSidebarState();
 
 if (state === SidebarState.Open) {
-    // The panel is open.
+    console.log("An open panel was confirmed");
 } else if (state === SidebarState.Closed) {
-    // The panel is closed.
+    console.log("The queried window has no open panel");
 } else {
-    // The browser cannot determine whether the panel is open in this window.
+    console.log("The panel state is unknown");
 }
 ```
 
@@ -297,141 +519,264 @@ if (state === SidebarState.Open) {
 isOpenSidebar(windowId?: number): Promise<boolean>
 ```
 
-Returns `true` only when `getSidebarState(windowId)` resolves to `SidebarState.Open`.
-Both `"closed"` and `"unknown"` produce `false`; `false` therefore means that an open panel was not confirmed,
-not necessarily that it is closed. This check never throws or rejects its Promise.
-Use `getSidebarState()` when the distinction between closed and unknown affects your next action.
+Returns `true` only when `getSidebarState(windowId)` returns `SidebarState.Open`. Both `Closed` and `Unknown`
+produce `false`; `false` does not necessarily mean the panel is closed. Like the state query, this helper
+contains errors and does not reject. Use `getSidebarState()` when the distinction matters.
 
 ```ts
 import {isOpenSidebar} from "@addon-core/browser";
 
-if (await isOpenSidebar()) {
-    // An open panel was confirmed in the last focused window.
-}
+const confirmedOpen = await isOpenSidebar(7);
 ```
-
-Compatibility note: earlier versions checked all windows in Chromium when `windowId` was omitted.
-The check now targets the last focused window and returns `false` on unavailable or failed queries.
-Use `getSidebarState()` to preserve unknown-state information.
-Earlier Firefox/Opera `getSidebarPath()` results also had a leading `/` and omitted query parameters and fragments.
-
-<a name="toggleSidebar"></a>
-
-### toggleSidebar [Firefox]
-
-```
-toggleSidebar(): Promise<void>
-```
-
-Toggles the sidebar in Firefox. Throws if unsupported.
 
 <a name="setSidebarTitle"></a>
 
-### setSidebarTitle [Firefox, Opera]
+### setSidebarTitle
 
-```
+```ts
 setSidebarTitle(title: string | number, tabId?: number): Promise<void>
 ```
 
-Sets the sidebar title via `sidebarAction.setTitle()` (Firefox/Opera). Firefox uses it in the sidebar menu and
-the open panel's heading; Opera documents it as the sidebar action's tooltip. This does not set the HTML document title.
+Calls `sidebarAction.setTitle({tabId, title: title.toString()})`; omitting `tabId` changes the global title.
+The title labels the browser's sidebar UI, not the sidebar page's HTML document. Firefox uses it in sidebar
+UI and Opera describes it as a tooltip. The wrapper awaits Firefox's Promise and handles Opera's synchronous setter.
+A missing or non-callable selected method rejects with `SidebarError`; native failures still reject.
 
-Rejects with `SidebarError` if the method is unavailable or not callable. API access errors and native operation
-errors still reject; unsupported operations are not silently skipped. Use `canSetSidebarTitle()` when setting
-the title is optional. Firefox's native Promise is awaited; Opera's native setter is synchronous.
+```ts
+import {canSetSidebarTitle, setSidebarTitle} from "@addon-core/browser";
 
-<a name="setSidebarIcon"></a>
-
-### setSidebarIcon [Firefox, Opera]
-
+if (canSetSidebarTitle()) {
+    await setSidebarTitle("Reading list", 42);
+}
 ```
-setSidebarIcon(details: opr.sidebarAction.IconDetails): Promise<void>
-```
-
-Sets the sidebar icon via `sidebarAction.setIcon()` (Firefox/Opera). Rejects with `SidebarError` if the method is unavailable.
-
-In Firefox, waits for the native Promise. In Opera, passes a completion callback and checks `runtime.lastError` inside it. Native errors, including `Access to extension API denied`, reject the returned Promise. The wrapper attempts the operation in Opera and does not report success without calling the API.
-
-Opera limitation: in a local check on Opera 135 (macOS, Manifest V2), an existing icon file still produced `Access to extension API denied`. An absent file produced a browser-side error without completing the callback, leaving the Promise pending. The wrapper does not add a timeout for a missing native callback.
-
-<a name="setSidebarBadgeText"></a>
-
-### setSidebarBadgeText [Opera]
-
-```
-setSidebarBadgeText(text: string | number, tabId?: number): Promise<void>
-```
-
-Sets the sidebar badge text via `opr.sidebarAction.setBadgeText()` (Opera only). Throws if unsupported.
-
-<a name="clearSidebarBadgeText"></a>
-
-### clearSidebarBadgeText [Opera]
-
-```
-clearSidebarBadgeText(tabId?: number): Promise<void>
-```
-
-Clears the sidebar badge text (equivalent to setting an empty string) via `opr.sidebarAction.setBadgeText()` (Opera only).
-
-<a name="setSidebarBadgeTextColor"></a>
-
-### setSidebarBadgeTextColor [Opera]
-
-```
-setSidebarBadgeTextColor(color: string | [number, number, number, number], tabId?: number): Promise<void>
-```
-
-Sets the sidebar badge text color via `opr.sidebarAction.setBadgeTextColor()` (Opera only). Throws if unsupported.
-
-<a name="setSidebarBadgeBgColor"></a>
-
-### setSidebarBadgeBgColor [Opera]
-
-```
-setSidebarBadgeBgColor(color: string | [number, number, number, number], tabId?: number): Promise<void>
-```
-
-Sets the sidebar badge background color via `opr.sidebarAction.setBadgeBackgroundColor()` (Opera only). Throws if unsupported.
 
 <a name="getSidebarTitle"></a>
 
-### getSidebarTitle [Firefox, Opera]
+### getSidebarTitle
 
-```
+```ts
 getSidebarTitle(tabId?: number): Promise<string>
 ```
 
-Gets the sidebar title via `sidebarAction.getTitle()` (Firefox/Opera). Rejects with `SidebarError` if the method
-is unavailable or not callable. API access errors, Firefox Promise rejections, and Opera callback
-`runtime.lastError` still reject. Use `canGetSidebarTitle()` when reading the title is optional.
+Reads the selected `sidebarAction.getTitle({tabId})`, awaiting Firefox's Promise or Opera's callback.
+Omit `tabId` for the global title. Missing or non-callable support rejects with `SidebarError`;
+access errors, callback errors and native Promise rejections also reject.
+
+```ts
+import {canGetSidebarTitle, getSidebarTitle} from "@addon-core/browser";
+
+if (canGetSidebarTitle()) {
+    console.log(await getSidebarTitle(42));
+}
+```
+
+<a name="setSidebarIcon"></a>
+
+### setSidebarIcon
+
+```ts
+setSidebarIcon(details: opr.sidebarAction.IconDetails): Promise<void>
+```
+
+Changes the selected Sidebar Action icon in Firefox. Uses the same compatibility rule as `canSetSidebarIcon()`:
+missing or non-callable support, or Opera in either MV2 or MV3, rejects with `SidebarError` before any native
+icon call. API access errors retain their original rejection. Opera's namespace keeps priority when both
+namespaces exist; the wrapper does not retry through Firefox or the Action API.
+
+Firefox receives `details` unchanged, including all path-map keys, string paths, `imageData` and `tabId: 0`.
+Neither `details` nor its path map is modified. The package does not convert sizes, load or resize images.
+It waits for Firefox's Promise and propagates native rejections and synchronous argument errors. A successful
+capability check does not validate an image or guarantee that a particular call succeeds.
+See the [argument types](#native-argument-types) and [Opera limitations](#opera-icon-compatibility).
+
+```ts
+import {canSetSidebarIcon, setSidebarIcon} from "@addon-core/browser";
+
+if (canSetSidebarIcon()) {
+    await setSidebarIcon({path: "/icons/sidebar.png"});
+    await setSidebarIcon({path: "/icons/sidebar-active.png", tabId: 42});
+
+    await setSidebarIcon({
+        path: {24: "/small.png", 40: "/medium.png", 64: "/large.png"},
+        tabId: 42,
+    });
+    // Firefox receives the original map with all three sizes. Opera skips this block.
+}
+```
+
+<a name="setSidebarBadgeText"></a>
+
+### setSidebarBadgeText
+
+```ts
+setSidebarBadgeText(text: string | number, tabId?: number): Promise<void>
+```
+
+Calls the selected Sidebar Action's `setBadgeText` with the text converted to a string. This is an Opera
+operation where the method is exposed; it has no Side Panel or Firefox equivalent. Omit `tabId` for the
+global badge. Missing support rejects with `SidebarError`.
+
+```ts
+import {setSidebarBadgeText} from "@addon-core/browser";
+
+// Opera with badge support.
+await setSidebarBadgeText(3, 42);
+```
+
+<a name="clearSidebarBadgeText"></a>
+
+### clearSidebarBadgeText
+
+```ts
+clearSidebarBadgeText(tabId?: number): Promise<void>
+```
+
+Calls `setSidebarBadgeText("", tabId)` and preserves its errors. Clearing does not reset badge colors.
+
+```ts
+import {clearSidebarBadgeText} from "@addon-core/browser";
+
+// Opera with badge support.
+await clearSidebarBadgeText(42);
+```
 
 <a name="getSidebarBadgeText"></a>
 
-### getSidebarBadgeText [Opera]
+### getSidebarBadgeText
 
-```
+```ts
 getSidebarBadgeText(tabId?: number): Promise<string>
 ```
 
-Gets the sidebar badge text via `opr.sidebarAction.getBadgeText()` (Opera only). Throws if unsupported.
+Reads the selected Sidebar Action's `getBadgeText` through its callback. Omit `tabId` for the global badge.
+A native empty string is returned unchanged; an unavailable method or failed read rejects.
+
+```ts
+import {getSidebarBadgeText} from "@addon-core/browser";
+
+// Opera with badge support.
+console.log(await getSidebarBadgeText(42));
+```
+
+<a name="setSidebarBadgeTextColor"></a>
+
+### setSidebarBadgeTextColor
+
+```ts
+setSidebarBadgeTextColor(color: string | chrome.extensionTypes.ColorArray, tabId?: number): Promise<void>
+```
+
+Forwards `{tabId, color}` to the selected Sidebar Action's `setBadgeTextColor`, without color conversion.
+This requires an implementation exposing that Opera-specific method; the general badge API does not
+establish support for text-color methods. Missing support rejects with `SidebarError`.
+
+```ts
+import {setSidebarBadgeTextColor} from "@addon-core/browser";
+
+// Opera with setBadgeTextColor support.
+await setSidebarBadgeTextColor([255, 255, 255, 255], 42);
+```
 
 <a name="getSidebarBadgeTextColor"></a>
 
-### getSidebarBadgeTextColor [Opera]
+### getSidebarBadgeTextColor
 
-```
-getSidebarBadgeTextColor(tabId?: number): Promise<[number, number, number, number]>
+```ts
+getSidebarBadgeTextColor(tabId?: number): Promise<chrome.extensionTypes.ColorArray>
 ```
 
-Gets the sidebar badge text color via `opr.sidebarAction.getBadgeTextColor()` (Opera only). Throws if unsupported.
+Reads the selected Sidebar Action's `getBadgeTextColor` through its callback and returns the native RGBA tuple.
+Omitting `tabId` queries the global setting. Unavailable support and native failures reject.
+
+```ts
+import {getSidebarBadgeTextColor} from "@addon-core/browser";
+
+// Opera with getBadgeTextColor support.
+const [red, green, blue, alpha] = await getSidebarBadgeTextColor(42);
+console.log(red, green, blue, alpha);
+```
+
+<a name="setSidebarBadgeBgColor"></a>
+
+### setSidebarBadgeBgColor
+
+```ts
+setSidebarBadgeBgColor(color: string | chrome.extensionTypes.ColorArray, tabId?: number): Promise<void>
+```
+
+Forwards `{tabId, color}` to the selected Sidebar Action's `setBadgeBackgroundColor`. Omit `tabId` for the
+global setting. The wrapper does not normalize colors or provide a fallback when the method is unavailable.
+
+```ts
+import {setSidebarBadgeBgColor} from "@addon-core/browser";
+
+// Opera with badge background-color support.
+await setSidebarBadgeBgColor("#2463eb", 42);
+```
 
 <a name="getSidebarBadgeBgColor"></a>
 
-### getSidebarBadgeBgColor [Opera]
+### getSidebarBadgeBgColor
 
-```
-getSidebarBadgeBgColor(tabId?: number): Promise<[number, number, number, number]>
+```ts
+getSidebarBadgeBgColor(tabId?: number): Promise<chrome.extensionTypes.ColorArray>
 ```
 
-Gets the sidebar badge background color via `opr.sidebarAction.getBadgeBackgroundColor()` (Opera only). Throws if unsupported.
+Reads the selected Sidebar Action's `getBadgeBackgroundColor` through its callback. Returns an RGBA tuple
+rather than a CSS string, and rejects unavailable support or native errors.
+
+```ts
+import {getSidebarBadgeBgColor} from "@addon-core/browser";
+
+// Opera with badge background-color support.
+const background = await getSidebarBadgeBgColor(42);
+console.log(background);
+```
+
+## Opera icon compatibility
+
+The package temporarily disables `setSidebarIcon()` for **Opera in both Manifest V2 and Manifest V3**, even
+when native `setIcon` exists. `canSetSidebarIcon()` returns `false`; a direct setter call rejects with
+`SidebarError` without invoking Opera's method. Title, path and other Sidebar operations keep their existing
+behavior. Use `sidebar_action.default_icon` in the manifest for Opera's initial Sidebar icon.
+
+In **Opera 135.0.5973.92 on macOS**, the native Sidebar Action handler sends the request to the old
+`browserAction.setIcon`, with different failures in each manifest version:
+
+- **MV2:** calls can complete successfully while changing the toolbar's Browser Action icon instead of
+  the Sidebar icon. Visual checks with both `sidebar_action` and `browser_action` declared reproduced this
+  for global and tab-specific calls. A direct native call with valid arguments reproduced the same result
+  without the wrapper.
+- **MV3:** the old API is unavailable, so correct native calls fail with `Access to extension API denied.`
+
+Changing path-map keys cannot correct this routing defect, so the package does not adapt Opera icon maps.
+The block also avoids Opera's lost callback on native image loading or decoding failures. No timeout,
+custom image loader, Action API fallback or silent success is used.
+
+This is a temporary package compatibility restriction, independent of the manifest or browser version.
+Revisit it only after a browser fix is confirmed by both successful API completion and visual updates of
+the actual Sidebar icon, globally and for a specific tab.
+
+## Compatibility notes
+
+Earlier Chromium `isOpenSidebar()` calls without a window ID checked all windows. The helper now checks
+the last focused window and returns `false` for unavailable or failed queries. Use `getSidebarState()` to
+retain the distinction between closed and unknown.
+
+Earlier Firefox/Opera `getSidebarPath()` results had a leading `/` and omitted query parameters and fragments.
+The current helper preserves those URL components and returns local paths relative to the extension root.
+
+## Verification scope
+
+Jest tests exercise capability checks, namespace priority, unchanged Firefox arguments and failure handling
+against controlled API models. Opera MV2/MV3 tests assert rejection without native icon calls or manifest
+reads, while title/path tests guard against regressions. Package-consumer checks verify public types and ESM/CJS exports.
+[Browser scenarios](../tests/browser/api/sidebar/) run the built package in Firefox and Chromium; they cover
+icon/title contracts and unsupported Side Panel operations. Separate native checks in Opera 137.0.6036.39
+on macOS confirmed the package's rejection of icon changes in MV2 and MV3, including a service worker without
+a DOM, while title and path operations still completed. These checks verify the package's block, not whether
+Opera has fixed its native handler. The earlier native Opera investigation and visual verification are the
+basis for the compatibility restriction above; successful native callbacks alone did not establish correct
+Sidebar icon updates.
+These checks do not establish support for every historical browser version or prove that all badge methods
+work on every Opera platform.
