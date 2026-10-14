@@ -141,12 +141,16 @@ describe.each(["chrome", "firefox"] as const)("tab methods in %s", profile => {
         expect(harness.tabs.values).toEqual([]);
     });
 
-    test("openOrCreateTabByUrl selects an existing tab without creating another", async () => {
-        harness.tabs.set([createTabFixture({id: 7, url, highlighted: false})]);
+    test.each([7, 0])("openOrCreateTabByUrl selects the first matching tab with ID %s without creating another", async id => {
+        harness.tabs.set([
+            createTabFixture({id, index: 0, url, active: false, highlighted: false}),
+            createTabFixture({id: 8, index: 1, url, active: true, highlighted: false}),
+        ]);
 
         await expect(api.openOrCreateTabByUrl(url)).resolves.toBeUndefined();
-        expect(harness.tabs.values).toHaveLength(1);
-        expect(harness.tabs.values[0]).toMatchObject({id: 7, highlighted: true});
+        expect(harness.tabs.values).toHaveLength(2);
+        expect(harness.tabs.values[0]).toMatchObject({id, active: false, highlighted: true});
+        expect(harness.tabs.values[1]).toMatchObject({id: 8, active: true, highlighted: false});
         expect(harness.tabs.create.calls).toHaveLength(0);
     });
 
@@ -158,44 +162,94 @@ describe.each(["chrome", "firefox"] as const)("tab methods in %s", profile => {
         expect(harness.tabs.update.calls).toHaveLength(0);
     });
 
-    test("openOrCreateTab selects an existing tab when both its ID and URL match", async () => {
-        const tab = createTabFixture({id: 7, url, highlighted: false});
-        harness.tabs.set([tab]);
+    test.each([7, 8, 0])("openOrCreateTab selects matching ID %s among tabs sharing a URL", async id => {
+        harness.tabs.set([
+            createTabFixture({id: 7, index: 0, url, active: true, highlighted: false}),
+            createTabFixture({id: 8, index: 1, url, active: false, highlighted: false}),
+            createTabFixture({id: 0, index: 2, url, active: false, highlighted: false}),
+        ]);
 
-        await expect(api.openOrCreateTab(tab)).resolves.toBeUndefined();
-        expect(harness.tabs.values[0]).toMatchObject({id: 7, highlighted: true});
+        await expect(api.openOrCreateTab(createTabFixture({id, url}))).resolves.toBeUndefined();
+        expect(harness.tabs.values).toHaveLength(3);
+        expect(harness.tabs.values.find(tab => tab.id === id)?.highlighted).toBe(true);
+        expect(harness.tabs.values.filter(tab => tab.id !== id).every(tab => !tab.highlighted)).toBe(true);
+        expect(harness.tabs.values.filter(tab => tab.active).map(tab => tab.id)).toEqual([7]);
         expect(harness.tabs.create.calls).toHaveLength(0);
     });
 
     test.each([undefined, 999])("openOrCreateTab creates a tab for an absent or stale ID: %s", async id => {
+        const existing = createTabFixture({id: 7, url, highlighted: false});
+        harness.tabs.set([existing]);
+
         await expect(api.openOrCreateTab(createTabFixture({id, url}))).resolves.toBeUndefined();
 
-        expect(harness.tabs.values).toHaveLength(1);
-        expect(harness.tabs.values[0].url).toBe(url);
+        expect(harness.tabs.values).toHaveLength(2);
+        expect(harness.tabs.values[0]).toEqual({...existing, active: false});
+        expect(harness.tabs.values[1].url).toBe(url);
+        expect(harness.tabs.create.calls).toHaveLength(1);
         expect(harness.tabs.update.calls).toHaveLength(0);
     });
 
-    test("openOrCreateTabByUrl propagates a lookup failure without creating a duplicate", async () => {
-        harness.tabs.query.failNext(new Error("Lookup failed"));
+    test("openOrCreateTab creates a tab when the requested ID belongs to a different URL", async () => {
+        const existing = [
+            createTabFixture({id: 7, index: 0, url, highlighted: false}),
+            createTabFixture({id: 8, index: 1, url: "https://example.test/other", active: false, highlighted: false}),
+        ];
 
-        await expect(api.openOrCreateTabByUrl(url)).rejects.toThrow("Lookup failed");
-        expect(harness.tabs.create.calls).toHaveLength(0);
+        harness.tabs.set(existing);
+
+        await expect(api.openOrCreateTab(createTabFixture({id: 8, url}))).resolves.toBeUndefined();
+
+        expect(harness.tabs.values).toHaveLength(3);
+        expect(harness.tabs.values.slice(0, 2)).toEqual(existing.map(tab => ({...tab, active: false})));
+        expect(harness.tabs.values[2].url).toBe(url);
+        expect(harness.tabs.create.calls).toHaveLength(1);
         expect(harness.tabs.update.calls).toHaveLength(0);
     });
 
-    test("openOrCreateTabByUrl propagates a selection failure without creating a duplicate", async () => {
-        harness.tabs.set([createTabFixture({id: 7, url})]);
-        harness.tabs.update.failNext(new Error("Selection failed"));
+    test("openOrCreateTab creates without a URL when the requested tab has no URL", async () => {
+        const existing = createTabFixture({id: 7, url});
+        harness.tabs.set([existing]);
 
-        await expect(api.openOrCreateTabByUrl(url)).rejects.toThrow("Selection failed");
-        expect(harness.tabs.create.calls).toHaveLength(0);
+        await expect(api.openOrCreateTab(createTabFixture({id: 7, url: undefined}))).resolves.toBeUndefined();
+
+        expect(harness.tabs.values).toHaveLength(2);
+        expect(harness.tabs.values[0]).toEqual({...existing, active: false});
+        expect(harness.tabs.create.calls.map(call => call.args)).toEqual([[{url: undefined}]]);
+        expect(harness.tabs.query.calls).toHaveLength(0);
+        expect(harness.tabs.update.calls).toHaveLength(0);
     });
 
-    test("openOrCreateTabByUrl propagates a creation failure", async () => {
-        harness.tabs.create.failNext(new Error("Creation failed"));
+    describe.each([
+        ["openOrCreateTab", () => api.openOrCreateTab(createTabFixture({id: 7, url}))],
+        ["openOrCreateTabByUrl", () => api.openOrCreateTabByUrl(url)],
+    ] as const)("%s failures", (_name, invoke) => {
+        test("propagates a lookup failure without creating a duplicate", async () => {
+            harness.tabs.query.failNext(new Error("Lookup failed"));
 
-        await expect(api.openOrCreateTabByUrl(url)).rejects.toThrow("Creation failed");
-        expect(harness.tabs.values).toEqual([]);
+            await expect(invoke()).rejects.toThrow("Lookup failed");
+            expect(harness.tabs.create.calls).toHaveLength(0);
+            expect(harness.tabs.update.calls).toHaveLength(0);
+            expect(harness.tabs.values).toEqual([]);
+        });
+
+        test("propagates a selection failure without creating a duplicate", async () => {
+            const existing = createTabFixture({id: 7, url, highlighted: false});
+            harness.tabs.set([existing]);
+            harness.tabs.update.failNext(new Error("Selection failed"));
+
+            await expect(invoke()).rejects.toThrow("Selection failed");
+            expect(harness.tabs.create.calls).toHaveLength(0);
+            expect(harness.tabs.values).toEqual([existing]);
+        });
+
+        test("propagates a creation failure", async () => {
+            harness.tabs.create.failNext(new Error("Creation failed"));
+
+            await expect(invoke()).rejects.toThrow("Creation failed");
+            expect(harness.tabs.update.calls).toHaveLength(0);
+            expect(harness.tabs.values).toEqual([]);
+        });
     });
 });
 

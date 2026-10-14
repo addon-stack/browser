@@ -165,10 +165,10 @@ export const updateTabAsActive = (tabId: number): Promise<Tab | undefined> => up
 export const openOrCreateTab = async (tab: Tab): Promise<void> => {
     const {id, url} = tab;
 
-    if (id && url) {
-        const existTab = await findTab({url});
+    if (id !== undefined && url) {
+        const tabs = await queryTabs({url});
 
-        if (existTab && id && existTab.id === id) {
+        if (tabs.some(tab => tab.id === id)) {
             await updateTabAsSelected(id);
 
             return;
@@ -181,7 +181,7 @@ export const openOrCreateTab = async (tab: Tab): Promise<void> => {
 export const openOrCreateTabByUrl = async (url: string): Promise<void> => {
     const tab = await findTabByUrl(url);
 
-    if (tab?.id) {
+    if (tab?.id !== undefined) {
         await updateTabAsSelected(tab.id);
 
         return;

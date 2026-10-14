@@ -9,6 +9,8 @@ const assert = require("node:assert/strict");
 
     assert.equal(api.canSetSidebarTitle(), false);
     assert.equal(api.canGetSidebarTitle(), false);
+    assert.equal(api.canSetSidebarIcon(), false);
+    await assert.rejects(api.setSidebarIcon({path: "icon.png"}), api.SidebarError);
 
     for (const profile of ["chrome", "firefox", "opera"]) {
         const harness = testing.createBrowserHarness();
@@ -17,6 +19,25 @@ const assert = require("node:assert/strict");
         try {
             assert.equal(api.canSetSidebarTitle(), profile !== "chrome");
             assert.equal(api.canGetSidebarTitle(), profile !== "chrome");
+
+            for (const manifest_version of [2, 3]) {
+                harness.runtime.setManifest(testing.createManifestFixture({manifest_version}));
+                const supported = profile === "firefox";
+                assert.equal(api.canSetSidebarIcon(), supported);
+                harness.sidebar.firefox.setIcon.setResult(undefined);
+                harness.sidebar.opera.setIcon.setResult(undefined);
+                const details = {path: {24: "small.png", 40: "medium.png", 64: "large.png"}, tabId: 0};
+                const operation = api.setSidebarIcon(details);
+
+                if (supported) {
+                    await operation;
+                    assert.equal(harness.sidebar.firefox.setIcon.calls.at(-1).args[0], details);
+                } else {
+                    await assert.rejects(operation, api.SidebarError);
+                    assert.equal(harness.sidebar.firefox.setIcon.calls.length, 0);
+                    assert.equal(harness.sidebar.opera.setIcon.calls.length, 0);
+                }
+            }
         } finally {
             restore();
         }

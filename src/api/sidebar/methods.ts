@@ -22,6 +22,21 @@ export enum SidebarState {
     Unknown = "unknown",
 }
 
+const getSidebarIconTarget = (): Pick<FirefoxSidebarAction, "setIcon"> => {
+    const sb = sidebarAction();
+
+    if (typeof sb?.setIcon !== "function") {
+        throw new SidebarError("The sidebarAction.setIcon API is not supported in this browser");
+    }
+
+    // Opera routes this to browserAction: MV2 changes the wrong icon, MV3 denies access.
+    if (isAvailableOperaSidebar()) {
+        throw new SidebarError("Changing the sidebar icon is temporarily unsupported in Opera due to a native browser bug");
+    }
+
+    return sb as FirefoxSidebarAction;
+};
+
 const normalizeSidebarPath = (path?: string): string | undefined => {
     if (!path) {
         return undefined;
@@ -100,6 +115,21 @@ export const canSetSidebarTitle = (): boolean => {
 export const canGetSidebarTitle = (): boolean => {
     try {
         return typeof sidebarAction()?.getTitle === "function";
+    } catch {
+        return false;
+    }
+};
+
+/**
+ * Checks icon support, including known browser restrictions, without changing the icon.
+ * Opera is temporarily unsupported in both MV2 and MV3 due to a native browser bug.
+ * A true result does not guarantee success with every argument. Access errors return false.
+ */
+export const canSetSidebarIcon = (): boolean => {
+    try {
+        getSidebarIconTarget();
+
+        return true;
     } catch {
         return false;
     }
@@ -306,20 +336,12 @@ export const setSidebarBadgeText = (text: string | number, tabId?: number): Prom
 
 export const clearSidebarBadgeText = (tabId?: number): Promise<void> => setSidebarBadgeText("", tabId);
 
+/**
+ * Sets the Firefox sidebar icon without modifying details and propagates native errors.
+ * Unsupported operations, including Opera MV2 and MV3, reject with SidebarError before a native call.
+ */
 export const setSidebarIcon = (details: IconDetails): Promise<void> =>
-    callWithPromise(cb => {
-        const sb = sidebarAction();
-
-        if (typeof sb?.setIcon === "function") {
-            if (isAvailableOperaSidebar()) {
-                return (sb as OperaSidebarAction).setIcon(details, cb);
-            }
-
-            return (sb as FirefoxSidebarAction).setIcon(details);
-        }
-
-        throw new SidebarError("The sidebarAction.setIcon API is supported only in Opera or Firefox");
-    });
+    callWithPromise(() => getSidebarIconTarget().setIcon(details));
 
 export const setSidebarBadgeTextColor = (color: Color, tabId?: number): Promise<void> =>
     callWithPromise(cb => {
