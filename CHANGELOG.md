@@ -1,5 +1,46 @@
 # Changelog
 
+## 🚀 Release `@addon-core/browser` v0.12.0 (2026-10-14)
+
+### 💥 Breaking Changes
+
+* setSidebarIcon() now rejects with SidebarError in Opera
+for both manifest versions instead of calling its broken native API.
+Guard dynamic updates with canSetSidebarIcon() and use
+sidebar_action.default_icon for Opera's initial sidebar icon.
+
+
+### ✨ Features
+
+* **sidebar:** add icon capability checks and block Opera icon changes ([5b7bad5](https://github.com/addon-stack/browser/commit/5b7bad51b397a4df70d05440ff7dfc703103122d))
+
+  Add canSetSidebarIcon() and share its compatibility check with the strict
+  setter. Block native icon calls in Opera MV2 and MV3: MV2 changes the
+  toolbar icon instead of the sidebar, while MV3 denies access. Keep Firefox
+  arguments and errors unchanged, without icon-map adaptation.
+
+  Refresh the Sidebar reference, document the temporary Opera restriction,
+  and cover capability checks, browser behavior, exports and consumer types.
+
+
+
+### 🐛 Bug Fixed
+
+* **tabs:** reuse matching tabs without creating duplicates ([0ba3f78](https://github.com/addon-stack/browser/commit/0ba3f784fb6490bbf6f6551762074766e759f923))
+
+  Search every URL query result for the requested tab ID and preserve ID 0
+  in both reuse helpers. Cover matching, fallback creation, and native errors.
+
+  Refresh the Tabs API reference with examples, permissions, accurate native
+  behavior, and a single method list matching the other API pages.
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 3
+
 ## 🚀 Release `@addon-core/browser` v0.11.0 (2026-10-12)
 
 ### 💥 Breaking Changes
