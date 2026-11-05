@@ -49,6 +49,36 @@ export function describeNamespaceAvailability(namespace: string, isAvailable: ()
             expect(console.warn).not.toHaveBeenCalled();
         });
 
+        test("checks a method without invoking it and observes its removal", () => {
+            const method = jest.fn();
+            const api: Record<string, unknown> = {testMethod: method, notAMethod: true};
+            const check = isAvailable as (method: string) => boolean;
+            useGlobals({chrome: {[namespace]: api}});
+
+            expect(check("testMethod")).toBe(true);
+            expect(check("notAMethod")).toBe(false);
+            expect(check("missing")).toBe(false);
+            delete api.testMethod;
+            expect(check("testMethod")).toBe(false);
+            api.testMethod = method;
+            expect(check("testMethod")).toBe(true);
+            expect(method).not.toHaveBeenCalled();
+        });
+
+        test("contains method access errors and missing namespaces", () => {
+            const check = isAvailable as (method: string) => boolean;
+            expect(check("testMethod")).toBe(false);
+
+            const api = Object.defineProperty({}, "testMethod", {get: () => {
+                throw new Error("Unavailable method");
+            }});
+
+            useGlobals({chrome: {[namespace]: api}});
+            expect(isAvailable()).toBe(true);
+            expect(check("testMethod")).toBe(false);
+            expect(console.error).not.toHaveBeenCalled();
+        });
+
         test.each([undefined, null])("returns false when the namespace is %s", value => {
             useGlobals({chrome: {[namespace]: value}});
             expect(isAvailable()).toBe(false);

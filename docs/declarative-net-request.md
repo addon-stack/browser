@@ -92,8 +92,12 @@ for rule matching and limits rather than assuming identical behavior across brow
 ### isAvailableDnr
 
 ```ts
-isAvailableDnr(): boolean
+isAvailableDnr(method?: ApiMethodName<typeof chrome.declarativeNetRequest>): boolean
 ```
+
+The optional `method` is a native function name, for example `isAvailableDnr("getDynamicRules")`.
+Import the public `ApiMethodName` type from `@addon-core/browser` for your own typed helpers.
+This checks callable presence without invoking the method; permissions and argument support still require handling.
 
 Checks the current native namespace on each call. Returns `false` if the environment or namespace
 is missing or access throws. It does not log, probe native operations or cache results.

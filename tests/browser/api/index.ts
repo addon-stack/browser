@@ -1,4 +1,5 @@
 import bookmarks from "./bookmarks";
+import compatibility from "./compatibility";
 import dnr from "./declarative-net-request";
 import identity from "./identity";
 import search from "./search";
@@ -8,5 +9,5 @@ import topSites from "./top-sites";
 
 import type {BrowserSuite} from "../types";
 
-const suites: BrowserSuite[] = [bookmarks, dnr, identity, search, sidebar, sidePanel, tabGroups, topSites];
+const suites: BrowserSuite[] = [bookmarks, compatibility, dnr, identity, search, sidebar, sidePanel, tabGroups, topSites];
 export default suites;

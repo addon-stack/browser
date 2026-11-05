@@ -1,5 +1,6 @@
 import {afterEach, beforeEach, describe, expect, test} from "@jest/globals";
 
+import {installNativeApiFixture} from "../../../tests/api/native";
 import {type BrowserHarness, createBrowserHarness, installBrowserGlobals} from "../../testing";
 import {getAllCookie, getAllCookieStores, getCookie, getCookiePartitionKey, removeCookie, setCookie} from "./methods";
 
@@ -76,10 +77,50 @@ describe.each(["chrome", "firefox"] as const)("cookies methods in %s", profile =
         ["get", () => getCookie(details)],
         ["getAll", () => getAllCookie()],
         ["getAllCookieStores", () => getAllCookieStores()],
+        ["getPartitionKey", () => getCookiePartitionKey({tabId: 7})],
         ["remove", () => removeCookie(details)],
         ["set", () => setCookie(details)],
     ] as const)("%s rejects native failures", async (name, invoke) => {
         harness.configurable.active.cookies[name].failNext(new Error("Cookie access denied"));
         await expect(invoke()).rejects.toThrow("Cookie access denied");
     });
+});
+
+describe("absent native cookies results", () => {
+    let native: ReturnType<typeof installNativeApiFixture>["native"];
+    let restore: () => void;
+
+    beforeEach(() => {
+        const fixture = installNativeApiFixture();
+        native = fixture.native;
+        restore = fixture.restore;
+    });
+
+    afterEach(() => restore());
+
+    test.each(["callback", "promise"])("normalizes an absent result from %s", async mode => {
+        const result = (value: unknown) => (...args: unknown[]) => {
+            if (mode === "promise") {
+                return Promise.resolve(value);
+            }
+
+            (args.at(-1) as (value: unknown) => void)(value);
+        };
+
+        native.cookies = {remove: result(undefined)};
+        await expect(removeCookie({url: "https://example.test/", name: "missing"})).resolves.toBeNull();
+        native.cookies.remove = result(null);
+        await expect(removeCookie({url: "https://example.test/", name: "missing"})).resolves.toBeNull();
+    });
+});
+
+test("missing cookies.getPartitionKey rejects with the API name", async () => {
+    const {native, restore} = installNativeApiFixture();
+    native.cookies = {};
+
+    try {
+        await expect(getCookiePartitionKey({tabId: 7})).rejects.toThrow("The cookies.getPartitionKey API is not supported in this browser");
+    } finally {
+        restore();
+    }
 });

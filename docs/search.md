@@ -79,8 +79,12 @@ The Firefox additions to the global declarations are a type superset, not a runt
 ### isAvailableSearch
 
 ```ts
-isAvailableSearch(): boolean
+isAvailableSearch(method?: ApiMethodName<typeof chrome.search>): boolean
 ```
+
+The optional `method` is a native function name, for example `isAvailableSearch("query")`.
+Import the public `ApiMethodName` type from `@addon-core/browser` for your own typed helpers.
+This checks callable presence without invoking the method; permissions and argument support still require handling.
 
 Returns whether the `search` namespace exists on the API selected by `browser()`.
 For example, older Firefox versions can expose the namespace without supporting `query`.

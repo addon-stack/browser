@@ -168,8 +168,12 @@ Badge setters accept a color string or `chrome.extensionTypes.ColorArray`, an RG
 ### isAvailableSidebar
 
 ```ts
-isAvailableSidebar(): boolean
+isAvailableSidebar(method?: ApiMethodName<typeof chrome.sidePanel | typeof browser.sidebarAction | typeof opr.sidebarAction>): boolean
 ```
+
+The optional `method` is a native function name, for example `isAvailableSidebar("open")`.
+Import the public `ApiMethodName` type from `@addon-core/browser` for your own typed helpers.
+This checks callable presence without invoking the method; permissions and argument support still require handling.
 
 Checks for `sidePanel` on the API selected by `browser()`, then for the selected `sidebarAction` namespace.
 Returns `false` if no namespace is available or accessing the environment throws. It checks namespace

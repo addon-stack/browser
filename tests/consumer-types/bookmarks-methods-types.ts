@@ -7,7 +7,7 @@ import {
 type Node = chrome.bookmarks.BookmarkTreeNode;
 
 type Expected = {
-    isAvailableBookmarks: () => boolean;
+    isAvailableBookmarks: (method?: "get" | "getTree" | "getSubTree" | "getChildren" | "getRecent" | "search" | "create" | "update" | "move" | "remove" | "removeTree") => boolean;
     getBookmarks: (ids: string | [string, ...string[]]) => Promise<Node[]>;
     getBookmarkTree: () => Promise<Node[]>;
     getBookmarkSubTree: (id: string) => Promise<Node[]>;

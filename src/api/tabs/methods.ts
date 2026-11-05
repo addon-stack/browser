@@ -1,3 +1,4 @@
+import {requireApiMethod} from "../../internal/api-method";
 import {browser} from "../browser";
 import {callBrowserMethod, callWithPromise} from "../utils";
 
@@ -35,29 +36,30 @@ export const createTab = (properties: CreateProperties): Promise<Tab> =>
 export const detectTabLanguage = (tabId: number): Promise<string> =>
     callWithPromise(cb => tabs().detectLanguage(tabId, cb));
 
-export const discardTab = (tabId: number): Promise<Tab | undefined> => callWithPromise(cb => tabs().discard(tabId, cb));
+export const discardTab = (tabId: number): Promise<Tab | undefined> => callWithPromise(cb => requireApiMethod(tabs(), "tabs", "discard")(tabId, cb));
 
 export const duplicateTab = (tabId: number): Promise<Tab | undefined> =>
     callWithPromise(cb => tabs().duplicate(tabId, cb));
 
 export const getTab = (tabId: number): Promise<Tab> => callWithPromise(cb => tabs().get(tabId, cb));
 
-export const getCurrentTab = (): Promise<Tab | undefined> => callWithPromise(cb => tabs().getCurrent(cb));
+export const getCurrentTab = async (): Promise<Tab | undefined> =>
+    (await callWithPromise<Tab | null | undefined>(cb => tabs().getCurrent(cb))) ?? undefined;
 
 export const getTabZoom = (tabId: number): Promise<number> => callWithPromise(cb => tabs().getZoom(tabId, cb));
 
 export const getTabZoomSettings = (tabId: number): Promise<ZoomSettings> =>
-    callWithPromise(cb => tabs().getZoomSettings(tabId, cb));
+    callWithPromise(cb => requireApiMethod(tabs(), "tabs", "getZoomSettings")(tabId, cb));
 
 export const goTabBack = (tabId: number): Promise<void> => callWithPromise(cb => tabs().goBack(tabId, () => cb()));
 
 export const goTabForward = (tabId: number): Promise<void> =>
     callWithPromise(cb => tabs().goForward(tabId, () => cb()));
 
-export const groupTabs = (options: GroupOptions): Promise<number> => callWithPromise(cb => tabs().group(options, cb));
+export const groupTabs = (options: GroupOptions): Promise<number> => callWithPromise(cb => requireApiMethod(tabs(), "tabs", "group")(options, cb));
 
 export const highlightTab = (highlightInfo: HighlightInfo): Promise<Window> =>
-    callWithPromise(cb => tabs().highlight(highlightInfo, cb));
+    callWithPromise(cb => requireApiMethod(tabs(), "tabs", "highlight")(highlightInfo, cb));
 
 export const moveTab = (tabId: number, moveProperties: MoveProperties): Promise<Tab> =>
     callWithPromise(cb => tabs().move(tabId, moveProperties, cb));
@@ -83,12 +85,12 @@ export const setTabZoom = (tabId: number, zoomFactor: number): Promise<void> =>
     callWithPromise(cb => tabs().setZoom(tabId, zoomFactor, () => cb()));
 
 export const setTabZoomSettings = (tabId: number, zoomSettings: ZoomSettings): Promise<void> =>
-    callWithPromise(cb => tabs().setZoomSettings(tabId, zoomSettings, () => cb()));
+    callWithPromise(cb => requireApiMethod(tabs(), "tabs", "setZoomSettings")(tabId, zoomSettings, () => cb()));
 
 export const ungroupTab = (tabIds: number | [number, ...number[]]): Promise<void> =>
     callBrowserMethod<void>({
-        callback: (api, done) => api.tabs.ungroup(tabIds, done),
-        promise: api => api.tabs.ungroup(tabIds),
+        callback: (api, done) => requireApiMethod(api.tabs, "tabs", "ungroup")(tabIds, done),
+        promise: api => requireApiMethod(api.tabs, "tabs", "ungroup")(tabIds),
     });
 
 export const updateTab = (tabId: number, updateProperties: UpdateProperties): Promise<Tab | undefined> =>

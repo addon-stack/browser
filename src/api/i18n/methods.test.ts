@@ -1,7 +1,9 @@
 import {afterEach, beforeEach, describe, expect, test} from "@jest/globals";
 
+import {installNativeApiFixture} from "../../../tests/api/native";
 import {type BrowserHarness, createBrowserHarness, installBrowserGlobals} from "../../testing";
 import * as api from "./methods";
+import {detectI18Language} from "./methods";
 
 describe.each(["chrome", "firefox"] as const)("i18n methods in %s", profile => {
     let harness: BrowserHarness;
@@ -68,4 +70,15 @@ describe.each(["chrome", "firefox"] as const)("i18n methods in %s", profile => {
         harness.runtime.getManifest.failNext(error);
         expect(api.getDefaultLanguage).toThrow(error);
     });
+});
+
+test("missing i18n.detectLanguage rejects with the API name", async () => {
+    const {native, restore} = installNativeApiFixture();
+    native.i18n = {};
+
+    try {
+        await expect(detectI18Language("hello")).rejects.toThrow("The i18n.detectLanguage API is not supported in this browser");
+    } finally {
+        restore();
+    }
 });

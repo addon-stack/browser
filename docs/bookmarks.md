@@ -81,8 +81,12 @@ All methods reject on native errors instead of converting failures into empty ar
 ### isAvailableBookmarks
 
 ```ts
-isAvailableBookmarks(): boolean
+isAvailableBookmarks(method?: ApiMethodName<typeof chrome.bookmarks>): boolean
 ```
+
+The optional `method` is a native function name, for example `isAvailableBookmarks("getTree")`.
+Import the public `ApiMethodName` type from `@addon-core/browser` for your own typed helpers.
+This checks callable presence without invoking the method; permissions and argument support still require handling.
 
 Checks the current API selected by `browser()` on every call. Returns `false` if the namespace or
 extension environment is missing, or access throws. It does not log or guarantee that a later operation succeeds.

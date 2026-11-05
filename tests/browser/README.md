@@ -191,6 +191,13 @@ npm run test:browser -- --browser chromium --api identity --binary /path/to/chro
 npm run test:browser -- --browser firefox --api identity --binary /path/to/firefox
 ```
 
+## Compatibility coverage
+
+The `compatibility` suite checks alarm schedules and results, repeated conditional creation, action enabled state,
+absent current-tab/cookie results and per-method availability in Chromium and Firefox. It uses only disposable profile
+data. Run it with `--api compatibility`. System WebKit has a separate macOS command, `npm run test:webkit`; see the
+[Safari verification notes](../../docs/safari.md#verification) for its native host and remaining gaps.
+
 ## Add another API
 
 1. Add `api/<namespace>/index.ts` exporting a `BrowserSuite` and one or more `.scenario.ts` files.

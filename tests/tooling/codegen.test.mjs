@@ -307,7 +307,7 @@ test.each([
 ])("derives %s availability names without losing camelCase", (namespace, expected) => {
     const [module] = generateAvailability([{namespace}]);
     expect(module.exports).toEqual([expected]);
-    expect(module.source).toContain(`export const ${expected} = (): boolean`);
+    expect(module.source).toContain(`export const ${expected} = (method?: ApiMethodName<typeof chrome.${namespace}>): boolean`);
 });
 
 test.each([null, [], {}, {namespace: "../tabs"}, {namespace: "tabs", template: "action"}])("rejects invalid availability descriptions: %j", spec => {

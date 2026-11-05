@@ -1,3 +1,4 @@
+import {requireApiMethod} from "../../internal/api-method";
 import {browser} from "../browser";
 import {callWithPromise} from "../utils";
 
@@ -16,4 +17,4 @@ export const isAllowedFileSchemeAccess = (): Promise<boolean> =>
 export const isAllowedIncognitoAccess = (): Promise<boolean> =>
     callWithPromise(cb => extension().isAllowedIncognitoAccess(cb));
 
-export const setUpdateUrlData = (data: string): void => extension().setUpdateUrlData(data);
+export const setUpdateUrlData = (data: string): void => requireApiMethod(extension(), "extension", "setUpdateUrlData")(data);

@@ -3,7 +3,7 @@ import {createBrowserHarness} from "@addon-core/browser/testing";
 
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 const exactGet: Equal<typeof getTopSites, (options?: TopSitesOptions) => Promise<TopSite[]>> = true;
-const exactAvailable: Equal<typeof isAvailableTopSites, () => boolean> = true;
+const exactAvailable: Equal<typeof isAvailableTopSites, (method?: "get") => boolean> = true;
 void [exactGet, exactAvailable];
 
 const options: TopSitesOptions = {

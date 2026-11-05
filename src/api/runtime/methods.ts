@@ -1,3 +1,4 @@
+import {requireApiMethod} from "../../internal/api-method";
 import {browser} from "../browser";
 import {callWithPromise} from "../utils";
 
@@ -23,18 +24,17 @@ export const connect = (extensionId: string, connectInfo?: object): Port => runt
 export const connectNative = (application: string): Port => runtime().connectNative(application);
 
 export const getContexts = (filter: ContextFilter): Promise<ExtensionContext[]> =>
-    callWithPromise(cb => runtime().getContexts(filter, cb));
+    callWithPromise(cb => requireApiMethod(runtime(), "runtime", "getContexts")(filter, cb));
 
 export const getManifest = (): Manifest => runtime().getManifest();
 
 export const getPackageDirectoryEntry = (): Promise<FileSystemDirectoryEntry> =>
-    callWithPromise(cb => runtime().getPackageDirectoryEntry(cb));
+    callWithPromise(cb => requireApiMethod(runtime(), "runtime", "getPackageDirectoryEntry")(cb));
 
 export const getPlatformInfo = (): Promise<PlatformInfo> => callWithPromise(cb => runtime().getPlatformInfo(cb));
 
-export const getBrowserInfo = (): Promise<BrowserInfo> => {
-    return (runtime() as unknown as FirefoxRuntime).getBrowserInfo();
-};
+export const getBrowserInfo = async (): Promise<BrowserInfo> =>
+    requireApiMethod(runtime() as unknown as FirefoxRuntime, "runtime", "getBrowserInfo")();
 
 export const getUrl = (path: string): string => runtime().getURL(path);
 
@@ -43,12 +43,12 @@ export const openOptionsPage = (): Promise<void> => callWithPromise(cb => runtim
 export const reload = (): void => runtime().reload();
 
 export const requestUpdateCheck = (): Promise<RequestUpdateCheck> =>
-    callWithPromise(cb => runtime().requestUpdateCheck((status, details) => cb({status, details})));
+    callWithPromise(cb => requireApiMethod(runtime(), "runtime", "requestUpdateCheck")((status, details) => cb({status, details})));
 
-export const restart = (): void => runtime().restart();
+export const restart = (): void => requireApiMethod(runtime(), "runtime", "restart")();
 
 export const restartAfterDelay = (seconds: number): Promise<void> =>
-    callWithPromise(cb => runtime().restartAfterDelay(seconds, cb));
+    callWithPromise(cb => requireApiMethod(runtime(), "runtime", "restartAfterDelay")(seconds, cb));
 
 export const sendMessage = <M = any, R = any>(message: M): Promise<R> =>
     callWithPromise(cb => runtime().sendMessage<M, R>(message, cb));

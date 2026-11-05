@@ -1,4 +1,4 @@
-export type PublicExportKind = "method-wrapper" | "event-wrapper" | "class" | "enum" | "interface";
+export type PublicExportKind = "method-wrapper" | "event-wrapper" | "class" | "enum" | "interface" | "type";
 
 export type PublicExportCoverage = "stateful" | "configurable" | "event" | "behavioral" | "declaration" | "unsupported";
 
@@ -24,6 +24,7 @@ const entries = (
  * deliberate test failure instead of an implicit fake implementation.
  */
 export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
+    ...entries("availability", "type", "declaration", ["ApiMethodName"]),
     ...entries("tabGroups", "method-wrapper", "behavioral", ["isAvailableTabGroups"]),
     ...entries("tabGroups", "interface", "declaration", ["TabGroup", "TabGroupRemoveInfo"]),
     ...entries("tabGroups", "method-wrapper", "configurable", [
@@ -518,9 +519,9 @@ export const PUBLIC_EXPORT_COVERAGE: readonly PublicExportCoverageEntry[] = [
     ]),
 ] as const;
 
-export const TYPE_ONLY_ROOT_EXPORTS = ["BrowserGuess", "DnrRulesMatchedDetails", "DnrTestMatchOptions", "LaunchWebAuthFlowDetails", "SearchEngine", "SearchTargetOptions", "TabGroup", "TabGroupRemoveInfo", "TopSite", "TopSitesOptions", "WindowEventFilter"] as const;
+export const TYPE_ONLY_ROOT_EXPORTS = ["ApiMethodName", "BrowserGuess", "DnrRulesMatchedDetails", "DnrTestMatchOptions", "LaunchWebAuthFlowDetails", "SearchEngine", "SearchTargetOptions", "TabGroup", "TabGroupRemoveInfo", "TopSite", "TopSitesOptions", "WindowEventFilter"] as const;
 
-export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 430;
+export const EXPECTED_ROOT_TYPESCRIPT_EXPORT_COUNT = 431;
 export const EXPECTED_ROOT_RUNTIME_EXPORT_COUNT = 419;
 
 export const getPublicExportCoverage = (name: string): PublicExportCoverageEntry | undefined =>

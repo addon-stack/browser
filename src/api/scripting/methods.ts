@@ -1,7 +1,8 @@
 import {browser} from "../browser";
 import {callWithPromise} from "../utils";
 
-type Awaited<T> = chrome.scripting.Awaited<T>;
+// Keep the result type independent of the removed chrome.scripting.Awaited alias.
+type Awaited<T> = T extends PromiseLike<infer U> ? U : T;
 type ContentScriptFilter = chrome.scripting.ContentScriptFilter;
 type CSSInjection = chrome.scripting.CSSInjection;
 type InjectionResult<T> = chrome.scripting.InjectionResult<T>;
