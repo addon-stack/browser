@@ -1,8 +1,10 @@
 import {afterEach, beforeEach, describe, expect, jest, test} from "@jest/globals";
 
 import {installAvailabilityGlobals} from "../../../tests/api/availability";
+import {installNativeApiFixture} from "../../../tests/api/native";
 import {type BrowserHarness, createBrowserHarness, installBrowserGlobals} from "../../testing";
 import * as api from "./methods";
+import {getDnrAvailableStaticRuleCount} from "./methods";
 
 const rule: chrome.declarativeNetRequest.Rule = {id: 1, action: {type: "block"}, condition: {urlFilter: "example.test"}};
 const rules = [rule];
@@ -180,4 +182,15 @@ describe("DNR method boundaries", () => {
         restore = installAvailabilityGlobals({chrome});
         await expect(api.getDnrDynamicRules()).rejects.toBe(error);
     });
+});
+
+test("missing declarativeNetRequest.getAvailableStaticRuleCount rejects with the API name", async () => {
+    const {native, restore} = installNativeApiFixture();
+    native.declarativeNetRequest = {};
+
+    try {
+        await expect(getDnrAvailableStaticRuleCount()).rejects.toThrow("The declarativeNetRequest.getAvailableStaticRuleCount API is not supported in this browser");
+    } finally {
+        restore();
+    }
 });

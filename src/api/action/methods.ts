@@ -1,7 +1,8 @@
+import {requireApiMethod} from "../../internal/api-method";
 import {isWebKitExtension} from "../../internal/webkit";
 import {getManifest, getManifestVersion} from "../runtime";
 import {callBrowserMethod, callWithPromise} from "../utils";
-import {type Action, action} from "./api";
+import {type Action, action, actionNamespace} from "./api";
 
 type ColorArray = chrome.extensionTypes.ColorArray;
 type TabIconDetails = chrome.action.TabIconDetails & chrome.browserAction.TabIconDetails;
@@ -20,7 +21,7 @@ export const getBadgeText = (tabId?: number): Promise<string> =>
     callWithPromise(cb => action().getBadgeText({tabId}, cb));
 
 export const getBadgeTextColor = (tabId?: number): Promise<ColorArray> =>
-    callWithPromise(cb => action<Action>().getBadgeTextColor({tabId}, cb));
+    callWithPromise(cb => requireApiMethod(action<Action>(), actionNamespace(), "getBadgeTextColor")({tabId}, cb));
 
 export const getActionPopup = (tabId?: number): Promise<string> =>
     callWithPromise(cb => action().getPopup({tabId}, cb));
@@ -29,11 +30,11 @@ export const getActionTitle = (tabId?: number): Promise<string> =>
     callWithPromise(cb => action().getTitle({tabId}, cb));
 
 export const getActionUserSetting = (): Promise<UserSettings> =>
-    callWithPromise(cb => action<Action>().getUserSettings(cb));
+    callWithPromise(cb => requireApiMethod(action<Action>(), actionNamespace(), "getUserSettings")(cb));
 
 export const isActionEnabled = (tabId: number): Promise<boolean> => {
     const invoke = (api: typeof chrome, callback?: (enabled: boolean) => void) => {
-        const isEnabled = action<Action>().isEnabled.bind(action<Action>()) as (
+        const isEnabled = requireApiMethod(action<Action>(), actionNamespace(), "isEnabled") as (
             details: number | {tabId: number},
             callback?: (enabled: boolean) => void
         ) => void | Promise<boolean>;
@@ -63,7 +64,7 @@ export const setBadgeTextColor = (color: Color, tabId?: number): Promise<void> =
         return Promise.resolve();
     }
 
-    return callWithPromise(cb => action<Action>().setBadgeTextColor({color, tabId}, cb));
+    return callWithPromise(cb => requireApiMethod(action<Action>(), actionNamespace(), "setBadgeTextColor")({color, tabId}, cb));
 };
 
 export const setActionIcon = (details: TabIconDetails): Promise<void> =>

@@ -89,10 +89,12 @@ Retrieves the partition key for the cookie associated with the given frame (Mani
 ### removeCookie
 
 ```
-removeCookie(details: chrome.cookies.CookieDetails): Promise<chrome.cookies.CookieDetails>
+removeCookie(details: chrome.cookies.CookieDetails): Promise<chrome.cookies.CookieDetails | null>
 ```
 
-Removes the cookie matching the specified details, returning the details of the removed cookie.
+Removes the cookie matching the specified details. Preserves returned native details and normalizes an absent result
+(`null` or `undefined`) to `null`. Chromium can return details even when the cookie was already absent; this result
+does not establish that a cookie existed. See the [migration notes](safari.md#breaking-change-migration).
 
 <a name="setCookie"></a>
 

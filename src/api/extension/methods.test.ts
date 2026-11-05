@@ -1,5 +1,6 @@
 import {afterEach, beforeEach, describe, expect, test} from "@jest/globals";
 
+import {installNativeApiFixture} from "../../../tests/api/native";
 import {type BrowserHarness, createBrowserHarness, installBrowserGlobals} from "../../testing";
 import * as api from "./methods";
 
@@ -65,4 +66,15 @@ describe.each(["chrome", "firefox"] as const)("extension methods in %s", profile
         harness.configurable.active.extension[name].failNext(error);
         expect(invoke).toThrow(error);
     });
+});
+
+test("missing setUpdateUrlData reports the native namespace synchronously", () => {
+    const {native, restore} = installNativeApiFixture();
+    native.extension = {};
+
+    try {
+        expect(() => api.setUpdateUrlData("key=value")).toThrow("The extension.setUpdateUrlData API is not supported in this browser");
+    } finally {
+        restore();
+    }
 });

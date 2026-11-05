@@ -1,5 +1,6 @@
 import {afterEach, beforeEach, describe, expect, jest, test} from "@jest/globals";
 
+import {installNativeApiFixture} from "../../../tests/api/native";
 import {describeSafePredicate} from "../../../tests/api/predicates";
 import {
     type BrowserHarness,
@@ -105,7 +106,7 @@ describe.each(["chrome", "firefox"] as const)("runtime methods in %s", profile =
 
     test("getBrowserInfo retains its Firefox-only Promise behavior", async () => {
         if (profile === "chrome") {
-            expect(() => getBrowserInfo()).toThrow(TypeError);
+            await expect(getBrowserInfo()).rejects.toThrow("The runtime.getBrowserInfo API is not supported in this browser");
             expect(harness.runtime.getBrowserInfo.calls).toHaveLength(0);
 
             return;
@@ -215,4 +216,24 @@ describe.each(["chrome", "firefox"] as const)("runtime methods in %s", profile =
         harness.runtime[name].failNext(new Error("Synchronous runtime failure"));
         expect(invoke).toThrow("Synchronous runtime failure");
     });
+});
+
+test("missing runtime.getContexts rejects with the API name", async () => {
+    const {restore} = installNativeApiFixture();
+
+    try {
+        await expect(getContexts({})).rejects.toThrow("The runtime.getContexts API is not supported in this browser");
+    } finally {
+        restore();
+    }
+});
+
+test("missing runtime.getBrowserInfo rejects with the API name", async () => {
+    const {restore} = installNativeApiFixture();
+
+    try {
+        await expect(getBrowserInfo()).rejects.toThrow("The runtime.getBrowserInfo API is not supported in this browser");
+    } finally {
+        restore();
+    }
 });

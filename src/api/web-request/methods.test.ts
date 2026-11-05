@@ -1,5 +1,6 @@
 import {afterEach, beforeEach, describe, expect, jest, test} from "@jest/globals";
 
+import {installNativeApiFixture} from "../../../tests/api/native";
 import {type BrowserHarness, createBrowserHarness, installBrowserGlobals} from "../../testing";
 import {handlerWebRequestBehaviorChanged} from "./methods";
 
@@ -76,4 +77,15 @@ describe.each(["chrome", "firefox"] as const)("webRequest methods in %s", profil
 
         await expect(handlerWebRequestBehaviorChanged()).rejects.toBe(error);
     });
+});
+
+test("missing webRequest.handlerBehaviorChanged rejects with the API name", async () => {
+    const {native, restore} = installNativeApiFixture();
+    native.webRequest = {};
+
+    try {
+        await expect(handlerWebRequestBehaviorChanged()).rejects.toThrow("The webRequest.handlerBehaviorChanged API is not supported in this browser");
+    } finally {
+        restore();
+    }
 });

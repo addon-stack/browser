@@ -1,3 +1,4 @@
+import {requireApiMethod} from "../../internal/api-method";
 import {browser} from "../browser";
 import {callWithPromise} from "../utils";
 
@@ -37,13 +38,13 @@ export const updateDnrEnabledRulesets = (options: UpdateRulesetOptions): Promise
     callWithPromise(cb => dnr().updateEnabledRulesets(options, cb));
 
 export const getDnrDisabledRuleIds = (options: GetDisabledRuleIdsOptions): Promise<number[]> =>
-    callWithPromise(cb => dnr().getDisabledRuleIds(options, cb));
+    callWithPromise(cb => requireApiMethod(dnr(), "declarativeNetRequest", "getDisabledRuleIds")(options, cb));
 
 export const updateDnrStaticRules = (options: UpdateStaticRulesOptions): Promise<void> =>
-    callWithPromise(cb => dnr().updateStaticRules(options, cb));
+    callWithPromise(cb => requireApiMethod(dnr(), "declarativeNetRequest", "updateStaticRules")(options, cb));
 
 export const getDnrAvailableStaticRuleCount = (): Promise<number> =>
-    callWithPromise(cb => dnr().getAvailableStaticRuleCount(cb));
+    callWithPromise(cb => requireApiMethod(dnr(), "declarativeNetRequest", "getAvailableStaticRuleCount")(cb));
 
 export const getDnrMatchedRules = (filter?: MatchedRulesFilter): Promise<DnrRulesMatchedDetails> =>
     callWithPromise(cb => filter === undefined ? dnr().getMatchedRules(cb) : dnr().getMatchedRules(filter, cb));
@@ -56,7 +57,7 @@ export const testDnrMatchOutcome = (
     request: TestMatchRequestDetails,
     options?: DnrTestMatchOptions
 ): Promise<TestMatchOutcomeResult> =>
-    callWithPromise(cb => options === undefined ? dnr().testMatchOutcome(request, cb) : dnr().testMatchOutcome(request, options));
+    callWithPromise(cb => options === undefined ? requireApiMethod(dnr(), "declarativeNetRequest", "testMatchOutcome")(request, cb) : requireApiMethod(dnr(), "declarativeNetRequest", "testMatchOutcome")(request, options));
 
 export const getDnrRegexSupport = (options: RegexOptions): Promise<IsRegexSupportedResult> =>
     callWithPromise(cb => dnr().isRegexSupported(options, cb));

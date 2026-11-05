@@ -1,5 +1,6 @@
 import {afterEach, beforeEach, describe, expect, test} from "@jest/globals";
 
+import {installNativeApiFixture} from "../../../tests/api/native";
 import {type BrowserHarness, createBrowserHarness, createTabFixture, installBrowserGlobals, installGlobals} from "../../testing";
 import * as api from "./methods";
 
@@ -265,6 +266,43 @@ test.each(["chrome", "firefox"] as const)("ungroupTab supports shared %s namespa
         expect(harness.tabs.ungroup.calls).toHaveLength(1);
         expect(harness.tabs.ungroup.calls[0].invocation).toBe(profile === "chrome" ? "callback" : "promise");
         await expect(pending).resolves.toBeUndefined();
+    } finally {
+        restore();
+    }
+});
+
+describe("absent native tabs results", () => {
+    let native: ReturnType<typeof installNativeApiFixture>["native"];
+    let restore: () => void;
+
+    beforeEach(() => {
+        const fixture = installNativeApiFixture();
+        native = fixture.native;
+        restore = fixture.restore;
+    });
+
+    afterEach(() => restore());
+
+    test.each(["callback", "promise"])("normalizes an absent result from %s", async mode => {
+        const result = (value: unknown) => (...args: unknown[]) => {
+            if (mode === "promise") {
+                return Promise.resolve(value);
+            }
+
+            (args.at(-1) as (value: unknown) => void)(value);
+        };
+
+        native.tabs = {getCurrent: result(null)};
+        await expect(api.getCurrentTab()).resolves.toBeUndefined();
+    });
+});
+
+test("missing tabs.discard rejects with the API name", async () => {
+    const {native, restore} = installNativeApiFixture();
+    native.tabs = {};
+
+    try {
+        await expect(api.discardTab(7)).rejects.toThrow("The tabs.discard API is not supported in this browser");
     } finally {
         restore();
     }

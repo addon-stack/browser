@@ -160,3 +160,16 @@ describe("native action signatures", () => {
         await expect(isActionEnabled(7)).resolves.toBe(false);
     });
 });
+
+test.each([2, 3] as const)("MV%s missing action methods use the selected namespace in errors", async version => {
+    const {native, restore} = installNativeApiFixture();
+    native.runtime.getManifest = () => ({manifest_version: version});
+    native.action = {};
+    native.browserAction = {};
+
+    try {
+        await expect(isActionEnabled(7)).rejects.toThrow(`The ${version === 3 ? "action" : "browserAction"}.isEnabled API is not supported in this browser`);
+    } finally {
+        restore();
+    }
+});

@@ -1,5 +1,6 @@
 import {afterEach, beforeEach, describe, expect, test} from "@jest/globals";
 
+import {installNativeApiFixture} from "../../../tests/api/native";
 import {type BrowserHarness, createBrowserHarness, installBrowserGlobals} from "../../testing";
 import {addHostAccessRequest, containsPermissions, getAllPermissions, removeHostAccessRequest, removePermissions, requestPermissions} from "./methods";
 
@@ -64,4 +65,15 @@ describe.each(["chrome", "firefox"] as const)("permissions methods in %s", profi
         harness.permissions[name].failNext(new Error("Permission request failed"));
         await expect(invoke()).rejects.toThrow("Permission request failed");
     });
+});
+
+test("missing permissions.addHostAccessRequest rejects with the API name", async () => {
+    const {native, restore} = installNativeApiFixture();
+    native.permissions = {};
+
+    try {
+        await expect(addHostAccessRequest({tabId: 7})).rejects.toThrow("The permissions.addHostAccessRequest API is not supported in this browser");
+    } finally {
+        restore();
+    }
 });

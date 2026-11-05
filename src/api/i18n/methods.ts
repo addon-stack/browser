@@ -1,3 +1,4 @@
+import {requireApiMethod} from "../../internal/api-method";
 import {browser} from "../browser";
 import {getManifest} from "../runtime";
 import {callWithPromise} from "../utils";
@@ -8,7 +9,7 @@ const i18n = () => browser().i18n;
 
 // Methods
 export const detectI18Language = (text: string): Promise<LanguageDetectionResult> =>
-    callWithPromise(cb => i18n().detectLanguage(text, cb));
+    callWithPromise(cb => requireApiMethod(i18n(), "i18n", "detectLanguage")(text, cb));
 
 export const getI18nAcceptLanguages = (): Promise<string[]> => callWithPromise(cb => i18n().getAcceptLanguages(cb));
 
