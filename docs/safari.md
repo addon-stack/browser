@@ -48,13 +48,14 @@ WebKit is detected using the extension URL scheme (`safari-web-extension:`, lega
 `webkit-extension:`), without user-agent sniffing or retrying a mutating native operation. Callback support remains
 in use for other methods. A general switch to Promise-only calls would not resolve missing methods or result shapes.
 
-The APIs identified as missing inside otherwise exposed namespaces now reject with their native API name, for example
+Several audited wrappers report unsupported methods using their native API name, for example
 `The cookies.getPartitionKey API is not supported in this browser`. This includes the audited action, tabs, cookies,
-permissions, runtime, DNR, i18n, extension and webRequest methods; it does not emulate those missing browser features.
+permissions, runtime, DNR, i18n, extension and webRequest methods. Other wrappers preserve native errors, including
+`moveTab()` and `moveTabs()` when `tabs.move` is absent. Missing browser features are not emulated.
 
 ## Breaking-change migration
 
-BREAKING CHANGE: `removeCookie()` returns `Promise<chrome.cookies.CookieDetails | null>`. Consumers must handle an
+`removeCookie()` returns `Promise<chrome.cookies.CookieDetails | null>`. Consumers must handle an
 absent native cookie removal result:
 
 ```ts
@@ -65,11 +66,11 @@ if (cookie !== null) {
 ```
 
 `clearAllAlarm()` still returns `Promise<boolean>`, but now returns `false` for an empty collection in every browser.
-This changes Chromium's previous native `true` result and requires a breaking-change marker on the alarms commit.
+This changes Chromium's previous native `true` result.
 
 `getBrowserInfo()` now rejects its Promise with an API-named error when unsupported, instead of throwing a synchronous
 `TypeError`. The adapted missing-method errors are ordinary `Error` objects; do not depend on the old native `TypeError`
-messages. These changes require a breaking-change release marker and a minor bump while the package remains on `0.x`.
+messages.
 
 ## Verification
 
@@ -93,21 +94,35 @@ features, actual alarm firing after the requested delay, or every public wrapper
 Promise-returning WebKit implementations. For upstream alarms changes, see
 [WebKit commit 0756528](https://github.com/WebKit/WebKit/commit/07565287df4a952e02a052d06125123d24ffcebd).
 
+<a name="verification-snapshot"></a>
+
 ## Verification snapshot — 2026-11-05
 
-Runtime: system WebKit **22625.2.8.11.9**, macOS **27.2**, standalone native host; Chromium **153.0.8010.12** and
-Firefox **159.0** in disposable extension profiles. This is not a Safari application UI or iOS test.
+Chromium **153.0.8010.12** and Firefox **159.0** passed the compatibility suite in disposable extension profiles.
+The native WebKit host passed all five scenarios in the following environments:
+
+| Environment | macOS (build) | System WebKit | Source revision | Result |
+| --- | --- | --- | --- | --- |
+| Local host | 27.2 (26B123) | 22625.2.8.11.9 | `c71d61f4a68b` | 5/5 passed |
+| CI `macos-15` | 15.8.2 (24H232) | 20621.3.11.11.3 | `c71d61f4a68b` | 5/5 passed |
+| CI `macos-26` | 26.6.2 (25G83) | 21624.5.1.11.3 | `c71d61f4a68b` | 5/5 passed |
+
+The CI results and report artifacts are available in the
+[verified WebKit pilot push run on develop](https://github.com/addon-stack/browser/actions/runs/42112369083).
+All three reports record revision `c71d61f4a68b` and a clean working tree.
+These checks use a standalone native host and do not establish Safari application UI or iOS behavior.
 
 | Category | Evidence and scope |
 | --- | --- |
 | Runtime-tested adaptations | Alarm creation/get/getAll/removal, one-shot and repeating schedules, a second conditional creation preserving `scheduledTime`, action enable/disable/isEnabled, badge text, current-tab and cookie absence normalization, callback errors. |
-| Observed missing methods in this WebKit build | `action.getBadgeTextColor/setBadgeTextColor/getUserSettings`; `tabs.discard/highlight/group/ungroup/getZoomSettings/setZoomSettings`; `cookies.getPartitionKey`; `permissions.addHostAccessRequest/removeHostAccessRequest`; `runtime.getBrowserInfo/getContexts/getPackageDirectoryEntry/requestUpdateCheck/restart/restartAfterDelay`; DNR `getAvailableStaticRuleCount/getDisabledRuleIds/testMatchOutcome/updateStaticRules`; `i18n.detectLanguage`; `extension.setUpdateUrlData`; `webRequest.handlerBehaviorChanged`. These observations depend on permissions, manifest and host/build. |
+| Observed missing methods in WebKit 22625.2.8.11.9 | `action.getBadgeTextColor/setBadgeTextColor/getUserSettings`; `tabs.discard/highlight/group/ungroup/getZoomSettings/setZoomSettings`; `cookies.getPartitionKey`; `permissions.addHostAccessRequest/removeHostAccessRequest`; `runtime.getBrowserInfo/getContexts/getPackageDirectoryEntry/requestUpdateCheck/restart/restartAfterDelay`; DNR `getAvailableStaticRuleCount/getDisabledRuleIds/testMatchOutcome/updateStaticRules`; `i18n.detectLanguage`; `extension.setUpdateUrlData`; `webRequest.handlerBehaviorChanged`. These observations depend on permissions, manifest and host/build. |
+| Version-dependent method presence | `tabs.move` was absent in WebKit 20621.3.11.11.3 and 21624.5.1.11.3, and callable in 22625.2.8.11.9. Presence does not verify successful execution. On builds where it is absent, `moveTab()` and `moveTabs()` reject with the native `TypeError`; use `isAvailableTabs("move")` to check callable presence. |
 | Context/permission-limited absence | `runtime.connectNative` is absent without a `nativeMessaging` permission request. Legacy `tabs.executeScript/insertCSS/removeCSS` are absent in this MV3 fixture; the wrappers select `scripting` in MV3. These observations do not establish Safari-wide absence. |
 | Source-only / unit checks | Complete wrapper argument and event behavior is not established by callable presence. Guards and newer Promise-returning WebKit creation are covered by unit tests; upstream alarms changes were checked in WebKit source. |
 | Remaining gaps | Actual delayed alarm firing, every wrapper's successful runtime behavior and errors, all options/result fields, event payloads, popup/user-gesture UI, iOS, and optional APIs controlled by host/build flags. |
 
-The missing-method observations above came from a separate native audit with the relevant permissions granted,
-including `webRequest`. A namespace absent from a differently configured host must not be labelled an unsupported
+All three WebKit reports record the fixture's granted permissions, including `webRequest`.
+A namespace absent from a differently configured host must not be labelled an unsupported
 Safari API without further investigation. Automatically recorded observations and human-reviewed findings are
 separate concerns; a callable inventory is not a runtime conformance result for every wrapper.
 
@@ -129,5 +144,5 @@ Human findings about adapted incorrect calls, source-only checks and remaining g
 
 The separate **WebKit pilot** workflow runs on `macos-15` and `macos-26`, uploads the report even after failure, and
 prints the actual system versions. It is not called by reusable CI or `release.yml`, so it is not a release dependency.
-GitHub-hosted execution must be assessed from its own run; the local macOS 27.2 result does not establish runner
-stability or the results of older system WebKit builds.
+The hosted runs in the verification snapshot passed on both runners and uploaded their reports. These results cover
+those system builds and scenarios; longer-term runner stability and other versions remain unverified.

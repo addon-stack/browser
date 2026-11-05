@@ -170,6 +170,8 @@ getBrowserInfo(): Promise<{ name: string; vendor: string; version: string; build
 ```
 
 Returns information about the browser. Available only in Firefox.
+If `runtime.getBrowserInfo` is unavailable, the Promise rejects with an `Error` whose message is
+`The runtime.getBrowserInfo API is not supported in this browser`.
 
 <a name="getUrl"></a>
 

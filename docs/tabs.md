@@ -588,6 +588,11 @@ moveTab(
 Moves one tab to a position in its current window or an explicitly supplied `windowId`.
 Use `index: -1` to move it to the end. Native move restrictions and errors are preserved.
 
+`tabs.move` was absent in the tested WebKit 20621.3.11.11.3 and 21624.5.1.11.3 builds, and callable in
+22625.2.8.11.9. When the method is absent, the Promise rejects with the native `TypeError`.
+Use `isAvailableTabs("move")` to check callable presence; see the [verification snapshot](safari.md#verification-snapshot)
+for environments and revisions.
+
 ```ts
 import {moveTab} from "@addon-core/browser";
 
@@ -608,6 +613,9 @@ moveTabs(
 
 Moves an array of tab IDs and returns the native array of updated tabs.
 Supply `windowId` to move them to another window; native ordering and restrictions remain in effect.
+
+Like [`moveTab()`](#moveTab), this calls `tabs.move` and rejects with the native `TypeError` when that method is absent;
+check `isAvailableTabs("move")` for the same WebKit availability limitations.
 
 ```ts
 import {moveTabs, queryTabIds} from "@addon-core/browser";
