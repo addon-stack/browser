@@ -1,5 +1,60 @@
 # Changelog
 
+## 🚀 Release `@addon-core/browser` v0.13.0 (2026-11-05)
+
+### 💥 Breaking Changes
+
+* removeCookie returns CookieDetails | null. Handle absent
+results. Unsupported getBrowserInfo calls reject a Promise instead of throwing
+synchronously; guarded missing methods use API-named Error objects instead
+of native TypeError messages.
+
+* clearAllAlarm now reports whether the collection observed
+before deletion was nonempty. An empty Chromium collection returns false
+instead of the previous native true. Reads and deletion are not atomic.
+
+
+### ✨ Features
+
+* **availability:** expose typed native method checks ([f13bc6f](https://github.com/addon-stack/browser/commit/f13bc6f19308cacf7d01dcbc5462a09e204ee93c))
+
+  Accept optional native method names in every availability helper and export
+  ApiMethodName for consumer wrappers. Keep no-argument namespace checks.
+
+
+
+### 🐛 Bug Fixed
+
+* **action:** adapt enabled-state calls across browsers ([65beedc](https://github.com/addon-stack/browser/commit/65beedc9318f2c6a19aea756d67d4b4534d92249))
+
+  Use WebKit details objects, numeric Chrome and Firefox arguments, and the
+  Firefox Promise interface while retaining the selected native receiver.
+
+* **alarms:** normalize removal and WebKit creation contracts ([e2f8c23](https://github.com/addon-stack/browser/commit/e2f8c2346d3aa4c74844c78a562f25d25ecb63f7))
+
+  Keep boolean results for named deletion and derive legacy WebKit results from
+  an existence check. Read the collection before clearAll in every browser and
+  ignore inconsistent native results. Preserve WebKit creation and null lookup
+  compatibility, with regression tests beside the alarm methods.
+
+* **api:** normalize absent results and unsupported methods ([b3b7122](https://github.com/addon-stack/browser/commit/b3b712256e3a09fd207b75d592aee7aa4d5f5974))
+
+  Normalize null current-tab results, preserve cookie details or null, and name
+  missing native methods without losing callback errors. Select the manifest
+  action namespace in diagnostics and reject unsupported getBrowserInfo calls.
+
+* **scripting:** avoid the removed chrome Awaited alias ([10c48d2](https://github.com/addon-stack/browser/commit/10c48d2267051d39e60f3d9d45f36d5aca327c1d))
+
+  Preserve the existing conditional script result type locally so consumers can
+  install newer @types/chrome declarations without TS2694.
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 12
+
 ## 🚀 Release `@addon-core/browser` v0.12.0 (2026-10-14)
 
 ### 💥 Breaking Changes
