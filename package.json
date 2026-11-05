@@ -75,6 +75,7 @@
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:ci": "npm test -- --ci --passWithNoTests --coverage",
     "test:browser": "node ./tests/browser/run.mjs",
+    "test:webkit": "node ./tests/webkit/run.mjs",
     "typecheck:browser": "tsc -p tests/browser/tsconfig.json",
     "test:browser-match-patterns": "node ./tests/browser-match-patterns/check.mjs",
     "test:consumer-types": "npm run build && node ./tests/consumer-types/check.mjs",
