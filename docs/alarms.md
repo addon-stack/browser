@@ -54,7 +54,11 @@ if (isAvailableAlarms()) {
 clearAlarm(name: string): Promise<boolean>
 ```
 
-Clears the alarm with the specified name, returning `true` if an existing alarm was found and cleared.
+Clears the alarm with the specified name and preserves a native boolean when provided. WebKit first reads whether
+the alarm exists; older implementations that report no removal result use this earlier observation. That fallback
+is not atomic: another context or alarm firing can change the state between the read and deletion.
+Chromium and Firefox perform no pre-read. An unexpected missing/non-boolean result outside the legacy WebKit fallback
+rejects the Promise rather than silently reporting `false`. Read and deletion errors also reject.
 
 <a name="clearAllAlarm"></a>
 
@@ -64,7 +68,13 @@ Clears the alarm with the specified name, returning `true` if an existing alarm 
 clearAllAlarm(): Promise<boolean>
 ```
 
-Clears all alarms, returning `true` if any alarms were found and cleared.
+Clears all alarms and returns whether the collection read immediately before deletion was nonempty. Every browser
+uses `getAll` followed by `clearAll`; native removal results are ignored. This gives one boolean contract despite
+Chromium returning `true` for an empty collection and Firefox 159/legacy WebKit reporting no result.
+The read and deletion are not atomic: another context or alarm firing may change the collection between them.
+Read and deletion errors reject instead of returning the earlier observation.
+
+This changes the previous native-result behavior: an empty Chromium collection now returns `false`.
 
 <a name="createAlarm"></a>
 
@@ -75,6 +85,8 @@ createAlarm(name: string, info: chrome.alarms.AlarmCreateInfo): Promise<void>
 ```
 
 Creates a new alarm or updates an existing one with the given name and scheduling options.
+The wrapper uses WebKit's supported two-argument call, handling both its older synchronous return and newer Promise.
+Native synchronous errors and Promise rejections reject the public `Promise<void>`.
 
 <a name="createAlarmIfNotExists"></a>
 
