@@ -127,3 +127,7 @@ can all affect it. The fixture requests and grants `webRequest`, so its namespac
 Human findings about adapted incorrect calls, source-only checks and remaining gaps are maintained separately in
 `tests/webkit/review.json`; they are never inferred from presence alone.
 
+The separate **WebKit pilot** workflow runs on `macos-15` and `macos-26`, uploads the report even after failure, and
+prints the actual system versions. It is not called by reusable CI or `release.yml`, so it is not a release dependency.
+GitHub-hosted execution must be assessed from its own run; the local macOS 27.2 result does not establish runner
+stability or the results of older system WebKit builds.
