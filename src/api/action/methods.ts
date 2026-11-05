@@ -1,5 +1,6 @@
+import {isWebKitExtension} from "../../internal/webkit";
 import {getManifest, getManifestVersion} from "../runtime";
-import {callWithPromise} from "../utils";
+import {callBrowserMethod, callWithPromise} from "../utils";
 import {type Action, action} from "./api";
 
 type ColorArray = chrome.extensionTypes.ColorArray;
@@ -30,8 +31,23 @@ export const getActionTitle = (tabId?: number): Promise<string> =>
 export const getActionUserSetting = (): Promise<UserSettings> =>
     callWithPromise(cb => action<Action>().getUserSettings(cb));
 
-export const isActionEnabled = (tabId: number): Promise<boolean> =>
-    callWithPromise(cb => action<Action>().isEnabled(tabId, cb));
+export const isActionEnabled = (tabId: number): Promise<boolean> => {
+    const invoke = (api: typeof chrome, callback?: (enabled: boolean) => void) => {
+        const isEnabled = action<Action>().isEnabled.bind(action<Action>()) as (
+            details: number | {tabId: number},
+            callback?: (enabled: boolean) => void
+        ) => void | Promise<boolean>;
+
+        const details = isWebKitExtension(api) ? {tabId} : tabId;
+
+        return callback ? isEnabled(details, callback) : isEnabled(details);
+    };
+
+    return callBrowserMethod({
+        callback: invoke,
+        promise: api => invoke(api) as Promise<boolean>,
+    });
+};
 
 export const openActionPopup = (windowId?: number): Promise<void> =>
     callWithPromise(cb => action<Action>().openPopup({windowId}, cb));

@@ -1,6 +1,8 @@
 import {afterEach, beforeEach, describe, expect, jest, test} from "@jest/globals";
 
+import {installNativeApiFixture} from "../../../tests/api/native";
 import {type BrowserTestApi, installGlobals} from "../../testing";
+import {isActionEnabled} from "./methods";
 import {clearBadgeText, getBadgeText, getDefaultPopup, setBadgeText, setBadgeTextColor} from "./methods";
 
 describe.each([2, 3] as const)("action methods in MV%s", version => {
@@ -114,5 +116,47 @@ describe.each([2, 3] as const)("action methods in MV%s", version => {
         expect(modernGet).not.toHaveBeenCalled();
         expect(legacyGet).not.toHaveBeenCalled();
         expect(setColor).not.toHaveBeenCalled();
+    });
+});
+
+describe("native action signatures", () => {
+    let native: ReturnType<typeof installNativeApiFixture>["native"];
+    let restore: () => void;
+
+    beforeEach(() => {
+        const fixture = installNativeApiFixture();
+        native = fixture.native;
+        restore = fixture.restore;
+    });
+
+    afterEach(() => restore());
+
+    test.each(["webkit-extension", "chrome-extension", "moz-extension"])("isActionEnabled uses the %s native argument shape and retains its receiver", async scheme => {
+        native.runtime.getURL = path => `${scheme}://fixture/${path}`;
+
+        const action = {
+            isEnabled: jest.fn(function (this: unknown, details: unknown, callback: (value: boolean) => void) {
+                expect(this).toBe(action);
+                expect(details).toEqual(scheme === "webkit-extension" ? {tabId: 7} : 7);
+                callback(true);
+            }),
+        };
+
+        native.action = action;
+        await expect(isActionEnabled(7)).resolves.toBe(true);
+        expect(action.isEnabled).toHaveBeenCalledTimes(1);
+    });
+
+    test("Firefox isActionEnabled omits callbacks for its Promise-only native signature", async () => {
+        Object.assign(native.runtime, {getBrowserInfo: () => undefined});
+        native.runtime.getURL = path => `moz-extension://fixture/${path}`;
+
+        native.action = {isEnabled: jest.fn((...args: unknown[]) => {
+            expect(args).toEqual([7]);
+
+            return Promise.resolve(false);
+        })};
+
+        await expect(isActionEnabled(7)).resolves.toBe(false);
     });
 });
