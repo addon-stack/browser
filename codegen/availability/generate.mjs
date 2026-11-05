@@ -28,7 +28,7 @@ export function generateAvailability(specs) {
         }
 
         const exportName = `isAvailable${alias ?? namespace[0].toUpperCase() + namespace.slice(1)}`;
-        const {imports, expression} = render({namespace});
+        const {imports, expression, methodType} = render({namespace});
 
         return {
             namespace,
@@ -37,11 +37,14 @@ export function generateAvailability(specs) {
             source: [
                 "// Edit codegen/availability/apis.mjs and run npm run generate.",
                 "",
+                'import type {ApiMethodName} from "../../internal/api-method";',
                 ...imports,
                 "",
-                `export const ${exportName} = (): boolean => {`,
+                `export const ${exportName} = (method?: ApiMethodName<${methodType}>): boolean => {`,
                 "    try {",
-                `        return Boolean(${expression});`,
+                `        const api = ${expression};`,
+                "",
+                '        return method === undefined ? Boolean(api) : api != null && typeof Reflect.get(api, method) === "function";',
                 "    } catch {",
                 "        return false;",
                 "    }",

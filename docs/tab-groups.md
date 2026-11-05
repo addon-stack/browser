@@ -93,8 +93,12 @@ All methods preserve native errors, including errors for missing group IDs.
 ### isAvailableTabGroups
 
 ```ts
-isAvailableTabGroups(): boolean
+isAvailableTabGroups(method?: ApiMethodName<typeof chrome.tabGroups>): boolean
 ```
+
+The optional `method` is a native function name, for example `isAvailableTabGroups("get")`.
+Import the public `ApiMethodName` type from `@addon-core/browser` for your own typed helpers.
+This checks callable presence without invoking the method; permissions and argument support still require handling.
 
 Checks the API selected by `browser()` on every call. Returns `false` when the namespace or extension
 environment is missing, or access throws. It does not log or guarantee that a later operation succeeds.

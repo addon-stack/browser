@@ -3,7 +3,7 @@ import {getTabGroup, isAvailableTabGroups, moveTabGroup, queryTabGroups, type Ta
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 
 const signatures: [
-    Equal<typeof isAvailableTabGroups, () => boolean>,
+    Equal<typeof isAvailableTabGroups, (method?: "get" | "query" | "update" | "move") => boolean>,
     Equal<typeof getTabGroup, (groupId: number) => Promise<TabGroup>>,
     Equal<typeof queryTabGroups, (queryInfo?: chrome.tabGroups.QueryInfo) => Promise<TabGroup[]>>,
     Equal<typeof updateTabGroup, (groupId: number, properties: chrome.tabGroups.UpdateProperties) => Promise<TabGroup | undefined>>,

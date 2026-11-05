@@ -22,8 +22,16 @@ const names = [
     assert.equal(api.isAvailableNotifications(), true);
     assert.equal(api.isAvailableScripting(), false);
     assert.equal(api.isAvailableUserScripts(), true);
+
+    globalThis.chrome.tabs.query = () => {
+        throw new Error("Availability must not invoke methods");
+    };
+
+    assert.equal(api.isAvailableTabs("query"), true);
+    assert.equal(api.isAvailableTabs("discard"), false);
     delete globalThis.chrome.tabs;
     assert.equal(api.isAvailableTabs(), false);
+    assert.equal(api.isAvailableTabs("query"), false);
 
     Object.defineProperty(globalThis.chrome, "userScripts", {get() {
         throw new Error("Access denied");

@@ -147,6 +147,21 @@ Explore the API guides for available helpers, examples, and browser-specific det
 - Firefox — partial support via compatible helpers (e.g., `sidebarAction`, `runtime.getBrowserInfo`)
 - Apple Safari — limited WebExtensions support; many Chromium-specific APIs are not available, so some helpers won’t work.
 
+All `isAvailable…()` helpers accept an optional **native method name**. A namespace can exist while an individual
+method is missing, especially in Safari:
+
+```ts
+import {getBadgeTextColor, isAvailableAction} from "@addon-core/browser";
+
+if (isAvailableAction("getBadgeTextColor")) {
+    const color = await getBadgeTextColor();
+}
+```
+
+The check is synchronous and does not invoke the method. It checks callable presence; permissions, valid arguments
+and successful execution still depend on the browser. Calls without an argument retain their namespace check.
+See [Safari compatibility and migration notes](docs/safari.md) for native differences and changed result types.
+
 ## TypeScript compatibility
 
 The package depends on `@types/chrome@^0.3.5`, which owns the global `browser` alias

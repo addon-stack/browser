@@ -136,8 +136,12 @@ must match, use `openOrCreateTab()`. Both reuse paths delegate to native highlig
 ### isAvailableTabs
 
 ```ts
-isAvailableTabs(): boolean
+isAvailableTabs(method?: ApiMethodName<typeof chrome.tabs>): boolean
 ```
+
+The optional `method` is a native function name, for example `isAvailableTabs("query")`.
+Import the public `ApiMethodName` type from `@addon-core/browser` for your own typed helpers.
+This checks callable presence without invoking the method; permissions and argument support still require handling.
 
 Checks the namespace selected by `browser()` on each call. Returns `false` if the extension environment
 or namespace is missing, or if accessing it throws. The check is synchronous, silent and uncached.

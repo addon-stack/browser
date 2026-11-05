@@ -30,13 +30,18 @@ A promise-based wrapper for the Chrome `browsingData` API.
 ### isAvailableBrowsingData
 
 ```ts
-isAvailableBrowsingData(): boolean
+isAvailableBrowsingData(method?: ApiMethodName<typeof chrome.browsingData>): boolean
 ```
+
+The optional `method` is a native function name, for example `isAvailableBrowsingData("remove")`.
+Import the public `ApiMethodName` type from `@addon-core/browser` for your own typed helpers.
+This checks callable presence without invoking the method; permissions and argument support still require handling.
 
 Returns `true` when the `browsingData` namespace is present on the API selected by `browser()` in the current context.
 Returns `false` if the namespace or WebExtension environment is absent, or if accessing it throws.
 The check is synchronous, does not log, and reads the current API on every call without caching.
-It checks namespace presence only; it does not guarantee individual methods, permissions, or a successful operation.
+Without an argument, it checks namespace presence only. Pass a native method name to also check that it is callable.
+Neither form verifies permissions, argument support, or a successful operation. See [method availability](safari.md).
 
 ```ts
 import {isAvailableBrowsingData} from "@addon-core/browser";

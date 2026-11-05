@@ -72,3 +72,14 @@ describe("sidebar availability", () => {
         expect(warn).not.toHaveBeenCalled();
     });
 });
+
+test("method availability checks the selected sidebar API without falling back", () => {
+    const restore = installAvailabilityGlobals({chrome: {sidePanel: {getOptions: () => undefined}}, opr: {sidebarAction: {toggle: () => undefined}}});
+
+    try {
+        expect(isAvailableSidebar("getOptions")).toBe(true);
+        expect(isAvailableSidebar("toggle")).toBe(false);
+    } finally {
+        restore();
+    }
+});

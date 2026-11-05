@@ -67,3 +67,21 @@ describe("action availability", () => {
         expect(isAvailableAction()).toBe(false);
     });
 });
+
+test.each([2, 3])("method availability observes the API selected by MV%s", version => {
+    const method = jest.fn();
+
+    const restore = installAvailabilityGlobals({chrome: {
+        runtime: {getManifest: () => ({manifest_version: version})},
+        action: {isEnabled: method}, browserAction: {},
+    }});
+
+    try {
+        expect(isAvailableAction()).toBe(true);
+        expect(isAvailableAction("isEnabled")).toBe(version === 3);
+        expect(isAvailableAction("getUserSettings")).toBe(false);
+        expect(method).not.toHaveBeenCalled();
+    } finally {
+        restore();
+    }
+});
