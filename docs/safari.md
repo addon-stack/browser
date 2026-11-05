@@ -111,3 +111,19 @@ including `webRequest`. A namespace absent from a differently configured host mu
 Safari API without further investigation. Automatically recorded observations and human-reviewed findings are
 separate concerns; a callable inventory is not a runtime conformance result for every wrapper.
 
+## Saved observations and pilot CI
+
+`npm run test:webkit` writes `report.json` and `report.md` under the gitignored `.output/webkit/` directory, including
+failures after runner startup. Override the directory with `--report-dir <path>`. Raw reports are not committed.
+
+The report records system WebKit/macOS versions, the source revision and dirty flag, requested manifest permissions
+and host permissions, **actually granted** permissions/origins, and scenario results. The inventory resolves native
+method references from the production TypeScript source and enumerates callable properties of each exposed namespace,
+including non-enumerable and inherited properties. Wrapper references are source observations, not proof of execution.
+
+Each method has one of three states: `namespace-unavailable`, `method-unavailable` (namespace present), or
+`method-present`. Namespace absence is not attributed to Safari itself: permissions, manifest, host and build flags
+can all affect it. The fixture requests and grants `webRequest`, so its namespace is not withheld by a missing request.
+Human findings about adapted incorrect calls, source-only checks and remaining gaps are maintained separately in
+`tests/webkit/review.json`; they are never inferred from presence alone.
+

@@ -1,0 +1,22 @@
+{
+  "kind": "human-reviewed-findings",
+  "reviewedOn": "2026-11-05",
+  "incorrectCallsAdapted": [
+    "alarms.create: legacy WebKit rejects a callback; modern WebKit returns a Promise",
+    "action.isEnabled: WebKit needs an object; Firefox's Promise interface rejects a callback",
+    "alarms.get and tabs.getCurrent: normalize null to declared undefined",
+    "alarms.clear: prefer native boolean and use WebKit pre-read when no result is reported",
+    "alarms.clearAll: use the nonempty pre-read collection in every browser; ignore inconsistent native results",
+    "cookies.remove: preserve details and normalize absent native results to null"
+  ],
+  "sourceOnly": [
+    "Presence of a callable property does not validate argument options, result fields or errors",
+    "Newer Promise-returning WebKit alarms.create is covered by unit tests and upstream source review"
+  ],
+  "remainingGaps": [
+    "Successful execution and errors for every remaining public wrapper",
+    "Actual delayed alarm firing and event payloads",
+    "Safari application UI, user gestures, popups and iOS",
+    "Host/build flags controlling optional APIs and versions not executed by this run"
+  ]
+}

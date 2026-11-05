@@ -1,11 +1,14 @@
 import {
     browser, clearAlarm, clearAllAlarm, createAlarm, createAlarmIfNotExists, disableAction,
-    enableAction, getAlarm, getAllAlarm, getBadgeText, getCurrentTab, getDnrDynamicRules,
+    enableAction, getAlarm, getAllAlarm, getAllPermissions, getBadgeText, getCurrentTab, getDnrDynamicRules,
     getRegisteredContentScripts, isActionEnabled, isAvailableAction, isAvailableCookies,
     isAvailableDnr, isAvailableI18n, isAvailablePermissions, isAvailableRuntime, isAvailableTabs,
     isAvailableWebRequest, queryTabs, removeCookie, setBadgeText,
 } from "../../dist/index.js";
 import {assert, rejects} from "../browser/extension/assert";
+import {observeMethods, type WrapperInventory} from "./observations";
+
+declare const __WK_WRAPPER_INVENTORY__: WrapperInventory;
 
 const results: {id: string; status: string; error?: string}[] = [];
 const native = browser();
@@ -87,7 +90,12 @@ async function main() {
 
     const host = globalThis as typeof globalThis & {webkit: {messageHandlers: {result: {postMessage(value: unknown): void}}}};
 
-    host.webkit.messageHandlers.result.postMessage({results});
+    host.webkit.messageHandlers.result.postMessage({
+        results,
+        grantedPermissions: await getAllPermissions(),
+        aliasesShareObject: native === globalThis.chrome,
+        observations: observeMethods(native, __WK_WRAPPER_INVENTORY__),
+    });
 }
 
 void main();
